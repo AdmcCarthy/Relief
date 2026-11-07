@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Relief · preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+:root { --bg:#f3f7fb; --surface:#fdfeff; --ink:#2d3439; --muted:#596c7b; --rule:#ccd6dd; --accent:#1a7f88; }
+:root[data-theme="dark"] { --bg:#0e1820; --surface:#15212a; --ink:#f5fdff; --muted:#b4c7d7; --rule:#2c3a45; --accent:#55b3bd; }
+body { margin:0; background:var(--bg); color:var(--ink); font:400 14px/1.5 "Instrument Sans", system-ui, sans-serif; }
+header { padding:20px 24px 8px; max-width:1200px; margin:0 auto; }
+h1 { font:500 30px/1.1 "Newsreader", Georgia, serif; margin:4px 0 6px; }
+.kicker { font:500 11px "JetBrains Mono", monospace; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+p { margin:0 0 8px; max-width:72ch; color:var(--muted); }
+.tools { display:flex; flex-wrap:wrap; gap:8px 18px; align-items:center; padding:10px 24px; max-width:1200px; margin:0 auto; }
+.seg { display:inline-flex; border:1px solid var(--rule); border-radius:999px; padding:2px; background:var(--surface); }
+.seg button { font:inherit; font-size:12.5px; border:0; background:none; color:var(--muted); padding:5px 11px; border-radius:999px; cursor:pointer; }
+.seg button[aria-pressed="true"] { background:var(--bg); color:var(--ink); box-shadow:0 1px 2px rgb(0 0 0/.12); }
+.stage { max-width:1200px; margin:0 auto; padding:0 24px 24px; display:grid; grid-template-columns:minmax(0,1fr) 260px; gap:20px; }
+@media (max-width:820px) { .stage { grid-template-columns:minmax(0,1fr); } }
+canvas { width:100%; height:auto; display:block; background:var(--surface); border:1px solid var(--rule); border-radius:10px; }
+.side { font-size:12.5px; }
+.side h3 { font:600 13px "Instrument Sans"; margin:0 0 6px; }
+.ramp { display:grid; grid-template-columns:18px 1fr; gap:3px 8px; align-items:center; margin-bottom:14px; }
+.ramp i { width:18px; height:12px; border-radius:2px; display:block; border:1px solid rgb(0 0 0/.06); }
+table { border-collapse:collapse; width:100%; font-variant-numeric:tabular-nums; }
+td { padding:3px 0; border-bottom:1px solid var(--rule); } td:last-child { text-align:right; }
+.note { color:var(--muted); font-size:12px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="kicker">Relief · proof of concept · Vestland</div>
+  <h1>Topography and bathymetry, generalised for data maps</h1>
+  <p>Copernicus DEM (land) and the EMODnet Bathymetry DTM (sea floor), merged, projected to UTM 32N and contoured into stacked layers at three levels of detail. Coastlines are generalised by scale: islands and lakes too small to see are dropped and skerry fields merge.</p>
+</header>
+<div class="tools">
+  <div class="seg" id="lod"><button data-v="overview">Overview · 1 km</button><button data-v="regional">Regional · 250 m</button><button data-v="detail">Detail · 125 m</button></div>
+  <div class="seg" id="style"><button data-v="context">Context</button><button data-v="showcase">Showcase</button><button data-v="lines">Contours</button></div>
+  <div class="seg" id="theme"><button data-v="light">Light</button><button data-v="dark">Dark</button></div>
+</div>
+<div class="stage">
+  <canvas id="map"></canvas>
+  <aside class="side">
+    <h3>Land, metres</h3><div class="ramp" id="landramp"></div>
+    <h3>Sea depth, metres</h3><div class="ramp" id="searamp"></div>
+    <h3>This level of detail</h3><table id="stats"></table>
+    <p class="note">Sources: Copernicus DEM GLO-90 (© DLR e.V. 2010–2014 and © Airbus 2014–2018, provided under COPERNICUS by the European Union and ESA); EMODnet Bathymetry Consortium (2024) EMODnet Digital Bathymetry (DTM).</p>
+  </aside>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script>
+const AREA = "vestland", base = `data/${AREA}/`;
+const PAL = {  // stacked fills, low -> high (land) and shallow -> deep (sea); context is muted for data overlays
+  context: {
+    light: { land: ["#eef0ea", "#e6e9e1", "#dee2d8", "#d5d9cf", "#cdd1c8", "#c5c9c1", "#bec2bb", "#b8bcb6"], sea: ["#e4eef5", "#dbe8f1", "#d2e2ed", "#c9dce9", "#c0d6e5", "#b7d0e1", "#aecadd", "#a5c4d9", "#9cbed5", "#93b8d1", "#8ab2cd"] },
+    dark: { land: ["#26313a", "#2b363f", "#303b44", "#354049", "#3a454e", "#3f4a53", "#444f58", "#49545d"], sea: ["#13202a", "#122130", "#112235", "#10233a", "#0f243f", "#0e2544", "#0d2649", "#0c274e", "#0b2853", "#0a2958", "#092a5d"] },
+  },
+  showcase: {
+    light: { land: ["#e9efd9", "#dbe6c4", "#cfdcb1", "#d9d3a8", "#dcc79f", "#d6b996", "#d1c3b8", "#eae6e2"], sea: ["#d6ecf7", "#bfe0f2", "#a7d3ec", "#8fc5e5", "#78b6dd", "#62a7d4", "#4f97c9", "#3f86bc", "#3275ac", "#27649a", "#1e5487"] },
+    dark: { land: ["#2f3a2b", "#38452f", "#424f34", "#4e533a", "#5a5640", "#635a47", "#6a6560", "#8a8682"], sea: ["#173a52", "#16364d", "#153248", "#142e43", "#132a3e", "#122639", "#112234", "#101e2f", "#0f1a2a", "#0e1625", "#0d1220"] },
+  },
+};
+const state = { lod: "regional", style: "context", theme: matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light" };
+const cache = {};
+const canvas = document.getElementById("map"), ctx = canvas.getContext("2d");
+let manifest;
+
+async function load(lod) {
+  if (!cache[lod]) {
+    const [gj, img] = await Promise.all([fetch(`${base}${lod}.geojson`).then((r) => r.json()),
+      new Promise((res) => { const i = new Image(); i.onload = () => res(i); i.src = `${base}${lod}_hillshade.png`; })]);
+    cache[lod] = { gj, img };
+  }
+  return cache[lod];
+}
+
+async function draw() {
+  document.documentElement.dataset.theme = state.theme;
+  ["lod", "style", "theme"].forEach((k) => document.querySelectorAll(`#${k} button`).forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === state[k])));
+  const { gj, img } = await load(state.lod);
+  const W = canvas.clientWidth, [x0, y0, x1, y1] = gj.bbox, H = Math.round(W * (y1 - y0) / (x1 - x0));
+  const dpr = Math.min(2, devicePixelRatio || 1);
+  canvas.width = W * dpr; canvas.height = H * dpr; canvas.style.height = `${H}px`;
+  const t0 = performance.now();
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const proj = d3.geoIdentity().reflectY(true).fitSize([W, H], { type: "MultiPoint", coordinates: [[x0, y0], [x1, y1]] });
+  const path = d3.geoPath(proj, ctx);
+  const cs = getComputedStyle(document.documentElement);
+  const style = state.style === "lines" ? "context" : state.style, P = PAL[style][state.theme];
+  const sea = gj.features.filter((f) => f.properties.kind === "sea"), land = gj.features.filter((f) => f.properties.kind === "land");
+  if (state.style === "lines") {
+    ctx.fillStyle = cs.getPropertyValue("--surface"); ctx.fillRect(0, 0, W, H);
+    const line = (f, c, w) => { ctx.beginPath(); path(f.geometry); ctx.strokeStyle = c; ctx.lineWidth = w; ctx.stroke(); };
+    sea.forEach((f, i) => line(f, d3.interpolateRgb(cs.getPropertyValue("--muted"), "#3f86bc")(i / sea.length), i === 0 ? 1.1 : 0.5));
+    land.forEach((f, i) => line(f, d3.interpolateRgb("#8b7d6b", cs.getPropertyValue("--ink"))(i / land.length), i === 0 ? 1.1 : 0.5));
+  } else {
+    ctx.fillStyle = P.sea[0]; ctx.fillRect(0, 0, W, H);  // everything is sea, then deeper-than layers, then land
+    sea.forEach((f, i) => { if (i) { ctx.beginPath(); path(f.geometry); ctx.fillStyle = P.sea[i]; ctx.fill(); } });
+    land.forEach((f, i) => { ctx.beginPath(); path(f.geometry); ctx.fillStyle = P.land[i]; ctx.fill(); });
+    if (state.style === "showcase") {
+      ctx.save(); ctx.globalCompositeOperation = state.theme === "dark" ? "soft-light" : "multiply"; ctx.globalAlpha = state.theme === "dark" ? 0.55 : 0.45;
+      ctx.drawImage(img, 0, 0, W, H); ctx.restore();
+    }
+    ctx.beginPath(); path(land[0].geometry); ctx.strokeStyle = state.theme === "dark" ? "#6b7d8a" : "#7f8f9a"; ctx.lineWidth = 0.6; ctx.stroke();
+  }
+  const ms = performance.now() - t0;
+  const L = manifest.lods[state.lod];
+  document.getElementById("stats").innerHTML = [["Grid cell", `${L.cell} m`], ["Grid", `${L.shape[1]} × ${L.shape[0]}`],
+    ["File (uncompressed)", `${(L.bytes / 1e6).toFixed(2)} MB`], ["Coastline pieces", `${L.coast_parts_ungeneralised} → ${L.coast_parts}`],
+    ["Draw time here", `${ms.toFixed(0)} ms`]].map(([a, b]) => `<tr><td>${a}</td><td>${b}</td></tr>`).join("");
+  const ramp = (id, cols, lv, fmt) => document.getElementById(id).innerHTML = cols.map((c, i) => `<i style="background:${c}"></i><span>${fmt(lv[i], lv[i + 1])}</span>`).join("");
+  ramp("landramp", P.land, manifest.land, (a, b) => b == null ? `${a}+` : `${a}–${b}`);
+  ramp("searamp", P.sea, manifest.sea, (a, b) => b == null ? `${a}+` : `${a}–${b}`);
+}
+["lod", "style", "theme"].forEach((k) => document.getElementById(k).addEventListener("click", (e) => { const v = e.target.dataset.v; if (v) { state[k] = v; draw(); } }));
+addEventListener("resize", () => draw());
+fetch(`${base}manifest.json`).then((r) => r.json()).then((m) => { manifest = m; draw(); });
+</script>
+</body>
+</html>

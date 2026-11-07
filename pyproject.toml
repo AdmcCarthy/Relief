@@ -1,0 +1,23 @@
+[project]
+name = "relief"
+version = "0.1.0"
+description = "Relief: open topography and bathymetry, generalised into fast contour maps for data visualisation"
+requires-python = ">=3.12"
+dependencies = [
+    "numpy>=2.0",
+    "rasterio>=1.4",
+    "contourpy>=1.3",
+    "scipy>=1.14",
+    "shapely>=2.0",
+    "pyproj>=3.6",
+    "requests>=2.31",
+]
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+pythonpath = ["scripts"]
