@@ -12,8 +12,35 @@
   1032,
   1332
  ],
- "zmin": -1272.611328125,
+ "zmin": -1272.502197265625,
  "zmax": 1826.382568359375,
+ "seabed": {
+  "available": [
+   "emodnet",
+   "kartverket"
+  ],
+  "share_of_sea": {
+   "emodnet": 0.303,
+   "kartverket": 0.697
+  },
+  "overlap": {
+   "kartverket": {
+    "overlap_cells": 498840,
+    "median_diff_m": -0.0,
+    "p90_abs_diff_m": 4.2
+   }
+  }
+ },
+ "zones": {
+  "channels": "R temperate, G boreal, B tundra/polar; arid = 255 - R - G - B",
+  "source": "Beck et al. (2023) K\u00f6ppen-Geiger 1991-2020, 1 km, CC BY 4.0",
+  "share_of_land": {
+   "temperate": 0.227,
+   "boreal": 0.67,
+   "tundra": 0.102,
+   "arid": 0.0
+  }
+ },
  "glaciers": {
   "count": 388,
   "area_km2_raster": 344,
@@ -43,11 +70,13 @@
   "channels": "R high byte, G low byte"
  },
  "files": {
-  "elev.webp": 1163112,
+  "elev.webp": 1162948,
   "glacier.png": 15610,
+  "zones.png": 32270,
+  "sources.png": 41196,
   "emodnet115.webp": 309656,
   "gebco450.webp": 230440,
-  "kartverket50.webp": 334462
+  "kartverket50.webp": 328294
  },
  "overlay": {
   "wells": 30,

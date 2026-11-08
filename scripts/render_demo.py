@@ -37,6 +37,7 @@ from shapely.geometry import shape
 def shp_transform(fn, g):
     return shapely.transform(g, lambda c: np.column_stack(fn(c[:, 0], c[:, 1])))
 
+import seabed
 from areas import AREAS
 from build import inner_rect
 
@@ -95,14 +96,54 @@ def encode(z: np.ndarray) -> bytes:
 
 
 def merged(raw: Path, crs: str, tr, w, h, kv, cop, sea_from="kartverket"):
-    sea_em = warp(raw / "emodnet_dtm.tif", tr, w, h, crs)
+    """Land from Copernicus; sea floor combined from every available source (seabed.py), or EMODnet only."""
     land = warp(cop[0], tr, w, h, crs, src_tr=cop[1], src_crs="EPSG:4326")
-    sea = sea_em
-    if sea_from == "kartverket":
-        sea_kv = warp(kv[0], tr, w, h, crs, src_tr=kv[1], src_crs="EPSG:25833")
-        sea = np.where(np.isfinite(sea_kv), sea_kv, sea_em)
+    if sea_from == "emodnet":
+        sea, src, info = warp(raw / "emodnet_dtm.tif", tr, w, h, crs), None, None
+    else:
+        sea, src, info = seabed.combine(raw, tr, w, h, crs, abs(tr.a))
     z = np.where(land > 0.5, land, np.minimum(np.nan_to_num(sea, nan=-1.0), -1.0))  # sea at least 1 m deep: a clean 0 m coast
-    return z, sea_em, land
+    return z, (src, info), land
+
+
+GROUPS = {  # Köppen-Geiger class -> zone channel (0 temperate, 1 boreal/cold, 2 tundra/polar, 3 arid)
+    **{k: 3 for k in (4, 5, 6, 7)}, **{k: 0 for k in range(8, 17)}, **{k: 1 for k in range(17, 29)}, 29: 2, 30: 2,
+    1: 0, 2: 0, 3: 0,  # tropical: treated with the humid (temperate) tints here
+}
+BLEND_KM = 6  # cross-blending distance: zone edges fade over a few kilometres, as in Patterson & Jenny
+
+
+def climate_zones(path: Path, tr, w, h, crs) -> np.ndarray:
+    """Zone weights per cell (RGBA), blurred so tints cross-blend instead of meeting at hard lines."""
+    from rasterio.warp import transform_bounds
+    from rasterio.windows import from_bounds
+
+    b = transform_bounds(crs, "EPSG:4326", tr.c, tr.f + tr.e * h, tr.c + tr.a * w, tr.f)
+    with rasterio.open(path) as r:
+        win = from_bounds(b[0] - 0.2, b[1] - 0.2, b[2] + 0.2, b[3] + 0.2, r.transform)
+        kg = r.read(1, window=win)
+        ktr = r.window_transform(win)
+    cls = np.zeros((h, w), dtype="uint8")
+    reproject(kg, cls, src_transform=ktr, src_crs="EPSG:4326", dst_transform=tr, dst_crs=crs, resampling=Resampling.mode)
+    # sea cells (0) take the nearest land class so coastal tints are not pulled towards nothing
+    from scipy.ndimage import distance_transform_edt
+
+    idx = distance_transform_edt(cls == 0, return_distances=False, return_indices=True)
+    cls = cls[tuple(idx)]
+    out = np.zeros((h, w, 4), dtype="float32")
+    for k, g in GROUPS.items():
+        out[..., g] += cls == k
+    sig = BLEND_KM * 1000 / abs(tr.a)
+    for c in range(4):
+        out[..., c] = gaussian_filter(out[..., c], sig)
+    out /= np.maximum(out.sum(axis=2, keepdims=True), 1e-6)
+    return np.round(out * 255).astype("uint8")
+
+
+def zone_shares(zones: np.ndarray, z: np.ndarray) -> dict:
+    land = z > 0
+    names = ["temperate", "boreal", "tundra", "arid"]
+    return {n: round(float((zones[..., i][land] > 127).mean()), 3) for i, n in enumerate(names)}
 
 
 def main(area: str) -> None:
@@ -116,8 +157,15 @@ def main(area: str) -> None:
     b = [round(v / CELL) * CELL for v in frame.bounds]
     tr, w, h = grid(b, CELL)
     kv, cop = kartverket_mosaic(raw), copernicus_mosaic(raw)
-    z, _sea_em, _land = merged(raw, crs, tr, w, h, kv, cop)
+    z, (srcmap, seainfo), _land = merged(raw, crs, tr, w, h, kv, cop)
     (out / "elev.webp").write_bytes(encode(z))
+    srcmap = np.where(z < 0, srcmap + 1, 0).astype("uint8")  # 0 land, 1 gebco, 2 emodnet, 3 denmark, 4 kartverket
+    Image.fromarray(srcmap, "L").save(out / "sources.png", optimize=True)
+    zones = climate_zones(Path("data/raw/climate/1991_2020/koppen_geiger_0p00833333.tif"), tr, w, h, crs)
+    # RGB = temperate, boreal, tundra weights; arid = 255 - R - G - B (weights sum to 255). No alpha channel:
+    # transparent pixels lose their colour in image resizing and browser decoding. Smooth field: quarter size.
+    q = zones[: h // 4 * 4, : w // 4 * 4, :3].reshape(h // 4, 4, w // 4, 4, 3).mean(axis=(1, 3))
+    Image.fromarray(np.round(q).astype("uint8"), "RGB").save(out / "zones.png", optimize=True)
 
     # glaciers: outlines projected and rasterised to a mask (255 = ice)
     gl = json.loads((raw / "glaciers_rgi6.geojson").read_text())["features"]
@@ -134,7 +182,7 @@ def main(area: str) -> None:
     cb = [round((cx - half) / 450) * 450, round((cy - half) / 450) * 450]
     cb += [cb[0] + 2 * half, cb[1] + 2 * half]
     ctr, cw, ch = grid(cb, CMP_CELL)
-    zk, _, _ = merged(raw, crs, ctr, cw, ch, kv, cop, sea_from="kartverket")
+    zk, _, _ = merged(raw, crs, ctr, cw, ch, kv, cop, sea_from="combined")
     ze, _, _ = merged(raw, crs, ctr, cw, ch, kv, cop, sea_from="emodnet")
     # GEBCO-like: average the EMODnet surface to about 450 m (15 arc-seconds), then sample back to 50 m
     gtr, gw, gh = grid(cb, 450)
@@ -173,13 +221,16 @@ def main(area: str) -> None:
     meta = {
         "area": area, "crs": crs, "cell": CELL, "bounds": b, "size": [w, h],
         "zmin": float(np.nanmin(z)), "zmax": float(np.nanmax(z)),
+        "seabed": seainfo,
+        "zones": {"channels": "R temperate, G boreal, B tundra/polar; arid = 255 - R - G - B", "source": "Beck et al. (2023) Köppen-Geiger 1991-2020, 1 km, CC BY 4.0",
+                  "share_of_land": zone_shares(zones, z)},
         "glaciers": {"count": len(gl), "area_km2_raster": round(gl_area), "source": "RGI 6.0 (GLIMS), CC BY 4.0"},
         "compare": {"bounds": cb, "cell": CMP_CELL, "size": [cw, ch], "sources": {
             "gebco450": "EMODnet averaged to GEBCO's 15 arc-second grid (about 450 m)",
             "emodnet115": "EMODnet DTM 2024 (about 115 m)",
             "kartverket50": "Kartverket sea-floor terrain model, 50 m"}},
         "encoding": {"base": BASE, "step": STEP, "channels": "R high byte, G low byte"},
-        "files": {p.name: p.stat().st_size for p in [out / "elev.webp", out / "glacier.png", *sorted((out / "compare").glob("*.webp"))]},
+        "files": {p.name: p.stat().st_size for p in [out / "elev.webp", out / "glacier.png", out / "zones.png", out / "sources.png", *sorted((out / "compare").glob("*.webp"))]},
         "overlay": {k: len(v) for k, v in overlay.items()},
     }
     (out / "overlay.json").write_text(json.dumps(overlay, separators=(",", ":")))

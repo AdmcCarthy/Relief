@@ -35,3 +35,33 @@ Proof of concept (Vestland, 3.5–7.5°E, 59–61.5°N): coastline pieces 1,049 
 5. **Quality checks**: no slivers between stacked layers, monotonic nesting (higher land inside lower land),
    size and draw-time budgets per LOD, coastline agreement with Kartverket.
 6. **Vertical datum note** on maps that show shallow water.
+
+## Research notes (2026-11-08)
+
+**Climate-aware hypsometric tints.** Patterson & Jenny's *cross-blended hypsometric tints* (Cartographic
+Perspectives 69, 2011; user study in 75, 2014) keep elevation steps but vary lowland colours by environment:
+green in humid regions, no green in arid ones, so tints stop implying vegetation that is not there. The
+Natural Earth raster uses it. Feasible with public data: **Beck et al. (2023) Köppen–Geiger 1 km, 1991–2020,
+CC BY 4.0** (one 12 MB GeoTIFF). Relief groups classes into temperate, boreal, tundra/polar and arid, blurs
+zone weights over ~6 km (cross-blending) and mixes four land ramps below 1,000 m in the shader; above
+1,000 m all zones share one alpine ramp. Vestland: 67 % boreal, 23 % temperate, 10 % tundra, no arid.
+
+**Non-linear steps.** Sea: 0–20, 20–50, 50–100, 100–200, 200–500, 500–1,000, >1,000 m. Land (coarser):
+0–50, 50–150, 150–300, 300–600, 600–1,000, 1,000–1,500, 1,500–2,000, >2,000 m. Colour bars draw each step at
+equal width so the fine shallow steps stay readable.
+
+**Sea-floor shading.** Soft multi-directional shading works on the 50 m (Kartverket) and 115 m (EMODnet)
+surfaces with ~3x vertical exaggeration; on 450 m GEBCO it mostly shows the grid, so keep it off or weak.
+
+**Combined sea floor** (`scripts/seabed.py`): Kartverket 50 m > Denmark 50 m (needs a free Dataforsyningen
+token: drop GeoTIFFs in `denmark_dybdemodel50/`) > EMODnet 115 m > GEBCO 450 m, feathered over 1.5 km.
+Kartverket vs EMODnet over 0.5 M overlapping cells: median 0 m, 90 % within 4.2 m.
+
+**Line simplification and smoothing** (`scripts/smooth.py`, `contours_visual.py`): Douglas–Peucker selects
+critical points (good for minimal simplification, poor at caricature); Visvalingam–Whyatt removes the least
+significant points first (more natural at small scales); Chaikin corner cutting converges to a quadratic
+B-spline inside the original; centripetal Catmull–Rom (alpha 0.5) passes through the points without cusps or
+self-intersections within segments (Yuksel et al. 2011). Topology-preserving DP is essential: without it,
+Chaikin amplified 3 kinks into 76 self-crossing rings. Recommended visual layer: Gaussian pre-blur (1 cell) +
+DP (1.5 cells) + Chaikin x2: 71 % fewer points than raw, no self-crossings, calm curves. The precise grid
+stays the record; the visual layer is for drawing (aesthetics over contour precision, as agreed).

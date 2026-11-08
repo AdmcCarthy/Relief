@@ -11,7 +11,8 @@ void main(){ uv = mix(uView.xy, uView.zw, vec2(p.x*0.5+0.5, 0.5-p.y*0.5)); gl_Po
 const FS = `#version 300 es
 precision highp float;
 in vec2 uv; out vec4 o;
-uniform sampler2D uElev, uIce, uRamp;
+uniform sampler2D uElev, uIce, uRamp, uZones;
+uniform int uZoneOn;  // 1: land colour = zone-weighted mix of four ramps (temperate, boreal, tundra, arid)
 uniform vec2 uTex; uniform float uCell, uBase, uStep;
 uniform float uLandMax, uSeaMax;           // ramp ranges, metres
 uniform float uLandStops[12], uSeaStops[12]; uniform int uNLand, uNSea;
@@ -36,9 +37,14 @@ float bandOf(float v, bool land){ // stepped: snap to the middle of the band con
   for (int k = 0; k < 12; k++){ int n = land ? uNLand : uNSea; if (k >= n) break;
     float s = land ? uLandStops[k] : uSeaStops[k]; if (v >= s) { lo = s; hi = (k+1 < n) ? (land ? uLandStops[k+1] : uSeaStops[k+1]) : s + (s-lo+1.); } }
   return (lo + hi) * 0.5; }
+// ramp rows (5): 0 temperate land, 1 boreal land, 2 tundra land, 3 arid land, 4 sea
+vec3 row(float t, float r){ return texture(uRamp, vec2(clamp(t,0.,1.), (r + .5) / 5.)).rgb; }
 vec3 ramp(float z){
-  if (z > 0.) { float v = uStepped == 1 ? bandOf(z, true) : z; return texture(uRamp, vec2(clamp(v/uLandMax,0.,1.), 0.25)).rgb; }
-  float d = -z; float v = uStepped == 1 ? bandOf(d, false) : d; return texture(uRamp, vec2(clamp(v/uSeaMax,0.,1.), 0.75)).rgb; }
+  if (z > 0.) { float t = (uStepped == 1 ? bandOf(z, true) : z) / uLandMax;
+    if (uZoneOn == 0) return row(t, 0.);
+    vec3 w = texture(uZones, uv).rgb; float a = max(0., 1. - w.r - w.g - w.b);
+    return row(t, 0.)*w.r + row(t, 1.)*w.g + row(t, 2.)*w.b + row(t, 3.)*a; }
+  float d = -z; float v = uStepped == 1 ? bandOf(d, false) : d; return row(v/uSeaMax, 4.); }
 float lightAt(vec3 n, float az, float alt){ vec3 L = vec3(sin(az)*cos(alt), cos(az)*cos(alt), sin(alt)); return max(dot(n, L), 0.); }
 void main(){
   vec2 px = 1.0/uTex;
@@ -101,14 +107,14 @@ export function createRenderer() {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     textures.set(key, t); return t;
   }
-  function rampTex(land, sea) {  // 256 x 2 colour table built from stop colours
-    const W = 256, data = new Uint8Array(W * 2 * 4);
-    [land, sea].forEach((stops, row) => { for (let i = 0; i < W; i++) {
+  function rampTex(lands, sea) {  // 256 x 5 colour table: four land rows (climate zones) and the sea
+    const W = 256, data = new Uint8Array(W * 5 * 4);
+    [...lands, sea].forEach((stops, row) => { for (let i = 0; i < W; i++) {
       const t = i / (W - 1); let k = 0; while (k < stops.length - 2 && t > stops[k + 1][0]) k++;
       const [t0, c0] = stops[k], [t1, c1] = stops[k + 1], f = Math.min(1, Math.max(0, (t - t0) / (t1 - t0 || 1)));
       const a = hex(c0), b = hex(c1); for (let j = 0; j < 3; j++) data[(row * W + i) * 4 + j] = Math.round((a[j] + (b[j] - a[j]) * f) * 255); data[(row * W + i) * 4 + 3] = 255; } });
     const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, W, 2, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, W, 5, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     return t;
@@ -119,10 +125,14 @@ export function createRenderer() {
     cv.width = W; cv.height = H; gl.viewport(0, 0, W, H);
     const t0 = performance.now();
     gl.activeTexture(gl.TEXTURE2);
-    const r = rampTex(style.land, style.sea);  // created on unit 2 so it cannot displace the elevation or ice textures
+    const z4 = style.zones ? [style.zones.temperate, style.zones.boreal, style.zones.tundra, style.zones.arid] : [style.land, style.land, style.land, style.land];
+    const r = rampTex(z4, style.sea);  // created on unit 2 so it cannot displace the elevation or ice textures
     gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, tex(src.key, src.elev)); gl.uniform1i(U("uElev"), 0);
     gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, src.ice ? tex(src.key + ":ice", src.ice, { filter: gl.LINEAR, format: "r" }) : null); gl.uniform1i(U("uIce"), 1);
     gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, r); gl.uniform1i(U("uRamp"), 2);
+    const zoneOn = !!(style.zones && src.zones);
+    gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, zoneOn ? tex(src.key + ":zones", src.zones, { filter: gl.LINEAR }) : null);
+    gl.uniform1i(U("uZones"), 3); gl.uniform1i(U("uZoneOn"), zoneOn ? 1 : 0);
     const view = src.view ?? [0, 0, 1, 1];
     gl.uniform4f(U("uView"), ...view);
     gl.uniform1f(U("uTpp"), ((view[2] - view[0]) * src.size[0]) / W);
