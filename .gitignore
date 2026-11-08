@@ -2,3 +2,7 @@
 __pycache__/
 data/raw/
 _site/
+# generated layers are released as assets (scripts/publish_data.py), not committed; Vestland stays in git (tests use it)
+data/out/*
+!data/out/vestland/
+dist/

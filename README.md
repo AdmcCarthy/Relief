@@ -1,7 +1,7 @@
 # Relief
 
 **Open topography and bathymetry, generalised into fast contour maps for data visualisation.**
-Region examples: https://admccarthy.github.io/Relief/ · techniques: https://admccarthy.github.io/Relief/techniques.html · vector layers: https://admccarthy.github.io/Relief/vector.html
+Region examples: https://admccarthy.github.io/Relief/ · zoomable tiles: https://admccarthy.github.io/Relief/explore.html · techniques: https://admccarthy.github.io/Relief/techniques.html · vector layers: https://admccarthy.github.io/Relief/vector.html
 
 Reusable across areas and stories (SubScout figures, MapLibre maps): land heights from the Copernicus DEM,
 sea-floor depths from the EMODnet Bathymetry DTM, merged, projected, contoured into stacked layers at several
@@ -22,12 +22,20 @@ uv run python scripts/render_demo.py vestland  # -> data/out/vestland/demo: 16-b
 uv run pytest
 ```
 
-Higher-resolution data (researched, scripted, not yet run: see [docs/hires-sources.md](docs/hires-sources.md)):
+Built data (tiles, textures) is not in git: it is a release asset, see [docs/data-releases.md](docs/data-releases.md):
+
+```
+uv run python scripts/fetch_data.py                         # latest data release -> data/out/
+uv run python scripts/publish_data.py build && uv run python scripts/publish_data.py release   # after a rebuild
+```
+
+Higher-resolution data (researched and scripted: see [docs/hires-sources.md](docs/hires-sources.md)):
 
 ```
 uv run python scripts/build_hires.py plan                   # per region: sources, what runs and why, no network
 uv run python scripts/build_hires.py run north_sea          # fetch -> merge -> render; hours, resumable
-uv run python scripts/render_region.py north_sea            # page assets from the data on disk (what the examples show today)
+uv run python scripts/render_region.py north_sea            # single-texture page assets from the data on disk
+uv run python scripts/build_tiles.py north_sea              # tile pyramid for the zoom page (data/out/<region>/tiles/)
 ```
 
 The example pages draw every region in one fixed style: Detuned, stepped relief by climate zone, linear bathymetry,
