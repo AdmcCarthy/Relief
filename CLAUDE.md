@@ -2,6 +2,10 @@
 
 Open topography and bathymetry for data maps, reusable by any story (SubScout) or map. Owner: Adam McCarthy.
 
+@../../shared/idiom/CORE.md
+
+Voice and structure of written work (README, docs, published pages) follow Idiom's CORE.md and house style: British English, impersonal, one creative headline then plain varied headings, a section ends on its last point. The import is harmless when the file is absent (CI).
+
 - Open sources only; record licence and attribution in docs/sources.md and on every output.
 - Generalise by intended map scale (LOD config in scripts/build.py): cell size, smoothing, min feature area and
   gap closing in cells. Stacked ("layer cake") contours; pre-projected metres rounded to 10 m.
