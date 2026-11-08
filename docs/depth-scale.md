@@ -69,10 +69,14 @@ Norway basins.
 
 ## Limits
 
-- Colour only. Fracture zones and abyssal hills are a few hundred metres on a 2.5 to 5 km grid; shading would show them far
-  better, but the house style has no illumination. If an exception is wanted for ocean basins, the renderer already has
-  soft shading and a sea-floor shade strength.
-- The Atlantic and world use ETOPO 2022 (1.85 km source). GEBCO 2026 (450 m) is the upgrade for finer lineations; it is a
-  4 to 7 GB download.
+- Colour only. Fracture zones and abyssal hills are a few hundred metres high; at the global view they are at the edge of
+  visibility, and zooming in reveals them. Shading would show them better, but the house style has no illumination. If an
+  exception is wanted for ocean basins, the renderer already has soft shading and a sea-floor shade strength.
+- **GEBCO 2026 for the Atlantic** (15 arc-second, about 463 m, averaged to 2 km; replaces ETOPO 2022 at 2.5 km): measured on
+  four 1,800 km patches of deep sea floor (2,000 to 6,500 m), small-scale relief (std of height minus a 20 km blur) rose only
+  3 to 6 % (for example 244 to 250 m at the Romanche fracture zone, 210 to 222 m on the southern ridge), and side by side the two
+  look alike. ETOPO 2022 already carries much of the same deep-ocean data; GEBCO's extra resolution shows where ships have
+  surveyed (margins, ridge axes, seamounts). The colour scale, not the grid, is what made the ridge, the Romanche trough and the
+  abyssal-hill lineations visible. Zoomed in (the zoom page), both resolve fracture zones and ridge-parallel hills.
 - Two ramps mean the same depth has a different colour in a shelf map and an ocean map (200 m is the same pale tone in
   both; 1,000 m is not). Every map carries its own depth key.

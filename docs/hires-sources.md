@@ -14,7 +14,8 @@ illumination.**
 | Barents Sea | Sea east of 43 E and north of Svalbard | IBCAO v5.0 (manual download) | 1.8 km (ETOPO) → **100 m** |
 | Barents Sea | Svalbard land | NPI Svalbard DTM 20, or ArcticDEM 32 m | 90 m → **20 to 32 m** |
 | Norwegian Sea, North Sea, Barents | Norwegian shelf and banks | Kartverket sea-floor model 25 m (MAREANO) and 50 m | 115 m → **25 to 50 m** |
-| World | Whole map | GEBCO_2026 (manual download) | ETOPO sampled every 5th cell → **450 m averaged properly** |
+| World | Whole map | ETOPO 2022 averaged 3 × 3 (GEBCO 2026 is available but adds nothing at a 5 km cell) | ETOPO sampled every 5th cell → **averaged properly** |
+| Atlantic | Spreading ridges, fracture zones | GEBCO 2026, scripted from CEDA tiles | ETOPO 1.85 km → **463 m source**; measured gain 3 to 6 % small-scale relief |
 | All land | Everywhere | Copernicus GLO-30 | 90 m → **30 m** |
 | North Sea, Norwegian Sea | Norwegian land | *not available*: Kartverket's lidar terrain service is under the Norge digitalt licence (partners only), so it cannot be published | stays Copernicus GLO-30 |
 | NE Europe | Little | GLO-30, Danish and German 50 m models in their waters | already finer than the picture |
@@ -75,7 +76,7 @@ were left out on purpose: at a 600 m NE Europe cell they add nothing visible.
 | Kartverket sea-floor model **25 m** (MAREANO) | 25 m | outside 12 nm; Møre to Finnmark, east Barents, parts around Svalbard | Geonorge download, 1,085 half-degree cells | **CC BY 4.0** (record 39e022aa…) | capabilities answered |
 | Kartverket sea-floor model 50 m | 50 m | Norwegian waters | Geonorge download (already scripted) | CC BY 4.0 | in use for Vestland |
 | IBCAO v5.2 (2026; v5.0 doi:10.17043/ibcao-5.0) | 100, 200, 400 m | Arctic Ocean incl. Barents, Svalbard | CEDA zips: 100 m is 12 GB, 200 m 3 GB, **400 m 776 MB** (deflated: no windowed reads). Script streams the 400 m zip, clips to the region and deletes it | open; terms on the GEBCO page, not for navigation | zip sizes and range support answered |
-| [GEBCO_2026](https://www.gebco.net/data-products-gridded-bathymetry-data/gebco2026-grid) | 450 m | global | 7 GB NetCDF or 8 GeoTIFF tiles; the download app cuts a user-defined area | public domain, acknowledge GEBCO, not for navigation | **manual** download |
+| [GEBCO_2026](https://www.gebco.net/data-products-gridded-bathymetry-data/gebco2026-grid) | 450 m | global | **eight 90° GeoTIFF tiles served unzipped on CEDA (int16, uncompressed, 933 MB, range requests)**; also 4.2 GB zip and NetCDF | public domain, acknowledge GEBCO, not for navigation | **scripted** (`remote_tiles`): read in bands, averaged on arrival, nothing stored; used for the Atlantic |
 | Denmark's Depth Model 2024 | 50 m | Danish EEZ | GeoTIFF or web service, free Dataforsyningen account | free incl. commercial, not for navigation | manual; `seabed.py` already reads it |
 | BSH seabed DTM | 50 m (1 m on request, maybe for a fee) | German North Sea and Baltic | GeoSeaPortal (no API found) | free under GeoZG; licence name not found | manual |
 | UKHO ADMIRALTY Marine Data Portal | survey dependent | UK waters | portal; outlines as GeoJSON, KML, Shapefile; gridded download **not confirmed** | UKHO Bathymetry Data Licence (OGL plus not-for-navigation) | not scriptable |
@@ -93,11 +94,11 @@ areas; I could not find which areas or a way to fetch them, so they are not plan
 - **Norwegian Sea**: land GLO-30/90; sea MAREANO 25 m, Kartverket 50 m, EMODnet. Gain: shelf, banks,
   Storegga area, Nordland coast.
 - **Barents Sea**: land NPI Svalbard 20 m, GLO-30/90 (ArcticDEM 32 m not used); sea Kartverket 25/50 m, IBCAO v5,
-  EMODnet, GEBCO 2026, ETOPO. The largest improvement of any region; no source for the Russian shelf finer than IBCAO
-  and GEBCO.
+  EMODnet, ETOPO. The largest improvement of any region; no source for the Russian shelf finer than IBCAO.
 - **NE Europe**: land GLO-30 then OS Terrain 50; sea EMODnet with Danish and German 50 m in their waters and
   Kartverket 50 m for the Norwegian sector. Modest.
-- **World**: GEBCO 2026 (land and sea), ETOPO fallback.
+- **World**: ETOPO 2022 averaged (GEBCO 2026 is scripted but not needed at 5 km).
+- **Atlantic**: GEBCO 2026 alone (global coverage), 2 km grid.
 
 ## Tiles: showing the fine data
 
@@ -130,8 +131,8 @@ uv run python scripts/build_tiles.py north_sea                       # tile pyra
 
 ## What I could not confirm
 
-- **GEBCO Cloud Optimized GeoTIFF.** A 4.4 GB COG of GEBCO_2026 is listed on Source Cooperative, but I could not find its
-  object URL, so GEBCO is a manual download. If it is reachable, a windowed read would remove the manual step.
+- **GEBCO Cloud Optimized GeoTIFF on Source Cooperative**: its object URL was never found; not needed, since CEDA serves the
+  eight GeoTIFF tiles directly (above).
 - **Licence wording** for Kartverket's 25 m model and DTM 10, the NPI models, BSH and IBCAO: all described as open, none
   confirmed as a named licence. Check each Geonorge or provider record before publishing derived tiles at full resolution.
 - **ArcticDEM tile coverage** over Novaya Zemlya and Svalbard (the index files list it; I did not read them), and whether
@@ -176,11 +177,19 @@ What happened that differs from the plan:
   (sequential HTTP over about 900 tiles) with little to gain at a 400 m cell; it was stopped. A tile-parallel reader would
   fix it if the ice-cap heights matter.
 - **IBCAO v5.2 at 400 m**, not 100 m: the 100 m zip is 12 GB. The 400 m zip (776 MB) is streamed, clipped and deleted.
-- **GEBCO was not downloaded.** At a 5 km world cell, ETOPO 2022 averaged properly (3 x 3 on its 1.85 km grid) shows the
-  same picture, and GEBCO's global files are 4 to 7 GB. The world is the same data as before, averaged instead of sampled.
+- **GEBCO was not used for the world.** At a 5 km world cell, ETOPO 2022 averaged properly (3 x 3 on its 1.85 km grid) shows the
+  same picture. The world is the same data as before, averaged instead of sampled. (GEBCO is used for the Atlantic: see the end.)
 - **Merge speed**: warping each piece into only its own window cut the Barents merge from over 11 minutes to under 2.
 - **One stall**: an EMODnet chunk request hung for three hours with no progress; read timeouts are now 15 s connect and 90 s
   read, and a re-run resumed from the finished sources.
 - Elapsed times: Kartverket sea orders 10 to 20 minutes per region, EMODnet chunks 5 to 10 minutes, ETOPO for the world
   about 25 minutes, merges 2 to 3 minutes.
 
+### GEBCO 2026 for the Atlantic (added later the same day)
+
+The `remote_tiles` adapter reads GEBCO's CEDA tiles in bands of rows with four threads (61 bands, about 5 GB of transfer, 8
+minutes), averages them to 2 km and keeps only the result; the Atlantic merge takes under a minute and about 600 MB. Memory
+was the constraint: a 1.5 km Atlantic grid is 79 million cells, which this machine could not merge, so the grid is 2 km (44
+million), and the merge skips the feathering pass for a layer with nothing beneath it. Effect: small-scale deep-ocean relief
+3 to 6 % higher than the ETOPO version, visually similar: see [depth-scale.md](depth-scale.md). GEBCO is not used for the world
+(5 km) or the Barents Sea, where the existing sources already match the cell.

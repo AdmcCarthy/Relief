@@ -15,7 +15,7 @@ from regions import load
 ROOT = Path(__file__).resolve().parents[1]
 PLAN = json.loads((ROOT / "regions" / "sources.json").read_text())
 REGIONS = {r["id"]: r for r in load()["regions"]}
-ADAPTERS = {"cog_tiles", "cog_vrt", "wcs_chunks", "opendap", "geonorge_download", "http_zip", "wcs", "zip_clip", "manual"}
+ADAPTERS = {"cog_tiles", "cog_vrt", "wcs_chunks", "opendap", "geonorge_download", "http_zip", "wcs", "zip_clip", "remote_tiles", "manual"}
 STATUSES = {"verified", "documented", "unverified", "manual", "restricted"}
 
 
@@ -201,3 +201,36 @@ def test_nothing_that_cannot_be_redistributed_is_in_a_region_plan():
         for sid in spec["land"] + spec["sea"]:
             assert sid not in restricted, f"{rid} plans {sid}, which cannot be redistributed"
             assert PLAN["sources"][sid]["licence"], sid
+
+
+def test_gebco_tiles_are_listed_completely():
+    tiles = PLAN["sources"]["gebco_2026"]["tiles"]
+    assert len(tiles) == 8
+    boxes = {tuple(t["bbox"]) for t in tiles}
+    assert boxes == {(w, s, w + 90, s + 90) for w in (-180, -90, 0, 90) for s in (-90, 0)}
+    for t in tiles:
+        w, s, e, n = t["bbox"]
+        assert t["url"].endswith(f"gebco_2026_n{float(n)}_s{float(s)}_w{float(w)}_e{float(e)}_geotiff.tif")
+
+
+def test_read_band_block_averages_a_window(tmp_path):
+    import rasterio
+    from rasterio.transform import from_origin
+
+    z = np.arange(48 * 40, dtype="float32").reshape(48, 40)
+    path = tmp_path / "b.tif"
+    bh.save_tif(path, z, from_origin(0, 10, 0.1, 0.1), "EPSG:4326")
+    with rasterio.open(path) as d:
+        got = bh.read_band(d, 8, 40, 4, 36, 4)
+    want = z[8:40, 4:36].reshape(8, 4, 8, 4).mean(axis=(1, 3))
+    assert got.shape == (8, 8) and np.allclose(got, want)
+
+
+def test_first_layer_needs_no_feathering_and_a_covering_finer_layer_replaces_it():
+    coarse = np.full((30, 30), -100.0, dtype="float32")
+    fine = np.full((30, 30), -140.0, dtype="float32")
+    z, idx, _ = bh.blend([("coarse", coarse)], cell=500, valid=lambda a: a < 0)
+    assert np.all(z == -100) and np.all(idx == 1)
+    z, idx, stats = bh.blend([("coarse", coarse), ("fine", fine)], cell=500, valid=lambda a: a < 0)
+    assert z[15, 15] == -140 and "fine" in stats  # the interior is entirely the finer layer
+    assert -140 < z[0, 0] < -100  # the grid edge counts as a boundary: the finer layer is feathered in over the first cells

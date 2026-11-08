@@ -38,6 +38,7 @@ import time
 import zipfile
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date
+from functools import partial
 from pathlib import Path
 
 import numpy as np
@@ -287,6 +288,61 @@ def block_mean_local(a: np.ndarray, k: int) -> np.ndarray:
         return np.nanmean(a[:h, :w].reshape(h // k, k, w // k, k), axis=(1, 3)).astype("float32")
 
 
+def read_band(d, r0: int, r1: int, c0: int, c1: int, k: int) -> np.ndarray:
+    """Rows r0:r1, columns c0:c1 of an open raster, block-averaged k x k (reads the rows contiguously)."""
+    return d.read(1, window=((r0, r1), (c0, c1)), out_shape=((r1 - r0) // k, (c1 - c0) // k), resampling=Resampling.average).astype("float32")
+
+
+def fetch_remote_tiles(region, sid, s, out: Path, cell: float) -> None:
+    """A global grid served as uncompressed GeoTIFF tiles over HTTP (GEBCO 2026 on CEDA: 90 x 90 degree int16 tiles).
+
+    Each tile is read in bands of full-width rows (contiguous, so range requests are efficient), averaged down to about
+    `cell` as it arrives, cropped to the region's longitudes and kept only if it touches the region's frame: the 933 MB
+    tiles never sit on disk. Bands outside the region's latitudes are not requested. Bands are read by a few threads,
+    each with its own dataset handle (GDAL handles are not thread-safe); finished bands are skipped on a re-run."""
+    from fetch_region import frame_hits, retry
+    w, so, e, n = lonlat_bounds_of(region)
+    frame = box(*AREAS[region]["extent"]).buffer(cell * 4)
+    fwd = Transformer.from_crs("EPSG:4326", AREAS[region]["crs"], always_xy=True)
+    jobs = []
+    for t in s["tiles"]:
+        if not intersects((w, so, e, n), t["bbox"]):
+            continue
+        tw, tn, res_deg, size = t["bbox"][0], t["bbox"][3], 90 / 21600, 21600  # GEBCO tiles: 21600 cells over 90 degrees
+        k = max(1, int(cell / (res_deg * 111_320)))
+        band = (1500 // k) * k
+        c0 = max(0, int((w - tw) / res_deg) // k * k)
+        c1 = min(size, math.ceil((e - tw) / res_deg / k) * k)
+        for r0 in range(0, size, band):
+            r1 = min(size, r0 + band)
+            r1 -= (r1 - r0) % k
+            lat_top, lat_bot = tn - r0 * res_deg, tn - r1 * res_deg
+            dst = out / f"{Path(t['url']).stem}_{r0}.tif"
+            if r1 <= r0 or lat_bot > n or lat_top < so or dst.exists():
+                continue
+            lon_l, lon_r = tw + c0 * res_deg, tw + c1 * res_deg
+            if frame_hits(frame, fwd, (lon_l, lat_bot, lon_r, lat_top)):
+                jobs.append((t["url"], r0, r1, c0, c1, k, lon_l, lat_top, res_deg, dst))
+    print(f"    {len(jobs)} bands to read (average {k} x {k})" if jobs else "    nothing to read", flush=True)
+
+    def one(job):
+        url, r0, r1, c0, c1, k, lon_l, lat_top, res_deg, dst = job
+        with rasterio.Env(GDAL_DISABLE_READDIR_ON_OPEN="EMPTY_DIR", GDAL_HTTP_MAX_RETRY="4", GDAL_HTTP_RETRY_DELAY="3",
+                          GDAL_HTTP_TIMEOUT="120", CPL_VSIL_CURL_CHUNK_SIZE="33554432"):
+            d = retry(partial(rasterio.open, "/vsicurl/" + url))
+            with d:
+                a = retry(partial(read_band, d, r0, r1, c0, c1, k))
+        save_tif(dst, a, rasterio.transform.from_origin(lon_l, lat_top, res_deg * k, res_deg * k), "EPSG:4326")
+        return 1
+
+    done = 0
+    with ThreadPoolExecutor(4) as ex:
+        for i, r in enumerate(ex.map(one, jobs), start=1):
+            done += r
+            if i % 5 == 0 or i == len(jobs):
+                print(f"    {i}/{len(jobs)} bands", flush=True)
+
+
 def fetch_zip_clip(region, sid, s, out: Path, cell: float) -> None:
     """A big zipped GeoTIFF (IBCAO v5.2, 400 m): stream to disk, clip to the region window at `cell`, delete the rest."""
     zp = out / "download.zip"
@@ -443,7 +499,7 @@ def fetch_wcs(region, sid, s, out: Path, cell: float) -> None:
 
 
 ADAPTERS = {"cog_tiles": fetch_cog_tiles, "cog_vrt": fetch_cog_vrt, "wcs_chunks": fetch_wcs_chunks, "opendap": fetch_opendap,
-            "geonorge_download": fetch_geonorge, "http_zip": fetch_http_zip, "wcs": fetch_wcs, "zip_clip": fetch_zip_clip}
+            "geonorge_download": fetch_geonorge, "http_zip": fetch_http_zip, "wcs": fetch_wcs, "zip_clip": fetch_zip_clip, "remote_tiles": fetch_remote_tiles}
 
 
 def stage_fetch(region: str, cell: float, only, include_unverified: bool, force: bool) -> None:
@@ -509,6 +565,10 @@ def blend(layers: list[tuple[str, np.ndarray]], cell: float, valid) -> tuple[np.
             src = np.zeros(a.shape, dtype="uint8")
         ok = np.isfinite(a) & valid(a)
         if not ok.any():
+            continue
+        if not np.isfinite(z).any():  # first layer: nothing beneath to feather into
+            z = np.where(ok, a, np.float32(np.nan)).astype("float32")
+            src[ok] = i
             continue
         both = ok & np.isfinite(z)
         if both.sum() > 100:
@@ -578,13 +638,17 @@ def stage_merge(region: str, cell: float, only, include_unverified: bool, force:
 
 
 def combine_land_sea(land, sea) -> np.ndarray:
-    """Land where the land surface is above 0.5 m, otherwise the sea floor (at least 1 m deep: a clean 0 m coast)."""
+    """Land where the land surface is above 0.5 m, otherwise the sea floor (at least 1 m deep: a clean 0 m coast).
+    Works in place on the arrays it is given, which are not reused afterwards."""
     ref = land if land is not None else sea
     ld = np.full(ref.shape, np.nan, dtype="float32") if land is None else land
     sd = np.full(ref.shape, np.nan, dtype="float32") if sea is None else sea
-    is_land = np.nan_to_num(ld, nan=-1.0) > 0.5
-    sea_z = np.minimum(np.nan_to_num(sd, nan=-1.0), -1.0)
-    return np.where(is_land, ld, sea_z).astype("float32")
+    np.nan_to_num(ld, nan=-1.0, copy=False)
+    is_land = ld > 0.5
+    np.nan_to_num(sd, nan=-1.0, copy=False)
+    np.minimum(sd, -1.0, out=sd)
+    sd[is_land] = ld[is_land]
+    return sd
 
 
 def main() -> None:

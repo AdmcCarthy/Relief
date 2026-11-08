@@ -212,18 +212,92 @@
       "kind": "both",
       "name": "GEBCO_2026 Grid",
       "res_m": 450,
-      "adapter": "manual",
-      "url": "https://download.gebco.net",
-      "status": "manual",
+      "adapter": "remote_tiles",
+      "url": "https://dap.ceda.ac.uk/bodc/gebco/global/gebco_2026/ice_surface_elevation/geotiff/",
+      "status": "verified",
       "licence": "Public domain; acknowledge GEBCO; not for navigation",
       "attribution": "GEBCO Bathymetric Compilation Group 2026 (2026) The GEBCO_2026 Grid. doi:10.5285/4f68d5c7-45eb-f999-e063-7086abc036fa",
-      "est_mb": 4400,
-      "note": "Published April 2026, 15 arc-second. Global file is 7 GB (NetCDF) or 8 tiles of 90 deg (GeoTIFF, about 4 GB zipped). Cut the region with the download app (user-defined area, GeoTIFF) and drop it in data/raw/<region>/manual/gebco_2026/. A Cloud Optimized GeoTIFF copy exists on Source Cooperative (giswqs/gebco-bathymetry, 4.4 GB, EPSG:4326) but its object URL could not be confirmed, so it is not scripted: if you find it, set 'url' and change 'adapter' to 'cog_file'.",
+      "est_mb": 5600,
+      "note": "GEBCO_2026 ice-surface grid, 15 arc-second (463 m at the equator), published April 2026. CEDA serves eight 90 x 90 degree GeoTIFF tiles unzipped (int16, uncompressed, 933 MB each, range requests supported; checked 2026-11-08), so the script reads each tile in bands of full rows, averages to the target cell and keeps only the result: about 5 GB of transfer for the Atlantic, nothing stored. Global zip 4.2 GB and NetCDF 4.2 GB also on CEDA. Used for the Atlantic; not for the world (5 km) or the Barents Sea, where ETOPO and IBCAO already match the cell.",
       "bbox": [
         -180,
         -90,
         180,
         90
+      ],
+      "tiles": [
+        {
+          "url": "https://dap.ceda.ac.uk/bodc/gebco/global/gebco_2026/ice_surface_elevation/geotiff/gebco_2026_n90.0_s0.0_w-180.0_e-90.0_geotiff.tif",
+          "bbox": [
+            -180,
+            0,
+            -90,
+            90
+          ]
+        },
+        {
+          "url": "https://dap.ceda.ac.uk/bodc/gebco/global/gebco_2026/ice_surface_elevation/geotiff/gebco_2026_n90.0_s0.0_w-90.0_e0.0_geotiff.tif",
+          "bbox": [
+            -90,
+            0,
+            0,
+            90
+          ]
+        },
+        {
+          "url": "https://dap.ceda.ac.uk/bodc/gebco/global/gebco_2026/ice_surface_elevation/geotiff/gebco_2026_n90.0_s0.0_w0.0_e90.0_geotiff.tif",
+          "bbox": [
+            0,
+            0,
+            90,
+            90
+          ]
+        },
+        {
+          "url": "https://dap.ceda.ac.uk/bodc/gebco/global/gebco_2026/ice_surface_elevation/geotiff/gebco_2026_n90.0_s0.0_w90.0_e180.0_geotiff.tif",
+          "bbox": [
+            90,
+            0,
+            180,
+            90
+          ]
+        },
+        {
+          "url": "https://dap.ceda.ac.uk/bodc/gebco/global/gebco_2026/ice_surface_elevation/geotiff/gebco_2026_n0.0_s-90.0_w-180.0_e-90.0_geotiff.tif",
+          "bbox": [
+            -180,
+            -90,
+            -90,
+            0
+          ]
+        },
+        {
+          "url": "https://dap.ceda.ac.uk/bodc/gebco/global/gebco_2026/ice_surface_elevation/geotiff/gebco_2026_n0.0_s-90.0_w-90.0_e0.0_geotiff.tif",
+          "bbox": [
+            -90,
+            -90,
+            0,
+            0
+          ]
+        },
+        {
+          "url": "https://dap.ceda.ac.uk/bodc/gebco/global/gebco_2026/ice_surface_elevation/geotiff/gebco_2026_n0.0_s-90.0_w0.0_e90.0_geotiff.tif",
+          "bbox": [
+            0,
+            -90,
+            90,
+            0
+          ]
+        },
+        {
+          "url": "https://dap.ceda.ac.uk/bodc/gebco/global/gebco_2026/ice_surface_elevation/geotiff/gebco_2026_n0.0_s-90.0_w90.0_e180.0_geotiff.tif",
+          "bbox": [
+            90,
+            -90,
+            180,
+            0
+          ]
+        }
       ]
     },
     "ibcao_v5": {
@@ -411,7 +485,6 @@
         "kartverket_sea_50",
         "emodnet_dtm_2024",
         "ibcao_v5",
-        "gebco_2026",
         "etopo_2022_60s"
       ],
       "gain": "The biggest real upgrade: the sea east of 43 E and north of 80 N goes from 1.8 km ETOPO to 100 m IBCAO v5; Svalbard from GLO-90 to NPI 20 m or ArcticDEM 32 m; the Norwegian Barents shelf to MAREANO 25 m."
@@ -441,11 +514,9 @@
         "hires": 8000
       },
       "land": [
-        "gebco_2026",
         "etopo_2022_60s"
       ],
       "sea": [
-        "gebco_2026",
         "etopo_2022_60s"
       ],
       "gain": "Replaces ETOPO sampled every fifth cell (1.8 km source, 9 km sample) with GEBCO 2026 averaged properly from 450 m: no aliasing on coasts and ridges. The only new thing needed is the GEBCO download."
@@ -473,12 +544,12 @@
         "hires": 5000
       },
       "land": [
-        "etopo_2022_60s"
+        "gebco_2026"
       ],
       "sea": [
-        "etopo_2022_60s"
+        "gebco_2026"
       ],
-      "gain": "A basin-scale view for spreading ridges: ETOPO 2022 at its own 1.85 km grid (averaged to 2.5 km), shown on the ocean depth scale. GEBCO 2026 (450 m) would sharpen fracture zones and abyssal hills but is a 4 to 7 GB download."
+      "gain": "Basin scale for spreading ridges: GEBCO 2026 (15 arc-second, about 463 m) averaged to 2 km, replacing ETOPO 2022 (1.85 km source). Deep-ocean GEBCO is largely satellite-altimetry-predicted at a few km, so the gain is sharpest where ships have surveyed (ridge axes, margins, seamounts); fracture zones sharpen modestly."
     }
   }
 }
