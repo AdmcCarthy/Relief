@@ -53,4 +53,10 @@ uv run python scripts/fetch_sodir.py && uv run python scripts/regions.py check  
 Attribution: Copernicus DEM GLO-90 © DLR e.V. 2010–2014 and © Airbus 2014–2018, provided under COPERNICUS by
 the European Union and ESA. EMODnet Bathymetry Consortium (2024): EMODnet Digital Bathymetry (DTM). World and the
 sea east of 43 E: NOAA NCEI ETOPO 2022 (public domain). Sodir block and field outlines (coverage checks only): NLOD.
-Code: MIT.
+Code: MIT License with Acknowledgement.
+
+## Licence and acknowledgement
+
+MIT License with Acknowledgement ([LICENSE](LICENSE)): the MIT terms plus one condition. Anything built with this work says so,
+visibly and in plain words, and does not imply endorsement: "Built with Relief by Adam McCarthy (https://github.com/AdmcCarthy/Relief)". The wording is custom, so
+the licence is not OSI-approved. Third-party data and vendored code keep their own terms.
