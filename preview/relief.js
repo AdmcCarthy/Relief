@@ -12,6 +12,7 @@ const FS = `#version 300 es
 precision highp float;
 in vec2 uv; out vec4 o;
 uniform sampler2D uElev, uIce, uRamp, uZones;
+uniform vec4 uZV;  // the part of the zone texture that uv 0..1 covers (x0, y0, x1, y1): a tile view covers only some of it
 uniform int uZoneOn;  // 1: land colour = zone-weighted mix of four ramps (temperate, boreal, tundra, arid)
 uniform vec2 uTex; uniform float uCell, uBase, uStep;
 uniform float uLandMax, uSeaMax;           // ramp ranges, metres
@@ -42,7 +43,7 @@ vec3 row(float t, float r){ return texture(uRamp, vec2(clamp(t,0.,1.), (r + .5) 
 vec3 ramp(float z){
   if (z > 0.) { float t = (uStepped == 1 ? bandOf(z, true) : z) / uLandMax;
     if (uZoneOn == 0) return row(t, 0.);
-    vec3 w = texture(uZones, uv).rgb; float a = max(0., 1. - w.r - w.g - w.b);
+    vec3 w = texture(uZones, mix(uZV.xy, uZV.zw, uv)).rgb; float a = max(0., 1. - w.r - w.g - w.b);
     return row(t, 0.)*w.r + row(t, 1.)*w.g + row(t, 2.)*w.b + row(t, 3.)*a; }
   float d = -z; float v = uSeaStepped == 1 ? bandOf(d, false) : d; return row(v/uSeaMax, 4.); }
 float lightAt(vec3 n, float az, float alt){ vec3 L = vec3(sin(az)*cos(alt), cos(az)*cos(alt), sin(alt)); return max(dot(n, L), 0.); }
@@ -119,7 +120,7 @@ export function createRenderer() {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     return t;
   }
-  // draw `style` for `src` = {elev: Image, ice: Image|null, size:[w,h], cell, base, step, view:[x0,y0,x1,y1]} into target 2D canvas
+  // draw `style` for `src` = {elev: Image|canvas, ice: Image|null, zones, zoneView, dynamic, size:[w,h], cell, base, step, view:[x0,y0,x1,y1]} into target 2D canvas
   function draw(target, src, style) {
     const W = target.width, H = target.height;
     cv.width = W; cv.height = H; gl.viewport(0, 0, W, H);
@@ -133,6 +134,7 @@ export function createRenderer() {
     const zoneOn = !!(style.zones && src.zones);
     gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, zoneOn ? tex(src.key + ":zones", src.zones, { filter: gl.LINEAR }) : null);
     gl.uniform1i(U("uZones"), 3); gl.uniform1i(U("uZoneOn"), zoneOn ? 1 : 0);
+    gl.uniform4f(U("uZV"), ...(src.zoneView ?? [0, 0, 1, 1]));
     const view = src.view ?? [0, 0, 1, 1];
     gl.uniform4f(U("uView"), ...view);
     gl.uniform1f(U("uTpp"), ((view[2] - view[0]) * src.size[0]) / W);
@@ -155,6 +157,7 @@ export function createRenderer() {
     gl.uniform3f(U("uLo"), ...hex(style.lo ?? "#3c4d5b"));
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     gl.deleteTexture(r);
+    if (src.dynamic) { gl.deleteTexture(textures.get(src.key)); textures.delete(src.key); }  // stitched tile views change every draw
     const ctx = target.getContext("2d"); ctx.drawImage(cv, 0, 0);
     gl.finish();
     return performance.now() - t0;

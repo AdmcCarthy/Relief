@@ -15,8 +15,8 @@ from regions import load
 ROOT = Path(__file__).resolve().parents[1]
 PLAN = json.loads((ROOT / "regions" / "sources.json").read_text())
 REGIONS = {r["id"]: r for r in load()["regions"]}
-ADAPTERS = {"cog_tiles", "cog_vrt", "wcs_chunks", "opendap", "geonorge_download", "http_zip", "wcs", "manual"}
-STATUSES = {"verified", "documented", "unverified", "manual"}
+ADAPTERS = {"cog_tiles", "cog_vrt", "wcs_chunks", "opendap", "geonorge_download", "http_zip", "wcs", "zip_clip", "manual"}
+STATUSES = {"verified", "documented", "unverified", "manual", "restricted"}
 
 
 def test_every_region_has_a_plan_and_every_source_is_defined():
@@ -136,3 +136,68 @@ def test_built_assets_match_the_region_and_budget(rid):
         assert (z > 0).any() and (z < 0).any()
         assert sum(meta["zones"]["share_of_land"].values()) == pytest.approx(1.0, abs=0.02)
     assert (d / "zones.png").exists()
+
+
+def test_warp_pieces_matches_a_full_grid_warp(tmp_path):
+    """Windowed warping of small pieces covers the same cells as warping each into the whole region, to within a metre
+    (smooth terrain: on pure noise the two differ at piece edges, which is GDAL's interpolation, not an error)."""
+    import rasterio
+    from rasterio.enums import Resampling
+    from rasterio.transform import from_origin
+    from rasterio.warp import reproject
+
+    crs, cell = "EPSG:25833", 1000.0
+    tr, w, h = rasterio.Affine(cell, 0, 200_000, 0, -cell, 6_700_000), 120, 100
+    yy, xx = np.mgrid[0:80, 0:40]
+    z = (100 + 2 * yy + 3 * xx).astype("float32")
+    files = []
+    for i, (lon, lat) in enumerate([(11.0, 60.5), (11.4, 60.7), (12.3, 61.1)]):  # overlapping 0.6 degree pieces
+        path = tmp_path / f"p{i}.tif"
+        bh.save_tif(path, z, from_origin(lon, lat, 0.6 / 40, 0.5 / 80), "EPSG:4326")
+        files.append(path)
+    got = bh.warp_pieces(files, tr, w, h, crs, cell)
+    want = np.full((h, w), np.nan, dtype="float32")
+    for f in files:
+        tmp = np.full((h, w), np.nan, dtype="float32")
+        with rasterio.open(f) as d:
+            reproject(rasterio.band(d, 1), tmp, dst_transform=tr, dst_crs=crs, dst_nodata=np.nan, tolerance=0.0,
+                      resampling=Resampling.average if cell >= abs(d.res[0]) * 111_320 else Resampling.bilinear)
+        want = np.where(np.isfinite(want), want, tmp)
+    assert np.isfinite(got).sum() > 500
+    assert np.array_equal(np.isfinite(got), np.isfinite(want))
+    both = np.isfinite(got)
+    assert np.max(np.abs(got[both] - want[both])) < 1.0
+
+
+def test_a_coarser_source_never_outranks_a_finer_one_it_would_overwrite():
+    """EMODnet (115 m) must come before IBCAO (400 m) and the global grids; the national 25 and 50 m models come first."""
+    for rid, spec in PLAN["regions"].items():
+        sea = spec["sea"]
+        res = [PLAN["sources"][s]["res_m"] for s in sea]
+        for name in ("ibcao_v5", "gebco_2026", "etopo_2022_60s"):
+            if name in sea and "emodnet_dtm_2024" in sea:
+                assert sea.index("emodnet_dtm_2024") < sea.index(name), f"{rid}: {name} would overwrite EMODnet"
+        assert res == sorted(res) or sea[0].startswith(("kartverket", "dk_", "bsh_")), f"{rid}: sea list is not finest first"
+
+
+def test_services_that_fill_with_zero_are_masked():
+    assert PLAN["sources"]["kartverket_dtm_seamless"]["zero_is_nodata"] is True
+
+
+def test_os_grid_references_give_the_right_squares():
+    assert bh.os_grid_square("hp40") == (440_000, 1_200_000, 450_000, 1_210_000)  # Shetland, Unst
+    assert bh.os_grid_square("NT34") == (330_000, 640_000, 340_000, 650_000)  # near Edinburgh
+    assert bh.os_grid_square("TQ38")[:2] == (530_000, 180_000)  # central London
+    assert bh.os_grid_square("SV00")[:2] == (0, 0)  # the grid origin, south-west of Scilly
+    assert bh.os_grid_square("SW00")[:2] == (100_000, 0)
+    assert bh.os_grid_square("xx") is None
+
+
+def test_nothing_that_cannot_be_redistributed_is_in_a_region_plan():
+    """Products are published, so every planned source needs an open licence on record. Restricted ones are excluded."""
+    restricted = {sid for sid, s in PLAN["sources"].items() if s.get("redistributable") is False}
+    assert "kartverket_dtm_seamless" in restricted  # Norge digitalt licence
+    for rid, spec in PLAN["regions"].items():
+        for sid in spec["land"] + spec["sea"]:
+            assert sid not in restricted, f"{rid} plans {sid}, which cannot be redistributed"
+            assert PLAN["sources"][sid]["licence"], sid

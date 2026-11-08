@@ -39,12 +39,12 @@ CURRENT_SOURCES = {  # what fetch_region.py merges, by region (see regions.json 
 }
 
 
-def encode(z: np.ndarray) -> bytes:
-    """16-bit heights in R (high byte) and G (low byte), lossless WebP."""
+def encode(z: np.ndarray, method: int = 6) -> bytes:
+    """16-bit heights in R (high byte) and G (low byte), lossless WebP (method 6 is smallest, 4 is faster)."""
     v = np.clip(np.round((np.nan_to_num(z, nan=0.0) - BASE) / STEP), 0, 65535).astype("uint32")
     rgb = np.dstack([(v >> 8) & 255, v & 255, np.zeros_like(v)]).astype("uint8")
     buf = io.BytesIO()
-    Image.fromarray(rgb, "RGB").save(buf, "WEBP", lossless=True, quality=100, method=6)
+    Image.fromarray(rgb, "RGB").save(buf, "WEBP", lossless=True, quality=100, method=method)
     return buf.getvalue()
 
 
@@ -77,6 +77,16 @@ def load_hires(region: str) -> tuple[np.ndarray, float, list[str], str]:
     return z, float(meta["cell_m"]), ids, f"high-resolution build {meta['built']}, finest source {meta['finest_source_m']} m"
 
 
+def resample(z: np.ndarray, cell: float, to: float, region: str) -> np.ndarray:
+    """Average a region grid to a coarser cell on the same top-left origin."""
+    x0, _, x1, y1 = AREAS[region]["extent"]
+    w, h = math.ceil((x1 - x0) / to), math.ceil((AREAS[region]["extent"][3] - AREAS[region]["extent"][1]) / to)
+    out = np.full((h, w), np.nan, dtype="float32")
+    reproject(z, out, src_transform=rasterio.Affine(cell, 0, x0, 0, -cell, y1), src_crs=AREAS[region]["crs"],
+              dst_transform=rasterio.Affine(to, 0, x0, 0, -to, y1), dst_crs=AREAS[region]["crs"], resampling=Resampling.average)
+    return np.nan_to_num(out, nan=0.0)
+
+
 def zones_texture(region: str, tr, w: int, h: int) -> tuple[np.ndarray, np.ndarray]:
     import render_demo  # climate_zones: Köppen-Geiger classes -> blurred zone weights (cross-blended tints)
     zones = render_demo.climate_zones(KOPPEN, tr, w, h, AREAS[region]["crs"])
@@ -93,6 +103,11 @@ def main(region: str, source: str = "auto", cell: float | None = None) -> None:
     plan = PLAN["regions"][region]
     if use == "hires":
         z, cell_m, ids, note = load_hires(region)
+        web = cell or plan["web_cell_m"]["hires"]
+        if web > cell_m * 1.05:  # the single texture stays web-sized; the tiles (build_tiles.py) carry the fine detail
+            z = resample(z, cell_m, web, region)
+            note += f"; this single texture is averaged to {web:.0f} m, tiles keep {cell_m:.0f} m"
+            cell_m = web
         tr = rasterio.Affine(cell_m, 0, AREAS[region]["extent"][0], 0, -cell_m, AREAS[region]["extent"][3])
     else:
         cell_m = cell or plan["web_cell_m"]["now"]

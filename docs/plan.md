@@ -71,8 +71,7 @@ stays the record; the visual layer is for drawing (aesthetics over contour preci
 The landing page now leads with the regions in one fixed style (Detuned, stepped relief, linear bathymetry, no contours,
 no illumination); the twelve-case techniques page moved to `techniques.html`. Better sources were researched per region
 (docs/hires-sources.md) and are scripted in `scripts/build_hires.py` (plan, fetch, merge, render; resumable; manual drop-in
-for GEBCO, IBCAO, Danish and German models). Not run yet. Next: run it for Barents Sea and the world first (largest real
-gain), then tiled elevation delivery so 25 to 50 m data is visible when zoomed.
+for GEBCO, IBCAO, Danish and German models). Run for all regions; tiled delivery (scripts/build_tiles.py, preview/explore.html) shows the fine data when zoomed.
 
 ## Styles (2026-11-08)
 All land tints are now cross-blended by climate zone (one ramp per Köppen–Geiger group below 1,000 m, a shared

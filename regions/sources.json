@@ -101,7 +101,7 @@
       },
       "crs": "EPSG:25833",
       "status": "verified",
-      "licence": "Open (Norwegian Polar Institute); exact licence wording to confirm on the NPI record",
+      "licence": "CC BY 4.0 (Geonorge record 9d118d31...)",
       "attribution": "© Norwegian Polar Institute",
       "note": "Capabilities answered: a single area (the whole archipelago). Built from NPI aerial photogrammetry; better than GLO on the glaciers' edges and fjord coasts. Also Svalbard DTM 5 (010bfb4a-65aa-4d30-aba9-7d090a432df7) and DTM 50 (3a83e0a7-113e-4850-8fed-1646838acb02).",
       "bbox": [
@@ -136,17 +136,19 @@
       "url": "https://wcs.geonorge.no/skwms1/wcs.hoyde-dtm_somlos",
       "coverage": "las_dtm",
       "crs": "EPSG:25833",
-      "status": "verified",
-      "scaling": "unverified",
-      "licence": "Open (Kartverket, likely CC BY 4.0: confirm on the Geonorge record)",
+      "status": "restricted",
+      "scaling": "verified",
+      "licence": "Norge digitalt-lisens (access limited to Norway Digital partners; Geonorge record 311782b2-26fe-4d1d-93e9-c90b45d5bd8b). NOT open data: do not publish products derived from it.",
       "attribution": "© Kartverket",
-      "note": "Capabilities and DescribeCoverage answered: one coverage, EPSG:25833, native step 0.25 m ('best resolution': 0.25 to 1 m lidar mosaic). Whether the server resamples (SCALESIZE) or rejects large requests was not tested; the script tries a scaled request on one chunk and drops the source if that fails. Bare terrain (no trees or buildings).",
+      "note": "EXCLUDED from every region (2026-11-08). The service answers without credentials and was used for a first build, but its Geonorge record is 'Norge digitalt begrenset' under the Norge digitalt licence, so tiles derived from it cannot be redistributed. Technical notes for reference: ArcGIS WCS; WCS 1.0.0 width/height resamples server-side; returns exact 0 outside Norway. Open alternatives: GLO-30 (used), or DTM 10 / DTM 1 from hoydedata.no (CC BY 4.0).",
       "bbox": [
         4,
         57.5,
         32,
         71.5
-      ]
+      ],
+      "zero_is_nodata": true,
+      "redistributable": false
     },
     "kartverket_dtm10_historic": {
       "kind": "land",
@@ -159,7 +161,7 @@
         "EPSG:25835": "294c21ca-eb83-49b9-8861-bb1595ce8768"
       },
       "status": "verified",
-      "licence": "Open (Geonorge record says 'open licence'; CC BY 4.0 not confirmed)",
+      "licence": "CC BY 4.0 (Geonorge record dddbb667...). Data from 2013; the current model is on hoydedata.no.",
       "attribution": "© Kartverket",
       "note": "Capabilities and 146 map-sheet areas answered for UTM 32. Marked 'Historisk': Kartverket says the current model is exported from hoydedata.no. A fallback if the WCS cannot scale. Not scripted: its areas are map sheets (e.g. 6403-1) without published outlines, so choosing sheets for a region needs a manual order on geonorge.no; drop the GeoTIFFs in data/raw/<region>/manual/kartverket_dtm10_historic/.",
       "bbox": [
@@ -226,21 +228,22 @@
     },
     "ibcao_v5": {
       "kind": "sea",
-      "name": "IBCAO v5.0",
-      "res_m": 100,
-      "adapter": "manual",
-      "url": "https://doi.org/10.17043/ibcao-5.0",
+      "name": "IBCAO v5.2 (2026), 400 m",
+      "res_m": 400,
+      "adapter": "zip_clip",
+      "url": "https://dap.ceda.ac.uk/bodc/gebco/ibcao/ibcao_v5.2/no_greenland_ice_sheet_elevation_data/400mx400m_grid_cell_spacing/single_complete_bathymetric_grid/ibcao_v5_2_2026_depth_400m.zip?download=1",
       "crs": "EPSG:3996",
-      "status": "manual",
-      "licence": "Open; terms on the GEBCO/IBCAO page (confirm); not for navigation",
-      "attribution": "Jakobsson et al. (2024) The International Bathymetric Chart of the Arctic Ocean Version 5.0, Scientific Data. doi:10.1038/s41597-024-04278-w",
-      "note": "100 m, published December 2024, four GeoTIFFs in polar stereographic. The right source for the Barents Sea east of 43 E and north of Svalbard, where EMODnet stops and the current build falls back to 1.8 km ETOPO. EMODnet 2024 already folds IBCAO 5 into its own grid inside its coverage.",
+      "status": "verified",
+      "licence": "Open Government Licence v3 (CEDA record 30ad58b6...); cite as given; not for navigation",
+      "attribution": "IBCAO Version 5.2 Compilation Group (2026): The International Bathymetric Chart of the Arctic Ocean (IBCAO) Version 5.2. NERC British Oceanographic Data Centre, accessed {date}. https://catalogue.ceda.ac.uk/uuid/30ad58b60d8c4a4dab6d64a40640540a",
+      "note": "Version 5.2 (2026) is on CEDA at 100, 200 and 400 m. The 100 m grid is a 12 GB zip (200 m: 3 GB), too big for this 10 GB disk and finer than the 300 to 600 m cells drawn, so the 400 m grid (776 MB zip) is streamed, clipped to the region and deleted. The zips are deflated, so no windowed reads: use the 16-tile 100 m zip (also 12 GB) only with more disk. Covers north of about 64 N in polar stereographic (EPSG:3996). Priority: below EMODnet (115 m) wherever EMODnet has data; it fills east of 43 E and north of Svalbard.",
       "bbox": [
         -180,
         64,
         180,
         90
-      ]
+      ],
+      "est_mb": 776
     },
     "emodnet_dtm_2024": {
       "kind": "sea",
@@ -270,7 +273,7 @@
       "uuid": "67a3a191-49cc-45bc-baf0-eaaf7c513549",
       "cell_type": "celle",
       "status": "verified",
-      "licence": "CC BY 4.0, © Kartverket",
+      "licence": "CC BY 4.0 (Geonorge record 67a3a191...)",
       "attribution": "© Kartverket",
       "note": "Already scripted (fetch_kartverket_sea.py). Cells NHS-Drrcc, half a degree each. Agrees with EMODnet to a median of 0 m (EMODnet already contains these surveys): the gain is resolution, not different depths.",
       "bbox": [
@@ -288,7 +291,7 @@
       "uuid": "39e022aa-c352-4351-b172-b980b03c578c",
       "cell_type": "celle",
       "status": "verified",
-      "licence": "Open (Geonorge record); confirm CC BY 4.0",
+      "licence": "CC BY 4.0 (Geonorge record 39e022aa...); 25 m only outside territorial waters (higher resolution near the coast is classified)",
       "attribution": "© Kartverket / MAREANO",
       "note": "Capabilities answered: 1,085 half-degree cells. Only outside the 12 nm limit and only where MAREANO has surveyed (Møre to Finnmark, the eastern Barents Sea, parts around Svalbard). Overlay on the 50 m model where present.",
       "bbox": [
@@ -359,7 +362,6 @@
         "hires": 250
       },
       "land": [
-        "kartverket_dtm_seamless",
         "kartverket_dtm10_historic",
         "os_terrain50",
         "cop_glo30",
@@ -373,7 +375,7 @@
         "emodnet_dtm_2024",
         "etopo_2022_60s"
       ],
-      "gain": "Norwegian shelf and fjord mouths from 115 m to 25 to 50 m; Norwegian land from GLO-90 to the national terrain model. At a 250 m cell the land sources are all finer than the picture, so GLO-30 alone would look the same: the national models earn their keep in zoomed views."
+      "gain": "Norwegian shelf and fjord mouths from 115 m to 25 to 50 m. Land stays Copernicus GLO-30 (30 m) with OS Terrain 50 for Shetland: Kartverket's lidar terrain service is not open data (Norge digitalt licence) and is excluded."
     },
     "norwegian_sea": {
       "web_cell_m": {
@@ -381,7 +383,6 @@
         "hires": 400
       },
       "land": [
-        "kartverket_dtm_seamless",
         "kartverket_dtm10_historic",
         "cop_glo30",
         "cop_glo90"
@@ -401,7 +402,6 @@
       },
       "land": [
         "npi_svalbard_dtm20",
-        "kartverket_dtm_seamless",
         "arcticdem_32m",
         "cop_glo30",
         "cop_glo90"
@@ -409,8 +409,8 @@
       "sea": [
         "kartverket_sea_25",
         "kartverket_sea_50",
-        "ibcao_v5",
         "emodnet_dtm_2024",
+        "ibcao_v5",
         "gebco_2026",
         "etopo_2022_60s"
       ],
@@ -427,10 +427,10 @@
         "cop_glo90"
       ],
       "sea": [
-        "emodnet_dtm_2024",
+        "kartverket_sea_50",
         "dk_dybdemodel_50",
         "bsh_dtm_50",
-        "kartverket_sea_50",
+        "emodnet_dtm_2024",
         "etopo_2022_60s"
       ],
       "gain": "Modest. At a 600 m cell GLO-30 (30 m) and EMODnet (115 m) are already finer than the picture; national models (Germany DGM, Poland NMT 1 m, Netherlands AHN, Denmark DHM) add nothing visible at this scale and were not scripted. The gain here is cleaner averaging from GLO-30 and the Danish and German 50 m models in their own waters."
@@ -456,7 +456,6 @@
         "hires": 100
       },
       "land": [
-        "kartverket_dtm_seamless",
         "kartverket_dtm10_historic",
         "cop_glo30",
         "cop_glo90"

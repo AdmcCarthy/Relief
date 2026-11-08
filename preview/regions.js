@@ -2,6 +2,7 @@
 // bathymetry, no contours, no illumination) from its 16-bit elevation WebP, plus the data plan per region.
 import { createRenderer, loadImage } from "./relief.js";
 import { detunedStyle, regionBars } from "./palette.js";
+import { equalEarthRing, ringPath } from "./geo.js";
 
 const ORDER = ["north_sea", "norwegian_sea", "barents_sea", "ne_europe", "world", "vestland"];
 const getJSON = (url) => fetch(url).then((r) => (r.ok ? r.json() : null)).catch(() => null);
@@ -55,24 +56,16 @@ async function loadCard(c) {
   } else {
     c.data.innerHTML = `<b>Drawn at ${meta.cell.toLocaleString("en-GB")} m</b> · Copernicus GLO-90, EMODnet 2024, Kartverket 50 m`;
   }
-  c.links.innerHTML = `<a href="vector.html?area=${esc(c.reg.id)}">Vector layers</a>`;
+  const tiles = await getJSON(`data/${c.reg.id}/tiles/tiles.json`);
+  const fine = tiles ? tiles.levels.at(-1).cell : null;
+  c.fine = fine;
+  c.links.innerHTML = (tiles ? `<a href="explore.html?area=${esc(c.reg.id)}">Zoom in: ${fine.toLocaleString("en-GB")} m tiles</a> · ` : "") + `<a href="vector.html?area=${esc(c.reg.id)}">Vector layers</a>`;
 }
 
-// Equal Earth is not a rectangle: clip the world to its outline (Šavrič, Patterson and Jenny 2019).
+// Equal Earth is not a rectangle: clip the world to its outline.
 function equalEarthOutline(bounds, W, H) {
-  const A1 = 1.340264, A2 = -0.081106, A3 = 0.000893, A4 = 0.003796, R0 = 6371007.2;
   const [x0, y0, x1, y1] = bounds;
-  const pt = (lat, lon) => {
-    const th = Math.asin((Math.sqrt(3) / 2) * Math.sin((lat * Math.PI) / 180)), t2 = th * th, t6 = t2 * t2 * t2, lam = (lon * Math.PI) / 180;
-    const x = (R0 * lam * Math.cos(th) * (2 * Math.sqrt(3) / 3)) / (A1 + 3 * A2 * t2 + t6 * (7 * A3 + 9 * A4 * t2));
-    const y = R0 * th * (A1 + A2 * t2 + t6 * (A3 + A4 * t2));
-    return [((x - x0) / (x1 - x0)) * W, ((y1 - y) / (y1 - y0)) * H];
-  };
-  const path = new Path2D();
-  for (let lat = -90; lat <= 90; lat += 2) { const [px, py] = pt(lat, 180); if (lat === -90) path.moveTo(px, py); else path.lineTo(px, py); }
-  for (let lat = 90; lat >= -90; lat -= 2) { const [px, py] = pt(lat, -180); path.lineTo(px, py); }
-  path.closePath();
-  return path;
+  return ringPath(equalEarthRing(), (x, y) => [((x - x0) / (x1 - x0)) * W, ((y1 - y) / (y1 - y0)) * H]);
 }
 
 function drawCard(c) {
@@ -98,17 +91,16 @@ function drawLegend() {
   document.getElementById("legend").innerHTML = regionBars(st, { arid: 0 });
 }
 
-// ---------------------------------------------------------------- plan table
+// ---------------------------------------------------------------- what each region is made of
 function drawPlan() {
-  if (!plan) return;
   const el = document.getElementById("plan");
   const res = (m) => (m >= 1000 ? `${m / 1000} km` : `${m} m`);
-  const top = (r, kind) => plan.regions[r.id][kind].map((id) => plan.sources[id]).filter((s) => s.status !== "unverified").slice(0, 2).map((s) => `${esc(s.name)} (${res(s.res_m)})`).join("; ");
-  el.innerHTML = `<thead><tr><th>Region</th><th>Drawn now</th><th>Planned</th><th>What improves</th></tr></thead><tbody>` +
-    regions.map((r) => {
-      const p = plan.regions[r.id], c = cards.find((k) => k.reg.id === r.id), now = c && c.meta ? c.meta.cell : p.web_cell_m.now;
-      return `<tr><td class="n"><b>${esc(r.name.split(" (")[0])}</b></td><td class="n">${res(now)} cells</td>
-        <td><b>${res(p.web_cell_m.hires)} cells</b><br>Land: ${top(r, "land")}<br>Sea: ${top(r, "sea")}</td><td>${esc(p.gain)}</td></tr>`;
+  el.innerHTML = `<thead><tr><th>Region</th><th>Example texture</th><th>Finest tiles</th><th>Sources</th><th>What improved</th></tr></thead><tbody>` +
+    cards.map((c) => {
+      const p = plan && plan.regions[c.reg.id], d = c.meta && c.meta.data;
+      const srcs = d ? d.sources.map((s) => `${esc(s.name)} (${res(s.res_m)})`).join("; ") : "Copernicus GLO-90; EMODnet 2024; Kartverket 50 m";
+      return `<tr><td class="n"><b>${esc(c.reg.name.split(" (")[0])}</b></td><td class="n">${c.meta ? res(c.meta.cell) : "–"}</td>
+        <td class="n">${c.fine ? "<b>" + res(c.fine) + "</b>" : "none"}</td><td>${srcs}</td><td>${p ? esc(p.gain) : ""}</td></tr>`;
     }).join("") + "</tbody>";
 }
 

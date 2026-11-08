@@ -1,8 +1,8 @@
 # Better-resolution data for the regions
 
-Researched 2026-11-08. **Nothing here has been downloaded or processed.** The machine-readable version is
+Researched 2026-11-08. **Status 2026-11-08: researched, then run** (see 'Run results' at the end). The machine-readable version is
 [`regions/sources.json`](../regions/sources.json); the processing is [`scripts/build_hires.py`](../scripts/build_hires.py),
-which plans before it fetches and only runs on an explicit `run` command.
+which plans before it fetches and only runs on an explicit `run` command; tiles are cut by [`scripts/build_tiles.py`](../scripts/build_tiles.py) and shown on the zoom page.
 
 House style for every example: **Detuned, stepped relief (by climate zone), linear bathymetry, no contours, no
 illumination.**
@@ -16,7 +16,7 @@ illumination.**
 | Norwegian Sea, North Sea, Barents | Norwegian shelf and banks | Kartverket sea-floor model 25 m (MAREANO) and 50 m | 115 m → **25 to 50 m** |
 | World | Whole map | GEBCO_2026 (manual download) | ETOPO sampled every 5th cell → **450 m averaged properly** |
 | All land | Everywhere | Copernicus GLO-30 | 90 m → **30 m** |
-| North Sea, Norwegian Sea | Norwegian land | Kartverket seamless terrain WCS (0.25 to 1 m lidar mosaic) | 90 m → **metre scale** |
+| North Sea, Norwegian Sea | Norwegian land | *not available*: Kartverket's lidar terrain service is under the Norge digitalt licence (partners only), so it cannot be published | stays Copernicus GLO-30 |
 | NE Europe | Little | GLO-30, Danish and German 50 m models in their waters | already finer than the picture |
 
 ## What resolution can the page show
@@ -55,9 +55,9 @@ edge (Kartverket 25 and 50 m) and a better deep-water base (GEBCO 2026, IBCAO 5)
 | [Copernicus DEM GLO-30](https://registry.opendata.aws/copernicus-dem/) | 30 m | global | 1° COG tiles on open AWS (`copernicus-dem-30m`); overviews make coarse reads cheap | free for the general public; the bucket readme links an older annex, so check the current one | tile URL answered |
 | Copernicus GLO-90 (current) | 90 m | global | as above | as above | in use |
 | [ArcticDEM mosaic v4.1](https://registry.opendata.aws/pgc-arcticdem) | 2, 10, 32 m | north of about 60 N | COG tiles plus VRT index on open S3 (`pgc-opendata-dems`) | CC BY 4.0, PGC acknowledgement | 10 m and 32 m VRT answered |
-| [NPI Svalbard DTM 20](https://geonorge.no/geonetworktest/srv/api/records/9d118d31-182c-495b-b7be-d819cc7444b1) (also DTM 5, 50) | 20 m | Svalbard | Geonorge download API; one area for the archipelago | open (NPI); exact wording to confirm | capabilities answered |
-| Kartverket seamless terrain WCS (`wcs.hoyde-dtm_somlos`, coverage `las_dtm`) | 0.25 m grid, 0.25 to 1 m data | mainland Norway | WCS 2.0.1, EPSG:25833 | open (Kartverket); CC BY 4.0 not confirmed | capabilities and DescribeCoverage answered; **scaling not tested** |
-| Kartverket DTM 10 (historic annual versions, UTM 32/33/35) | 10 m | mainland Norway | Geonorge download, map-sheet areas | open; Kartverket now points to hoydedata.no | UTM 32 capabilities answered; sheets cannot be chosen without outlines |
+| [NPI Svalbard DTM 20](https://geonorge.no/geonetworktest/srv/api/records/9d118d31-182c-495b-b7be-d819cc7444b1) (also DTM 5, 50) | 20 m | Svalbard | Geonorge download API; one area for the archipelago | **CC BY 4.0** (record 9d118d31…) | capabilities answered |
+| ~~Kartverket seamless terrain WCS~~ (`wcs.hoyde-dtm_somlos`) | 0.25 m grid | mainland Norway | ArcGIS WCS (WCS 1.0.0 width/height resamples) | **Norge digitalt licence, access limited to partners** (Geonorge record 311782b2…): **excluded** | worked technically and was used for a first build, then removed |
+| Kartverket DTM 10 (historic annual versions, UTM 32/33/35) | 10 m | mainland Norway | Geonorge download, map-sheet areas | **CC BY 4.0** (record dddbb667…), 2013 data; Kartverket now points to hoydedata.no | UTM 32 capabilities answered; sheets cannot be chosen without outlines |
 | [OS Terrain 50](https://docs.os.uk/os-downloads/products/land-and-terrain-portfolio/os-terrain-50) | 50 m | Great Britain incl. Shetland | OS Downloads API, no key; ASCII grid zip, 162 MB | OS OpenData (OGL) | download list answered |
 | Germany DGM25 / DGM10 (state level) | 25 / 10 m | Germany | state ATOM services | dl-de/by-2.0 in the state records seen; federal status unclear | not scripted |
 | Poland NMT (GUGiK) | 1 m, 5 m | Poland | WCS (addresses on geoportal.gov.pl); request size limited | free for any use; licence name not found | not scripted |
@@ -72,9 +72,9 @@ were left out on purpose: at a 600 m NE Europe cell they add nothing visible.
 | Source | Res. | Covers | Access | Licence | Checked |
 |---|---|---|---|---|---|
 | EMODnet Bathymetry DTM 2024 (current) | 115 m | European seas, 11 N to 90 N, 70.5 W to 43 E | WCS; 2° chunks only, no scaling | open; cite EMODnet | in use |
-| Kartverket sea-floor model **25 m** (MAREANO) | 25 m | outside 12 nm; Møre to Finnmark, east Barents, parts around Svalbard | Geonorge download, 1,085 half-degree cells | open; CC BY 4.0 to confirm | capabilities answered |
+| Kartverket sea-floor model **25 m** (MAREANO) | 25 m | outside 12 nm; Møre to Finnmark, east Barents, parts around Svalbard | Geonorge download, 1,085 half-degree cells | **CC BY 4.0** (record 39e022aa…) | capabilities answered |
 | Kartverket sea-floor model 50 m | 50 m | Norwegian waters | Geonorge download (already scripted) | CC BY 4.0 | in use for Vestland |
-| [IBCAO v5.0](https://doi.org/10.17043/ibcao-5.0) | 100 m | Arctic Ocean incl. Barents, Svalbard | four GeoTIFFs, polar stereographic | open; terms on the GEBCO page, not for navigation | **manual** download |
+| IBCAO v5.2 (2026; v5.0 doi:10.17043/ibcao-5.0) | 100, 200, 400 m | Arctic Ocean incl. Barents, Svalbard | CEDA zips: 100 m is 12 GB, 200 m 3 GB, **400 m 776 MB** (deflated: no windowed reads). Script streams the 400 m zip, clips to the region and deletes it | open; terms on the GEBCO page, not for navigation | zip sizes and range support answered |
 | [GEBCO_2026](https://www.gebco.net/data-products-gridded-bathymetry-data/gebco2026-grid) | 450 m | global | 7 GB NetCDF or 8 GeoTIFF tiles; the download app cuts a user-defined area | public domain, acknowledge GEBCO, not for navigation | **manual** download |
 | Denmark's Depth Model 2024 | 50 m | Danish EEZ | GeoTIFF or web service, free Dataforsyningen account | free incl. commercial, not for navigation | manual; `seabed.py` already reads it |
 | BSH seabed DTM | 50 m (1 m on request, maybe for a fee) | German North Sea and Baltic | GeoSeaPortal (no API found) | free under GeoZG; licence name not found | manual |
@@ -88,16 +88,24 @@ areas; I could not find which areas or a way to fetch them, so they are not plan
 
 ## Per region
 
-- **North Sea**: land Kartverket seamless WCS then OS Terrain 50 then GLO-30/90; sea Kartverket 25/50 m, Danish and
+- **North Sea**: land OS Terrain 50 then GLO-30/90; sea Kartverket 25/50 m, Danish and
   German 50 m (manual), EMODnet, ETOPO. Gain: Norwegian shelf edge and fjord mouths.
-- **Norwegian Sea**: land Kartverket WCS, GLO-30/90; sea MAREANO 25 m, Kartverket 50 m, EMODnet. Gain: shelf, banks,
+- **Norwegian Sea**: land GLO-30/90; sea MAREANO 25 m, Kartverket 50 m, EMODnet. Gain: shelf, banks,
   Storegga area, Nordland coast.
-- **Barents Sea**: land NPI Svalbard 20 m, Kartverket WCS, ArcticDEM 32 m, GLO-30/90; sea Kartverket 25/50 m, IBCAO v5,
+- **Barents Sea**: land NPI Svalbard 20 m, GLO-30/90 (ArcticDEM 32 m not used); sea Kartverket 25/50 m, IBCAO v5,
   EMODnet, GEBCO 2026, ETOPO. The largest improvement of any region; no source for the Russian shelf finer than IBCAO
   and GEBCO.
 - **NE Europe**: land GLO-30 then OS Terrain 50; sea EMODnet with Danish and German 50 m in their waters and
   Kartverket 50 m for the Norwegian sector. Modest.
 - **World**: GEBCO 2026 (land and sea), ETOPO fallback.
+
+## Tiles: showing the fine data
+
+`scripts/build_tiles.py <region>` cuts a region's grid (the `hires.tif` from the build, or the first-pass grid) into a
+power-of-two pyramid of 512 px lossless 16-bit WebP tiles under `data/out/<region>/tiles/`, with a `tiles.json`
+describing every level. The zoom page (`explore.html`) picks the level that matches the zoom, fetches only the tiles in
+view, stitches them into one texture and draws it with the same Detuned style, so a 150 m grid is as cheap to browse as a
+2 km one. Tiles are the committed deliverable; `data/raw` stays ignored.
 
 ## Running it
 
@@ -107,7 +115,8 @@ uv run python scripts/build_hires.py plan barents_sea --include-unverified
 uv run python scripts/build_hires.py run north_sea --stage fetch     # hours; resumable (hires/<source>/DONE.json)
 uv run python scripts/build_hires.py run north_sea --stage merge     # -> data/raw/north_sea/hires.tif + hires.json
 uv run python scripts/build_hires.py run north_sea --stage render    # -> data/out/north_sea/demo/ (page assets)
-uv run python scripts/render_region.py north_sea --source current    # first-pass assets, what the page shows today
+uv run python scripts/render_region.py north_sea --source current    # first-pass assets (single texture) from the coarse grid
+uv run python scripts/build_tiles.py north_sea                       # tile pyramid from hires.tif -> data/out/north_sea/tiles/
 ```
 
 - Each fetch adapter decimates to the target cell as it reads (COG overviews, averaged WCS chunks, averaged Geonorge
@@ -121,9 +130,6 @@ uv run python scripts/render_region.py north_sea --source current    # first-pas
 
 ## What I could not confirm
 
-- **Kartverket seamless WCS scaling.** The service answers and reports a 0.25 m grid, but whether it resamples on request
-  (SCALESIZE) or refuses large requests is untested. The script tests this on its first request and drops the source if
-  it fails, falling back to GLO-30. The older DTM 10 would then need a manual order.
 - **GEBCO Cloud Optimized GeoTIFF.** A 4.4 GB COG of GEBCO_2026 is listed on Source Cooperative, but I could not find its
   object URL, so GEBCO is a manual download. If it is reachable, a windowed read would remove the manual step.
 - **Licence wording** for Kartverket's 25 m model and DTM 10, the NPI models, BSH and IBCAO: all described as open, none
@@ -134,3 +140,47 @@ uv run python scripts/render_region.py north_sea --source current    # first-pas
   Danish and German sea models were checked, and the latter two have no API.
 - **Download sizes and times** for the Geonorge orders and the ArcticDEM window are not measured; the EMODnet chunk fetch
   took about 5 to 7 minutes per region at the first-pass resolution.
+
+## Licences checked before publishing (2026-11-08)
+
+CC BY 4.0: Kartverket sea floor 25 m and 50 m, NPI Svalbard DTM 20, Kartverket DTM 10 (historic). Open Government Licence v3:
+IBCAO v5.2 (cite as on the CEDA record), OS Terrain 50. Copernicus DEM: free for the general public with the Copernicus
+attribution. EMODnet: open, cite the consortium. ETOPO: public domain. Köppen-Geiger (Beck et al. 2023): CC BY 4.0.
+**Not redistributable: the Kartverket seamless terrain WCS (Norge digitalt licence).**
+
+## Run results (2026-11-08)
+
+`build_hires.py run` was run for all five regions (fetch, merge, then `render_region.py` and `build_tiles.py`), at these
+grid cells: North Sea 150 m, Norwegian Sea 250 m, Barents Sea 400 m, NE Europe 400 m, world 5 km. Each tile pyramid is
+5 levels, 15 to 31 MB.
+
+| Region | Land sources used | Sea share by source |
+|---|---|---|
+| North Sea | OS Terrain 50, GLO-30, GLO-90 | EMODnet 85 %, Kartverket 50 m 10 %, Kartverket 25 m 4 %, ETOPO 1 % |
+| Norwegian Sea | GLO-30, GLO-90 | EMODnet 68 %, Kartverket 50 m 18 %, Kartverket 25 m 14 % |
+| Barents Sea | NPI Svalbard 20 m, GLO-30, GLO-90 | EMODnet 47 %, **IBCAO 39 %**, Kartverket 25 m 7 %, 50 m 6 % |
+| NE Europe | GLO-30, OS Terrain 50, GLO-90 | EMODnet 94 %, Kartverket 50 m 4 % (Danish and German models not supplied) |
+| World | ETOPO 2022 averaged 3 x 3 | ETOPO (GEBCO not used: see below) |
+
+What happened that differs from the plan:
+
+- **The Kartverket seamless terrain service was used, then removed.** It fetched and merged well (and returns exact 0 outside
+  Norway, which had to be masked), but its Geonorge record is under the Norge digitalt licence, limited to partners, so tiles
+  derived from it cannot be published. The three Norwegian regions were rebuilt on open sources only; the Norwegian land is
+  GLO-30 again. The open alternatives are DTM 10 or DTM 1 from hoydedata.no (CC BY 4.0), which need their map sheets chosen.
+- **Priority order matters.** IBCAO (400 m) first overwrote EMODnet (115 m) over most of the Barents Sea; EMODnet now
+  outranks it, so IBCAO supplies only the east and the far north. A test guards the order.
+- **OS Terrain 50 is a zip of zips**, one per 10 km tile named by grid reference; the first run found no tiles. Fixed, and
+  the North Sea and NE Europe re-merged.
+- **ArcticDEM was not used.** Reading its 32 m VRT for the whole Barents window ran 15 minutes at near-zero CPU
+  (sequential HTTP over about 900 tiles) with little to gain at a 400 m cell; it was stopped. A tile-parallel reader would
+  fix it if the ice-cap heights matter.
+- **IBCAO v5.2 at 400 m**, not 100 m: the 100 m zip is 12 GB. The 400 m zip (776 MB) is streamed, clipped and deleted.
+- **GEBCO was not downloaded.** At a 5 km world cell, ETOPO 2022 averaged properly (3 x 3 on its 1.85 km grid) shows the
+  same picture, and GEBCO's global files are 4 to 7 GB. The world is the same data as before, averaged instead of sampled.
+- **Merge speed**: warping each piece into only its own window cut the Barents merge from over 11 minutes to under 2.
+- **One stall**: an EMODnet chunk request hung for three hours with no progress; read timeouts are now 15 s connect and 90 s
+  read, and a re-run resumed from the finished sources.
+- Elapsed times: Kartverket sea orders 10 to 20 minutes per region, EMODnet chunks 5 to 10 minutes, ETOPO for the world
+  about 25 minutes, merges 2 to 3 minutes.
+

@@ -31,6 +31,8 @@ import argparse
 import io
 import json
 import math
+import re
+import shutil
 import sys
 import time
 import zipfile
@@ -197,18 +199,128 @@ def fetch_cog_vrt(region, sid, s, out: Path, cell: float) -> None:
 
 
 def fetch_wcs_chunks(region, sid, s, out: Path, cell: float) -> None:
-    """EMODnet: 2-degree full-resolution chunks averaged to the grid (fetch_region.fetch_emodnet)."""
-    from fetch_region import Grid, fetch_emodnet
-    grid = Grid(lonlat_bounds_of(region), cell / 111_320)
+    """EMODnet: 2-degree full-resolution chunks, each averaged to about `cell` and written as its own small GeoTIFF."""
+    from fetch_region import (
+        EMODNET_BOX,
+        EMODNET_PX,
+        block_mean,
+        emodnet_chunk,
+        frame_hits,
+    )
+    divisors = [d for d in range(1, 65) if 1920 % d == 0]  # source pixels per output cell must divide a 2-degree chunk
+    want = max(1.0, cell / 111_320 * EMODNET_PX)
+    k = min(divisors, key=lambda d: abs(d - want))
+    step = k / EMODNET_PX
     fwd = Transformer.from_crs("EPSG:4326", AREAS[region]["crs"], always_xy=True)
-    arr = fetch_emodnet(grid, box(*AREAS[region]["extent"]).buffer(cell * 4), fwd)
-    save_tif(out / "emodnet.tif", arr, grid.transform, "EPSG:4326")
+    frame = box(*AREAS[region]["extent"]).buffer(cell * 4)
+    w, so, e, n = lonlat_bounds_of(region)
+    w, e, so, n = max(w, EMODNET_BOX[0]), min(e, EMODNET_BOX[2]), max(so, EMODNET_BOX[1]), min(n, EMODNET_BOX[3])
+    jobs = []
+    lat = math.floor(so / 2) * 2
+    while lat < n:
+        width = 2 if lat < 62 else 4
+        lon = math.floor(w / width) * width
+        while lon < e:
+            if frame_hits(frame, fwd, (lon, lat, lon + width, lat + 2)) and not (out / f"emodnet_{lon}_{lat}.tif").exists():
+                jobs.append((lon, lat, lon + width, lat + 2))
+            lon += width
+        lat += 2
+    print(f"    {len(jobs)} chunks of 2 degrees, {k} source px per cell ({step * 111_320:.0f} m)", flush=True)
+
+    def one(job, depth=0):
+        x0, y0, x1, y1 = job
+        x0c, x1c = max(x0, EMODNET_BOX[0]), min(x1, EMODNET_BOX[2])
+        arr = emodnet_chunk(x0c, y0, x1c, y1)
+        if arr is None:  # refused: halve along the longer side (cells stay aligned: halves fall on multiples of k pixels)
+            if depth >= 3:
+                return 0
+            if (x1c - x0c) >= (y1 - y0):
+                mid = x0c + (x1c - x0c) / 2
+                return one((x0c, y0, mid, y1), depth + 1) + one((mid, y0, x1c, y1), depth + 1)
+            mid = y0 + (y1 - y0) / 2
+            return one((x0c, y0, x1c, mid), depth + 1) + one((x0c, mid, x1c, y1), depth + 1)
+        block = block_mean(arr, k)
+        save_tif(out / f"emodnet_{x0}_{y0}_{depth}_{round(x0c * 1000)}_{round(y0 * 1000)}.tif", block,
+                 rasterio.transform.from_origin(x0c, y1, step, step), "EPSG:4326")
+        return 1
+
+    done = 0
+    with ThreadPoolExecutor(3) as ex:
+        for i, r in enumerate(ex.map(one, jobs), start=1):
+            done += r
+            if i % 10 == 0:
+                print(f"    {i}/{len(jobs)} chunks", flush=True)
+    print(f"    {done} pieces written", flush=True)
 
 
 def fetch_opendap(region, sid, s, out: Path, cell: float) -> None:
-    from fetch_region import Grid, fetch_etopo
-    grid = Grid(lonlat_bounds_of(region), max(cell, 1850) / 111_320)
-    save_tif(out / "etopo.tif", fetch_etopo(grid), grid.transform, "EPSG:4326")
+    """ETOPO 2022 over OPeNDAP: the region's window, block-averaged to about `cell` (never sampled), in bands of rows."""
+    import netCDF4
+    d = netCDF4.Dataset(s["url"])
+    z, lat, lon = d.variables["z"], d.variables["lat"][:], d.variables["lon"][:]
+    res = 1 / 60
+    f = max(1, round(cell / 111_320 / res))
+    w, so, e, n = lonlat_bounds_of(region)
+    c0, c1 = max(0, int((w - lon[0]) / res)), min(len(lon), math.ceil((e - lon[0]) / res) + 1)
+    r0, r1 = max(0, int((so - lat[0]) / res)), min(len(lat), math.ceil((n - lat[0]) / res) + 1)
+    c1 -= (c1 - c0) % f
+    band = (600 // f) * f
+    print(f"    ETOPO rows {r0}:{r1} cols {c0}:{c1}, average {f} x {f}", flush=True)
+    for r in range(r0, r1, band):
+        rr = min(r + band, r1) - ((min(r + band, r1) - r) % f)
+        if rr <= r:
+            continue
+        dst = out / f"etopo_{r}.tif"
+        if dst.exists():
+            continue
+        a = np.ma.filled(z[r:rr, c0:c1], np.nan).astype("float32")
+        blk = block_mean_local(a, f)[::-1]  # the file runs south to north
+        save_tif(dst, blk, rasterio.transform.from_origin(lon[c0] - res / 2, lat[rr - 1] + res / 2, res * f, res * f), "EPSG:4326")
+    d.close()
+
+
+def block_mean_local(a: np.ndarray, k: int) -> np.ndarray:
+    if k == 1:
+        return a
+    h, w = a.shape[0] // k * k, a.shape[1] // k * k
+    with np.errstate(all="ignore"):
+        return np.nanmean(a[:h, :w].reshape(h // k, k, w // k, k), axis=(1, 3)).astype("float32")
+
+
+def fetch_zip_clip(region, sid, s, out: Path, cell: float) -> None:
+    """A big zipped GeoTIFF (IBCAO v5.2, 400 m): stream to disk, clip to the region window at `cell`, delete the rest."""
+    zp = out / "download.zip"
+    if not zp.exists():
+        print(f"    downloading {s['url'].split('/')[-1].split('?')[0]} ...", flush=True)
+        with requests.get(s["url"], stream=True, timeout=1800) as r:
+            r.raise_for_status()
+            with open(zp, "wb") as f:
+                f.writelines(r.iter_content(1 << 22))
+    z = zipfile.ZipFile(zp)
+    member = next(n for n in z.namelist() if n.lower().endswith((".tif", ".tiff")))
+    tmp = out / "_tmp"
+    z.extract(member, tmp)
+    z.close()
+    zp.unlink()
+    src = tmp / member
+    with rasterio.open(src) as d:
+        b = transform_bounds(AREAS[region]["crs"], d.crs, *AREAS[region]["extent"], densify_pts=101)
+        b = (max(b[0], d.bounds.left), max(b[1], d.bounds.bottom), min(b[2], d.bounds.right), min(b[3], d.bounds.top))
+        if b[0] >= b[2] or b[1] >= b[3]:
+            print("    no overlap")
+        else:
+            win = rasterio.windows.from_bounds(*b, transform=d.transform).round_offsets().round_lengths()
+            res = abs(d.res[0])
+            k = max(1, int(cell / res))
+            shape = (max(1, int(win.height) // k), max(1, int(win.width) // k))
+            a = d.read(1, window=win, out_shape=shape, resampling=Resampling.average, masked=True).astype("float32").filled(np.nan)
+            a[a > 1e4] = np.nan
+            save_tif(out / "window.tif", a, rasterio.windows.transform(win, d.transform) * rasterio.Affine.scale(int(win.width) / shape[1], int(win.height) / shape[0]), d.crs)
+            print(f"    window {shape[1]} x {shape[0]}", flush=True)
+    src.unlink()
+    for p in sorted(tmp.rglob("*"), reverse=True):
+        p.rmdir() if p.is_dir() else None
+    tmp.rmdir()
 
 
 def fetch_geonorge(region, sid, s, out: Path, cell: float) -> None:
@@ -236,27 +348,41 @@ def fetch_geonorge(region, sid, s, out: Path, cell: float) -> None:
                 t.unlink()
 
 
+def os_grid_square(ref: str) -> tuple[float, float, float, float] | None:
+    """Bounds (E0, N0, E1, N1, British National Grid metres) of an OS 10 km tile reference such as 'hp40' or 'NT34'."""
+    m = re.match(r"^([A-Za-z]{2})(\d)(\d)", ref)
+    if not m:
+        return None
+    l1, l2 = (ord(c.upper()) - 65 for c in m.group(1))
+    l1, l2 = (v - 1 if v > 8 else v for v in (l1, l2))  # the grid letters skip I
+    e100, n100 = ((l1 - 2) % 5) * 5 + (l2 % 5), (19 - (l1 // 5) * 5) - (l2 // 5)
+    e0, n0 = e100 * 100_000 + int(m.group(2)) * 10_000, n100 * 100_000 + int(m.group(3)) * 10_000
+    return e0, n0, e0 + 10_000, n0 + 10_000
+
+
 def fetch_http_zip(region, sid, s, out: Path, cell: float) -> None:
-    """OS Terrain 50: one national zip of 10 km ASCII-grid tiles; keep only tiles in the frame, merged at `cell`."""
+    """OS Terrain 50: one national zip holding a zip per 10 km tile (named by grid reference), each with an ASCII grid.
+    Only tiles inside the region are opened; they are merged and averaged to `cell`."""
     from rasterio.merge import merge
     zp = out / "download.zip"
     if not zp.exists():
-        with requests.get(s["url"], stream=True, timeout=900) as r:
+        with requests.get(s["url"], stream=True, timeout=(15, 120)) as r:
             r.raise_for_status()
             with open(zp, "wb") as f:
                 f.writelines(r.iter_content(1 << 20))
     b = transform_bounds(AREAS[region]["crs"], s["crs"], *AREAS[region]["extent"], densify_pts=101)
     z = zipfile.ZipFile(zp)
-    names = [n for n in z.namelist() if n.lower().endswith(".asc")]
+    inner = [n for n in z.namelist() if n.lower().endswith(".zip")]
     keep = []
-    for n in names:
-        head = z.open(n).read(400).decode("ascii", "ignore").split()
-        h = {head[i].lower(): float(head[i + 1]) for i in range(0, 12, 2)}
-        x0, y0, cs = h["xllcorner"], h["yllcorner"], h["cellsize"]
-        if intersects(b, (x0, y0, x0 + h["ncols"] * cs, y0 + h["nrows"] * cs)):
-            z.extract(n, out / "_asc")
-            keep.append(out / "_asc" / n)
-    print(f"    {len(keep)} of {len(names)} tiles in the frame", flush=True)
+    for n in inner:
+        sq = os_grid_square(Path(n).name)
+        if sq and intersects(b, sq):
+            zi = zipfile.ZipFile(io.BytesIO(z.read(n)))
+            for m in zi.namelist():
+                if m.lower().endswith(".asc"):
+                    zi.extract(m, out / "_asc")
+                    keep.append(out / "_asc" / m)
+    print(f"    {len(keep)} of {len(inner)} tiles in the frame", flush=True)
     if keep:
         srcs = [rasterio.open(p) for p in keep]
         arr, tr = merge(srcs, res=cell, resampling=Resampling.average, nodata=-9999)
@@ -265,60 +391,59 @@ def fetch_http_zip(region, sid, s, out: Path, cell: float) -> None:
         a = arr[0].astype("float32")
         a[a <= -9000] = np.nan
         save_tif(out / "terrain50.tif", a, tr, s["crs"])
-    for p in keep:
-        p.unlink()
+    shutil.rmtree(out / "_asc", ignore_errors=True)
+    zp.unlink()
 
 
 def fetch_wcs(region, sid, s, out: Path, cell: float) -> None:
-    """Kartverket seamless terrain WCS in EPSG:25833, 50 km squares requested at `cell` metres (SCALESIZE).
-
-    Scaling support is unverified: the first request is checked, and the source is abandoned (so the next one in the
-    priority list is used) if the server ignores or refuses it. Squares with no land (by the existing coarse
-    merged.tif) are skipped."""
+    """Kartverket seamless terrain model: ArcGIS WCS 1.0.0 (width and height resample on the server; WCS 2.0 scaling is
+    refused). 50 km squares in EPSG:25833 at `cell` metres. Squares with no land by the coarse merged.tif are skipped."""
     b = transform_bounds(AREAS[region]["crs"], s["crs"], *AREAS[region]["extent"], densify_pts=101)
     side = 50_000
-    land = None
-    mt = ROOT / "data" / "raw" / region / "merged.tif"
-    if mt.exists():
-        land = rasterio.open(mt)
-    n = round(side / cell)
-    sq = [(x, y) for x in range(int(b[0] // side) * side, int(b[2]) + 1, side) for y in range(int(b[1] // side) * side, int(b[3]) + 1, side)]
     cov = transform_bounds("EPSG:4326", s["crs"], *s["bbox"], densify_pts=21)  # where Norway's model has data
-    sq = [(x, y) for x, y in sq if intersects((x, y, x + side, y + side), cov)]
+    sq = [(x, y) for x in range(int(b[0] // side) * side, int(b[2]) + 1, side) for y in range(int(b[1] // side) * side, int(b[3]) + 1, side)]
+    sq = [(x, y) for x, y in sq if intersects((x, y, x + side, y + side), cov) and intersects((x, y, x + side, y + side), b)]
     to_ll = Transformer.from_crs(s["crs"], "EPSG:4326", always_xy=True)
-    first = True
-    kept = 0
+    mt = ROOT / "data" / "raw" / region / "merged.tif"
+    land = rasterio.open(mt) if mt.exists() else None
+    n = max(2, round(side / cell))
+    todo = []
     for x, y in sq:
-        dst = out / f"las_dtm_{x}_{y}.tif"
-        if dst.exists():
+        if (out / f"las_dtm_{x}_{y}.tif").exists():
             continue
-        if land is not None:
+        if land is not None:  # a 50 km square with no land anywhere in its 3 x 3 neighbourhood of coarse cells is open sea
             lon, lat = to_ll.transform(x + side / 2, y + side / 2)
             r, c = land.index(lon, lat)
-            win = rasterio.windows.Window(max(0, c - 40), max(0, r - 40), 80, 80)
-            v = land.read(1, window=win)
+            v = land.read(1, window=rasterio.windows.Window(max(0, c - 40), max(0, r - 40), 80, 80))
             if not (v > 0).any():
                 continue
-        params = [("service", "WCS"), ("version", "2.0.1"), ("request", "GetCoverage"), ("coverageId", s["coverage"]),
-                  ("subset", f"x({x},{x + side})"), ("subset", f"y({y},{y + side})"), ("format", "image/tiff"),
-                  ("scalesize", f"x({n}),y({n})")]
-        r = requests.get(s["url"], params=params, timeout=300)
-        ok = r.status_code == 200 and r.content[:4] in (b"II*\x00", b"MM\x00*")
-        if first:
-            first = False
-            if ok:
-                with rasterio.MemoryFile(r.content) as mf, mf.open() as d:
-                    ok = d.width <= n * 1.1 and d.height <= n * 1.1
-            if not ok:
-                raise RuntimeError("Kartverket WCS did not honour SCALESIZE: dropping this source (" + r.text[:200] + ")")
-        if ok:
-            dst.write_bytes(r.content)
-            kept += 1
-    print(f"    {kept} squares", flush=True)
+        todo.append((x, y))
+    print(f"    {len(todo)} squares of {side // 1000} km at {side / n:.0f} m", flush=True)
+
+    def one(xy):
+        x, y = xy
+        params = {"service": "WCS", "version": "1.0.0", "request": "GetCoverage", "coverage": s["coverage"], "crs": s["crs"],
+                  "bbox": f"{x},{y},{x + side},{y + side}", "width": n, "height": n, "format": "GeoTIFF"}
+        for attempt in range(3):
+            try:
+                r = requests.get(s["url"], params=params, timeout=300)
+                if r.status_code == 200 and r.content[:4] in (b"II*\x00", b"MM\x00*"):
+                    (out / f"las_dtm_{x}_{y}.tif").write_bytes(r.content)
+                    return 1
+            except requests.RequestException:
+                pass
+            time.sleep(2 ** attempt)
+        return 0
+
+    if todo and not one(todo[0]):
+        raise RuntimeError("Kartverket WCS 1.0.0 request failed: dropping this source")
+    with ThreadPoolExecutor(4) as ex:
+        kept = 1 + sum(ex.map(one, todo[1:])) if todo else 0
+    print(f"    {kept} squares written", flush=True)
 
 
 ADAPTERS = {"cog_tiles": fetch_cog_tiles, "cog_vrt": fetch_cog_vrt, "wcs_chunks": fetch_wcs_chunks, "opendap": fetch_opendap,
-            "geonorge_download": fetch_geonorge, "http_zip": fetch_http_zip, "wcs": fetch_wcs}
+            "geonorge_download": fetch_geonorge, "http_zip": fetch_http_zip, "wcs": fetch_wcs, "zip_clip": fetch_zip_clip}
 
 
 def stage_fetch(region: str, cell: float, only, include_unverified: bool, force: bool) -> None:
@@ -343,16 +468,30 @@ def stage_fetch(region: str, cell: float, only, include_unverified: bool, force:
 
 # --------------------------------------------------------------------------- merge
 def warp_pieces(files: list[Path], tr, w, h, crs, cell: float) -> np.ndarray:
-    """Warp decimated pieces into the region grid (later files do not overwrite earlier finite cells)."""
+    """Warp decimated pieces into the region grid (a finite cell from an earlier piece is kept).
+
+    Each piece is warped only into the window of the grid it covers, so thousands of small pieces cost no more than
+    their own area (a full-grid temporary per piece made a 24 M-cell merge take over ten minutes)."""
     out = np.full((h, w), np.nan, dtype="float32")
     for f in files:
         with rasterio.open(f) as d:
             res = abs(d.res[0]) if d.crs.is_projected else abs(d.res[0]) * 111_320
-            tmp = np.full((h, w), np.nan, dtype="float32")
-            reproject(rasterio.band(d, 1), tmp, dst_transform=tr, dst_crs=crs, dst_nodata=np.nan, tolerance=0.0,
-                      resampling=Resampling.average if cell >= res else Resampling.bilinear)
+            try:
+                b = transform_bounds(d.crs, crs, *d.bounds, densify_pts=21)
+                c0, c1 = max(0, int((b[0] - tr.c) / cell) - 2), min(w, math.ceil((b[2] - tr.c) / cell) + 2)
+                r0, r1 = max(0, int((tr.f - b[3]) / cell) - 2), min(h, math.ceil((tr.f - b[1]) / cell) + 2)
+                if not all(math.isfinite(v) for v in b):
+                    raise ValueError
+            except (ValueError, rasterio.errors.CRSError):
+                c0, c1, r0, r1 = 0, w, 0, h
+            if c1 <= c0 or r1 <= r0:
+                continue
+            tmp = np.full((r1 - r0, c1 - c0), np.nan, dtype="float32")
+            reproject(rasterio.band(d, 1), tmp, dst_transform=tr * rasterio.Affine.translation(c0, r0), dst_crs=crs, dst_nodata=np.nan,
+                      tolerance=0.0, resampling=Resampling.average if cell >= res else Resampling.bilinear)
         tmp[np.abs(tmp) > NODATA_LIMIT] = np.nan
-        out = np.where(np.isfinite(out), out, tmp)
+        win = out[r0:r1, c0:c1]
+        out[r0:r1, c0:c1] = np.where(np.isfinite(win), win, tmp)
     return out
 
 
@@ -364,6 +503,7 @@ def blend(layers: list[tuple[str, np.ndarray]], cell: float, valid) -> tuple[np.
     src = None
     stats = {}
     for i, (name, a) in enumerate(layers, start=1):
+        a = a() if callable(a) else a  # layers can be loaded one at a time: a region never holds them all in memory
         if z is None:
             z = np.full(a.shape, np.nan, dtype="float32")
             src = np.zeros(a.shape, dtype="uint8")
@@ -375,7 +515,7 @@ def blend(layers: list[tuple[str, np.ndarray]], cell: float, valid) -> tuple[np.
             d = a[both] - z[both]
             stats[name] = {"overlap_cells": int(both.sum()), "median_diff_m": round(float(np.median(d)), 1),
                            "p90_abs_diff_m": round(float(np.percentile(np.abs(d), 90)), 1)}
-        wgt = np.clip(distance_transform_edt(ok) * cell / FEATHER_M, 0, 1).astype("float32")
+        wgt = np.clip(distance_transform_edt(ok) * (cell / FEATHER_M), 0, 1).astype("float32")
         wgt[~ok] = 0
         wgt = np.where(np.isfinite(z), wgt, ok.astype("float32"))
         base = np.where(np.isfinite(z), z, a)
@@ -393,10 +533,13 @@ def collect(region: str, kind: str, tr, w, h, crs, cell: float, only, include_un
         files = sorted(folder.rglob("*.tif")) if folder.exists() else []
         if not files:
             continue
-        a = warp_pieces(files, tr, w, h, crs, cell)
-        if sid in ("dk_dybdemodel_50",):
-            a = -np.abs(a)  # stored as positive or negative depth
-        layers.append((sid, a))
+        def load(files=files, sid=sid):
+            a = warp_pieces(files, tr, w, h, crs, cell)
+            if SOURCES[sid].get("zero_is_nodata"):
+                a[a == 0] = np.nan  # the service fills outside its coverage (and the sea) with exact zeros
+            return -np.abs(a) if sid == "dk_dybdemodel_50" else a  # that model stores depth as positive or negative
+
+        layers.append((sid, load))
         used.append(sid)
     return layers, used
 

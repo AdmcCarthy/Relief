@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Relief · zoom</title>
+<meta name="description" content="Pan and zoom the Relief regions: elevation tiles at 150 m to 5 km, drawn on the GPU in one house style.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root { --canvas:#f3f7fb; --surface:#fdfeff; --raised:#ecf1f5; --ink:#2d3439; --muted:#596c7b; --rule:#ccd6dd; --link:#20565c; --accent:#1a7f88;
+  --display:"Newsreader","Iowan Old Style",Georgia,serif; --body:"Instrument Sans","Segoe UI",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,Menlo,monospace; color-scheme:light; }
+:root[data-theme="dark"] { --canvas:#0e1820; --surface:#15212a; --raised:#1e2b35; --ink:#f5fdff; --muted:#b4c7d7; --rule:#2c3a45; --link:#86d2da; --accent:#55b3bd; color-scheme:dark; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--canvas); color:var(--ink); font:400 16px/1.6 var(--body); }
+.wrap { max-width:1180px; margin:0 auto; padding-inline:max(16px, env(safe-area-inset-left,0px)); }
+.top { position:sticky; top:0; z-index:5; background:color-mix(in oklab, var(--canvas) 90%, transparent); backdrop-filter:blur(8px); border-bottom:1px solid var(--rule); }
+.top .wrap { display:flex; gap:12px; align-items:center; justify-content:space-between; padding-block:8px; flex-wrap:wrap; }
+.brand { font:500 1.05rem var(--display); color:inherit; text-decoration:none; }
+.nav { font-size:13px; color:var(--muted); display:flex; gap:14px; flex-wrap:wrap; } .nav b { color:var(--ink); font-weight:600; }
+.seg { display:inline-flex; background:var(--raised); border:1px solid var(--rule); border-radius:999px; padding:2px; flex-wrap:wrap; }
+.seg button { font:500 12.5px var(--body); color:var(--muted); background:none; border:0; padding:5px 11px; border-radius:999px; cursor:pointer; }
+.seg button[aria-pressed="true"] { background:var(--surface); color:var(--ink); box-shadow:0 1px 2px rgb(0 0 0/.12); }
+.seg button:focus-visible, canvas:focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
+.kicker { font:500 12px/1.4 var(--mono); letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+h1 { font:500 clamp(1.8rem,4vw,2.6rem)/1.1 var(--display); margin:8px 0 6px; }
+.lead { color:var(--muted); max-width:70ch; margin:0 0 12px; font-size:14.5px; }
+.tools { display:flex; gap:10px 14px; align-items:center; flex-wrap:wrap; margin:12px 0; }
+.stage { position:relative; }
+#map { display:block; width:100%; height:min(74vh, 820px); min-height:360px; border:1px solid var(--rule); border-radius:12px; background:var(--raised); cursor:grab; touch-action:none; }
+#map:active { cursor:grabbing; }
+.info { font:500 12px var(--mono); color:var(--muted); margin:8px 0; }
+.nogl { display:none; padding:12px 14px; border:1px solid var(--rule); border-radius:10px; background:var(--surface); margin:12px 0; }
+.legend { margin:12px 0; max-width:640px; }
+.credits { margin:24px 0 40px; padding-top:12px; border-top:1px solid var(--rule); font-size:12.5px; color:var(--muted); }
+a { color:var(--link); }
+.cbs { display:flex; flex-direction:column; gap:6px; margin:2px 0; }
+.cb-kind { font:500 10.5px var(--mono); letter-spacing:.05em; text-transform:uppercase; color:var(--muted); }
+.cbg { display:grid; grid-template-columns:64px minmax(0,1fr); column-gap:8px; row-gap:3px; align-items:center; }
+.cb-l { font-size:11.5px; color:var(--ink); }
+.cb-lin { height:10px; border-radius:2px; border:1px solid var(--rule); }
+.cb-steps { display:grid; grid-template-columns:repeat(var(--n), 1fr); height:10px; border:1px solid var(--rule); border-radius:2px; overflow:hidden; }
+.cb-steps .cb-band { display:block; }
+.cb-labs { display:grid; grid-template-columns:repeat(var(--n), 1fr) 0; font:400 9.5px var(--body); color:var(--muted); }
+.cb-labs span { transform:translateX(-50%); white-space:nowrap; } .cb-labs span:first-child { transform:none; }
+.cb-ticks { position:relative; height:13px; font:400 9.5px var(--body); color:var(--muted); }
+.cb-ticks span { position:absolute; top:0; transform:translateX(-50%); white-space:nowrap; }
+.cb-ticks span:first-child { transform:none; } .cb-ticks span:last-child { transform:translateX(-100%); }
+</style>
+</head>
+<body>
+<div class="top"><div class="wrap">
+  <a class="brand" href="./">Relief</a>
+  <nav class="nav"><a href="./">Examples</a><b>Zoom</b><a href="techniques.html">Techniques</a><a href="vector.html">Vector layers</a></nav>
+  <div class="seg" id="theme" role="group" aria-label="Colour scheme"><button data-v="light">Light</button><button data-v="dark">Dark</button></div>
+</div></div>
+<main class="wrap">
+  <div class="kicker">Relief · zoom</div>
+  <h1 id="rname">Zoom into a region</h1>
+  <p class="lead" id="rdesc">Elevation arrives as tiles in a zoom pyramid, so the finest data can be shown without one huge file. Drag to pan, scroll or pinch to zoom, double-click to zoom in.</p>
+  <p class="nogl" id="nogl">This page needs WebGL 2, which this browser does not provide.</p>
+  <div class="tools">
+    <div class="seg" id="regions" role="group" aria-label="Region"></div>
+    <div class="seg" role="group" aria-label="Zoom"><button id="zin" aria-label="Zoom in">＋</button><button id="zout" aria-label="Zoom out">－</button><button id="zfit">Fit</button></div>
+  </div>
+  <div class="stage"><canvas id="map" tabindex="0" aria-label="Zoomable relief map: arrow keys pan, plus and minus zoom"></canvas></div>
+  <div class="info" id="info" aria-live="polite">Loading…</div>
+  <div class="legend" id="legend"></div>
+  <div class="credits" id="credits"></div>
+</main>
+<script type="module" src="explore.js"></script>
+</body>
+</html>

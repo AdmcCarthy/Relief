@@ -80,7 +80,7 @@ def emodnet_chunk(w: float, s: float, e: float, n: float) -> np.ndarray | None:
     params = [("service", "WCS"), ("version", "2.0.1"), ("request", "GetCoverage"), ("coverageId", "emodnet__mean"),
               ("subset", f"Lat({s:.8f},{n:.8f})"), ("subset", f"Long({w:.8f},{e:.8f})"), ("format", "image/tiff")]
     def go():
-        r = requests.get(EMODNET_WCS, params=params, timeout=600)
+        r = requests.get(EMODNET_WCS, params=params, timeout=(15, 90))
         if r.status_code >= 500 or not r.content.startswith((b"II*\x00", b"MM\x00*")):
             raise RuntimeError(r.status_code)
         return r.content
