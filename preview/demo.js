@@ -21,33 +21,66 @@ function setTheme(t) {
 themeSeg.addEventListener("click", (e) => { if (e.target.dataset.v) { setTheme(e.target.dataset.v); redrawAll(); } });
 setTheme(theme);
 
-// ---------------------------------------------------------------- palettes (stops: fraction of landMax / seaMax)
-const LAND_STOPS = [0, 100, 250, 500, 750, 1000, 1250, 1500, 1800];
-const SEA_STOPS = [0, 50, 100, 200, 300, 400, 500, 750, 1000];
-const PAL = {
+// ---------------------------------------------------------------- palettes
+// Non-linear steps (metres). Sea is finest near the coast, where most of the sea-floor shape is; land is coarser.
+const LB = [0, 50, 150, 300, 600, 1000, 1500, 2000];
+const SB = [0, 20, 50, 100, 200, 500, 1000];
+const LMAX = 2000, SMAX = 1300;
+const at = (breaks, cols, max) => breaks.map((b, i) => [b / max, cols[i]]).concat(cols.length > breaks.length ? [[1, cols.at(-1)]] : []);
+// Cross-blended hypsometric tints (Patterson & Jenny): one land ramp per climate zone below 1,000 m and a shared
+// alpine ramp above. ZPAL is the full-strength "relief" set; every other style is derived from it by detuning.
+const ZPAL = {
   light: {
-    context: { land: [[0, "#eef0ea"], [0.3, "#e3e6de"], [0.65, "#d5d8d0"], [1, "#c6cac3"]], sea: [[0, "#e6eef4"], [0.2, "#d6e3ec"], [0.6, "#c2d5e3"], [1, "#adc6d9"]],
-      coastCol: "#8a9aa6", lo: "#7b8c99", hi: "#ffffff", iceCol: "#ffffff", iceEdge: "#a9bccb" },
-    showcase: { land: [[0, "#dfe8c9"], [0.06, "#cfdcb1"], [0.17, "#c9cf9e"], [0.33, "#d6c99b"], [0.5, "#cfb48f"], [0.7, "#bfa992"], [0.85, "#c9c3bc"], [1, "#eeeceb"]],
-      sea: [[0, "#cfe9f5"], [0.06, "#a9d6ec"], [0.15, "#82c0e1"], [0.3, "#5ea7d3"], [0.5, "#3f8bc0"], [0.75, "#2a6ea6"], [1, "#1b4f80"]],
-      coastCol: "#5d7383", lo: "#3c4d5b", hi: "#ffffff", iceCol: "#ffffff", iceEdge: "#8fa9bd" },
-    bathy: { land: [[0, "#e7e9e5"], [1, "#d9dcd6"]], sea: [[0, "#d7eef8"], [0.06, "#a9d6ec"], [0.15, "#7fbfe0"], [0.3, "#5aa4d1"], [0.5, "#3a86bd"], [0.75, "#2669a1"], [1, "#174a7a"]],
-      coastCol: "#6f8290", lo: "#2c5f86", hi: "#ffffff", iceCol: "#ffffff", iceEdge: "#a9bccb" },
+    temperate: ["#d6e8b8", "#c6dea0", "#bad38f", "#cbcf92", "#d9c897", "#ccb8a0", "#d8d0c6", "#efece8"],
+    boreal: ["#a9c7a6", "#97bb98", "#8aae8c", "#93a98b", "#a8ad96", "#ccb8a0", "#d8d0c6", "#efece8"],
+    tundra: ["#e0e3dc", "#d6dad2", "#cdd1c9", "#c6c8c0", "#c4c0b6", "#ccb8a0", "#d8d0c6", "#efece8"],
+    arid: ["#efe2c2", "#e9d6ac", "#e1c695", "#d6b382", "#c9a077", "#ccb8a0", "#d8d0c6", "#efece8"],
+    sea: ["#e3f2f9", "#c6e5f3", "#a6d3eb", "#82bde0", "#5fa3d2", "#3f85bd", "#29689f", "#1b4f80"],
   },
   dark: {
-    context: { land: [[0, "#26313a"], [0.5, "#2e3a44"], [1, "#3a4752"]], sea: [[0, "#17252f"], [0.4, "#132029"], [1, "#0d1820"]],
-      coastCol: "#4f6170", lo: "#0f1820", hi: "#5f7383", iceCol: "#c9d6df", iceEdge: "#7d93a3" },
-    showcase: { land: [[0, "#34412e"], [0.12, "#3c4a33"], [0.3, "#4a5038"], [0.5, "#5c5845"], [0.7, "#6b6355"], [0.88, "#8a857f"], [1, "#b2aea9"]],
-      sea: [[0, "#1f5571"], [0.1, "#1c4863"], [0.3, "#163a52"], [0.55, "#112d42"], [1, "#0a1c2c"]],
-      coastCol: "#7a93a5", lo: "#0b141b", hi: "#cfe3ee", iceCol: "#e8f0f5", iceEdge: "#8ea7b8" },
-    bathy: { land: [[0, "#28333c"], [1, "#323e48"]], sea: [[0, "#2a6f93"], [0.1, "#225d7d"], [0.3, "#1a4964"], [0.55, "#13374e"], [1, "#0a2033"]],
-      coastCol: "#7f97a8", lo: "#0b141b", hi: "#d4ecf7", iceCol: "#d9e4eb", iceEdge: "#7d93a3" },
+    temperate: ["#46572f", "#4c5d33", "#536237", "#5d633b", "#665f42", "#655d50", "#85807a", "#aaa6a1"],
+    boreal: ["#2c4232", "#304836", "#354d39", "#3f513e", "#4e5547", "#655d50", "#85807a", "#aaa6a1"],
+    tundra: ["#55595a", "#585b5b", "#5b5d5c", "#5e5e5b", "#615d57", "#655d50", "#85807a", "#aaa6a1"],
+    arid: ["#5e533c", "#665a3f", "#6c5c40", "#6e5a43", "#6a5747", "#655d50", "#85807a", "#aaa6a1"],
+    sea: ["#2f7896", "#286a87", "#225c78", "#1c4e69", "#16405a", "#11334b", "#0c263c", "#081c2e"],
   },
 };
-function style(palette, opts = {}) {
-  const P = PAL[theme][palette];
-  return { land: P.land, sea: P.sea, landMax: 1800, seaMax: 1100, landStops: LAND_STOPS, seaStops: SEA_STOPS,
-    coastCol: P.coastCol, lo: P.lo, hi: P.hi, iceCol: P.iceCol, iceEdge: P.iceEdge, ...opts };
+// "Detuned": the sea floor gets more room than the land (wider range, deeper indigo) while land is held back.
+const DETUNED_SEA = {
+  light: ["#e8f0f2", "#cfe1e6", "#aacdd8", "#7eb0c5", "#5891ae", "#3a6d94", "#264b73", "#162b50"],
+  dark: ["#3a8aa2", "#2f7690", "#25647d", "#1c526b", "#144157", "#0e3045", "#092336", "#06172a"],
+};
+const rgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+const hexOf = (v) => "#" + v.map((x) => Math.round(Math.min(255, Math.max(0, x))).toString(16).padStart(2, "0")).join("");
+// Detune a colour: scale its saturation towards its own grey, then lift (mix > 0, towards white) or sink (< 0, towards black).
+function tune(h, sat, mix = 0) {
+  const c = rgb(h), y = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2], t = mix > 0 ? 255 : 0, m = Math.abs(mix);
+  return hexOf(c.map((v) => { const g = y + (v - y) * sat; return g + (t - g) * m; }));
+}
+const ZK = ["temperate", "boreal", "tundra", "arid"];
+function paletteSet(name) {
+  const Z = ZPAL[theme], dark = theme === "dark", calm = dark ? -0.22 : 0.3;
+  const land = (sat, mix) => Object.fromEntries(ZK.map((k) => [k, at(LB, Z[k].map((c) => tune(c, sat, mix)), LMAX)]));
+  const sea = (sat, mix, cols = Z.sea) => at(SB, cols.map((c) => tune(c, sat, mix)), SMAX);
+  const ink = dark ? { coastCol: "#7a93a5", lo: "#0b141b", hi: "#cfe3ee", iceCol: "#e8f0f5", iceEdge: "#8ea7b8" }
+                   : { coastCol: "#6f8290", lo: "#3c4d5b", hi: "#ffffff", iceCol: "#ffffff", iceEdge: "#8fa9bd" };
+  switch (name) {
+    case "context":   // the relief set, muted: land and sea desaturated and lifted so data on top carries the colour
+      return { ...ink, land: land(0.38, calm), sea: sea(0.4, calm), shadeK: 0.35, seaShadeK: 0.25 };
+    case "bathy":     // land almost grey, sea floor at full strength
+      return { ...ink, land: land(0.18, calm), sea: sea(1.1, 0), shadeK: 0.15, seaShadeK: 0.75 };
+    case "detuned":   // own style: half-strength land tints, wide-range deep sea floor with strong shading
+      return { ...ink, land: land(0.5, dark ? -0.08 : 0.08), sea: sea(1, 0, DETUNED_SEA[theme]), shadeK: 0.35, seaShadeK: 0.9 };
+    default:          // relief: full-strength cross-blended tints
+      return { ...ink, land: land(1, 0), sea: sea(1, 0), shadeK: 0.6, seaShadeK: 0.45 };
+  }
+}
+// climate: false -> one (temperate) ramp everywhere. The coastline is off by default: at the scale of Norway's
+// skerries it reads as noise; when on it is drawn at low opacity (coastK).
+function style(name, opts = {}) {
+  const { land, ...rest } = paletteSet(name);
+  return { land: land.temperate, zones: opts.climate === false ? null : land, landMax: LMAX, seaMax: SMAX, landStops: LB, seaStops: SB,
+    coast: false, coastK: 0.3, ...rest, ...opts };
 }
 
 // ---------------------------------------------------------------- colour bars
@@ -60,60 +93,77 @@ function rampAt(stops, t) {
   return `rgb(${a.map((v, j) => Math.round(v + (b[j] - v) * f)).join(",")})`;
 }
 const fmtM = (v) => v.toLocaleString("en-GB");
-function bar(label, stops, max, bands, stepped, ticks) {
+function strip(label, stops, max, bands, stepped) {
   if (stepped) {  // hypsometric classes: one block per band, labelled with its range
     const cells = bands.map((lo, i) => {
       const hi = bands[i + 1];
       const mid = hi == null ? lo + (lo - bands[i - 1]) / 2 : (lo + hi) / 2;
       return `<span class="cb-band" style="background:${rampAt(stops, mid / max)}" title="${fmtM(lo)}${hi == null ? "+" : `–${fmtM(hi)}`} m"></span>`;
     }).join("");
-    const labs = bands.map((v, i) => `<span>${fmtM(v)}${i === bands.length - 1 ? "+" : ""}</span>`).join("") + "<span></span>";
-    return `<div class="cb"><span class="cb-l">${label}</span><div class="cb-steps" style="--n:${bands.length}">${cells}</div><div class="cb-labs" style="--n:${bands.length}">${labs}</div></div>`;
+    return `<span class="cb-l">${label}</span><div class="cb-steps" style="--n:${bands.length}">${cells}</div>`;
   }
   const grad = Array.from({ length: 24 }, (_, i) => `${rampAt(stops, i / 23)} ${(i / 23 * 100).toFixed(1)}%`).join(",");
-  const tk = ticks.filter((v) => v / max < 0.85).map((v) => `<span style="left:${(v / max) * 100}%">${fmtM(v)}</span>`).join("");
-  return `<div class="cb"><span class="cb-l">${label}</span><div class="cb-lin" style="background:linear-gradient(90deg,${grad})"></div><div class="cb-ticks">${tk}<span style="left:100%">${fmtM(max)}+</span></div></div>`;
+  return `<span class="cb-l">${label}</span><div class="cb-lin" style="background:linear-gradient(90deg,${grad})"></div>`;
 }
+function axis(max, bands, stepped, ticks) {
+  if (stepped) return `<span></span><div class="cb-labs" style="--n:${bands.length}">${bands.map((v, i) => `<span>${fmtM(v)}${i === bands.length - 1 ? "+" : ""}</span>`).join("")}<span></span></div>`;
+  const tk = ticks.filter((v) => v / max < 0.85).map((v) => `<span style="left:${(v / max) * 100}%">${fmtM(v)}</span>`).join("");
+  return `<span></span><div class="cb-ticks">${tk}<span style="left:100%">${fmtM(max)}+</span></div>`;
+}
+// One height strip per climate zone present (arid only where the area has any), then depth: the legend is
+// honest about which tints appear where.
 function colourBars(st) {
-  const kind = st.stepped ? "Hypsometric classes, m" : "Linear, m";
-  return `<div class="cbs"><span class="cb-kind">${kind}</span>` +
-    bar("Height", st.land, st.landMax, st.landStops, st.stepped, [0, 500, 1000, 1500]) +
-    bar("Depth", st.sea, st.seaMax, st.seaStops, st.stepped, [0, 200, 500, 1000]) + "</div>";
+  const kind = (st.stepped ? "Hypsometric classes, m" : "Linear, m") + (st.zones ? " · by climate zone" : "");
+  const arid = meta.zones.share_of_land.arid > 0;
+  const land = st.zones ? [["Temperate", st.zones.temperate], ["Boreal", st.zones.boreal], ["Tundra", st.zones.tundra], ...(arid ? [["Arid", st.zones.arid]] : [])]
+                        : [["Height", st.land]];
+  return `<div class="cbs"><span class="cb-kind">${kind}</span><div class="cbg">` +
+    land.map(([l, sp]) => strip(l, sp, st.landMax, st.landStops, st.stepped)).join("") + axis(st.landMax, st.landStops, st.stepped, [0, 500, 1000, 1500]) +
+    strip("Depth", st.sea, st.seaMax, st.seaStops, st.stepped) + axis(st.seaMax, st.seaStops, st.stepped, [0, 200, 500, 1000]) + "</div></div>";
 }
 
 // ---------------------------------------------------------------- sources
-const [elev, ice] = await Promise.all([loadImage(BASE + "elev.webp"), loadImage(BASE + "glacier.png")]);
-const main = { key: "main", elev, ice, size: meta.size, cell: meta.cell, base: meta.encoding.base, step: meta.encoding.step };
+const [elev, ice, zonesImg, sourcesImg] = await Promise.all([loadImage(BASE + "elev.webp"), loadImage(BASE + "glacier.png"), loadImage(BASE + "zones.png"), loadImage(BASE + "sources.png")]);
+const main = { key: "main", elev, ice, zones: zonesImg, size: meta.size, cell: meta.cell, base: meta.encoding.base, step: meta.encoding.step };
 
 // ---------------------------------------------------------------- case studies
 const CASES = [
-  { id: "context", title: "Quiet context for data", text: "Muted tints and a soft shade keep the land legible while wells and fields, in story colours, carry the meaning.",
-    tags: ["linear", "soft shade", "overlay"], best: "Maps whose job is the data on top: SubScout's default base.",
-    s: () => style("context", { shade: "soft", shadeK: 0.35, seaShadeK: 0.25, coast: true, ice: true }), overlay: true },
-  { id: "stepped", title: "Stepped tints", text: "Height and depth in classes. Every colour maps to one legend entry, so values can be read back.",
-    tags: ["stepped", "classes"], best: "Print, legends, and readers who need to read heights.",
-    s: () => style("showcase", { stepped: true, coast: true }) },
-  { id: "linear", title: "Linear gradient", text: "One continuous ramp for land and one for sea. Smooth and calm, but it hides the shape of slopes.",
-    tags: ["linear"], best: "Small maps and backgrounds behind text.",
-    s: () => style("showcase", { coast: true }) },
+  { id: "context", title: "Quiet context for data", text: "The climate-aware tints, muted and lifted, with a soft shade: land stays legible while wells and fields, in story colours, carry the meaning.",
+    tags: ["linear", "muted tints", "soft shade", "overlay"], best: "Maps whose job is the data on top: SubScout's default base.",
+    s: () => style("context", { shade: "soft", ice: true }), overlay: true },
+  { id: "stepped", title: "Stepped, climate-aware tints", text: "Non-linear classes (finest in shallow water) with a land ramp per climate zone: fresh green on the temperate coast, cooler green in boreal valleys, lichen grey on the tundra.",
+    tags: ["stepped", "cross-blended", "classes"], best: "Print, legends, and readers who need to read heights.",
+    s: () => style("relief", { stepped: true, ice: true }) },
+  { id: "linear", title: "Linear, climate-aware", text: "One continuous ramp per climate zone and one for the sea. Smooth and calm, but it hides the shape of slopes.",
+    tags: ["linear", "cross-blended"], best: "Small maps and backgrounds behind text.",
+    s: () => style("relief", { ice: true }) },
   { id: "single", title: "Hillshade, one light", text: "The classic shaded relief: light from the north-west, slopes facing it lit, the rest in shadow.",
     tags: ["linear", "hillshade", "315°"], best: "Showing landforms: fjords, valleys, the trench.",
-    s: () => style("showcase", { shade: "single", shadeK: 0.65, seaShadeK: 0.45, coast: true }) },
+    s: () => style("relief", { shade: "single", shadeK: 0.65, seaShadeK: 0.45, ice: true }) },
   { id: "soft", title: "Soft multi-directional shade", text: "Six lights round the compass, weighted to the north-west, plus sky light: no slope sinks into black.",
     tags: ["linear", "multi-directional", "sky light"], best: "Large areas with relief in every direction.",
-    s: () => style("showcase", { shade: "soft", shadeK: 0.6, seaShadeK: 0.45, coast: true }) },
+    s: () => style("relief", { shade: "soft", ice: true }) },
   { id: "tanaka", title: "Illuminated contours", text: "Tanaka's method: stepped tints whose edges are lit where they face the light and shaded where they face away.",
     tags: ["stepped", "contours", "Tanaka"], best: "Showpiece maps with a crafted, layered look.",
-    s: () => style("showcase", { stepped: true, contours: "tanaka", landInt: 500, seaInt: 200, lineK: 0.9 }) },
-  { id: "bathy", title: "Sea floor first", text: "Land falls back to a flat grey; depth carries the colour and the shade. Fjords show as deep as the trench.",
+    s: () => style("relief", { stepped: true, contours: "tanaka", landInt: 500, seaInt: 200, lineK: 0.9, ice: true }) },
+  { id: "bathy", title: "Sea floor first", text: "Land falls back to near-grey with a trace of its climate tint; depth carries the colour and the shade. Fjords show as deep as the trench.",
     tags: ["linear", "bathymetry", "soft shade"], best: "Offshore stories: fields, wells, pipelines, licences.",
-    s: () => style("bathy", { shade: "soft", shadeK: 0.15, seaShadeK: 0.75, coast: true, contours: "lines", landInt: 1e6, seaInt: 100, lineK: 0.25, exag: 4 }) },
+    s: () => style("bathy", { shade: "soft", contours: "lines", landInt: 1e6, seaInt: 100, lineK: 0.25, exag: 4 }) },
   { id: "ice", title: "Glaciers in white", text: "Folgefonna and Hardangerjøkulen from the glacier inventory, white with a cool edge, shaded with the land.",
     tags: ["soft shade", "glacier outlines"], best: "Mountain maps; the observed 'always white' layer.",
-    s: () => style("showcase", { shade: "soft", shadeK: 0.6, seaShadeK: 0.4, coast: true, ice: true }) },
-  { id: "lines", title: "Contour lines only", text: "Plain index contours over a near-flat tint: precise and light, and the cheapest to print.",
+    s: () => style("relief", { shade: "soft", ice: true }) },
+  { id: "lines", title: "Contour lines only", text: "Plain index contours over a quiet tint: precise and light, and the cheapest to print.",
     tags: ["lines", "500 m / 200 m"], best: "Technical figures and overlays that need to stay thin.",
-    s: () => style("context", { contours: "lines", landInt: 500, seaInt: 200, lineK: 0.6, coast: true }) },
+    s: () => style("context", { contours: "lines", landInt: 500, seaInt: 200, lineK: 0.32 }) },
+  { id: "det-step", title: "Detuned, stepped", text: "A house style: land at half strength so it recedes, a wide-range sea floor in deep indigo with strong shading, in the same climate steps.",
+    tags: ["stepped", "detuned", "soft shade"], best: "Offshore and coastal stories that still want a sense of place.",
+    s: () => style("detuned", { stepped: true, shade: "soft", ice: true }) },
+  { id: "det-lin", title: "Detuned, linear", text: "The same style as a continuous gradient: the sea floor reads as a landscape of its own, the land as a quiet frame.",
+    tags: ["linear", "detuned", "soft shade"], best: "Maps where the sea floor is the subject.",
+    s: () => style("detuned", { shade: "soft", ice: true }) },
+  { id: "det-lines", title: "Detuned with sea-floor contours", text: "Detuned stepped tints with fine depth contours at 100 m: the sea floor gets the contour language usually kept for land.",
+    tags: ["stepped", "detuned", "contours"], best: "Showpiece maps of the shelf and the trench.",
+    s: () => style("detuned", { stepped: true, shade: "soft", contours: "lines", landInt: 1e6, seaInt: 100, lineK: 0.3, ice: true }) },
 ];
 const casesEl = document.getElementById("cases");
 CASES.forEach((c) => {
@@ -159,13 +209,13 @@ async function drawCompare() {
     if (!cmpSrc[k]) cmpSrc[k] = { key: k, elev: await loadImage(`${BASE}compare/${k}.webp`), ice: null, size: meta.compare.size, cell: meta.compare.cell, base: meta.encoding.base, step: meta.encoding.step };
   }
   cmpEl.querySelectorAll("canvas").forEach((cv, i) => { sizeTo(cv, 1);
-    R.draw(cv, cmpSrc[CMP[i][0]], style("bathy", { shade: "soft", shadeK: 0.2, seaShadeK: 0.8, exag: 3, coast: true, landMax: 1800, seaMax: 400 })); });
+    R.draw(cv, cmpSrc[CMP[i][0]], style("bathy", { shade: "soft", shadeK: 0.2, seaShadeK: 0.8, exag: 3 })); });
 }
 let cmpReady = false;
 new IntersectionObserver(([e]) => { if (e.isIntersecting && !cmpReady) { cmpReady = true; drawCompare(); } }, { rootMargin: "50% 0px" }).observe(cmpEl);
 
 // ---------------------------------------------------------------- playground
-const play = { palette: "showcase", stepped: "0", shade: "soft", contours: "none", zoom: "all" };
+const play = { palette: "relief", stepped: "0", shade: "soft", contours: "none", zoom: "all" };
 const ZOOM = {  // view rectangles in texture uv (x0, y0, x1, y1; y runs south)
   all: [0, 0, 1, 1],
   bergen: [0.18, 0.42, 0.44, 0.62],
@@ -175,7 +225,7 @@ const ZOOM = {  // view rectangles in texture uv (x0, y0, x1, y1; y runs south)
 const pc = document.getElementById("play"), stat = document.getElementById("stat");
 const ctl = document.getElementById("ctl");
 ctl.querySelectorAll(".seg").forEach((seg) => seg.addEventListener("click", (e) => { if (!e.target.dataset.v) return; play[seg.dataset.k] = e.target.dataset.v; drawPlay(); }));
-["az", "alt", "exag", "ice"].forEach((id) => document.getElementById(id).addEventListener("input", () => drawPlay()));
+["az", "alt", "exag", "ice", "coast", "climate"].forEach((id) => document.getElementById(id).addEventListener("input", () => drawPlay()));
 let pending = false;
 function drawPlay() {
   if (pending) return; pending = true;
@@ -185,9 +235,9 @@ function drawPlay() {
     const v = ZOOM[play.zoom], aspect = ((v[3] - v[1]) * meta.size[1]) / ((v[2] - v[0]) * meta.size[0]);
     sizeTo(pc, aspect); pc.style.aspectRatio = `${1 / aspect}`;
     const pst = style(play.palette, {
-      stepped: play.stepped === "1", shade: play.shade, contours: play.contours, ice: document.getElementById("ice").checked, coast: true,
+      stepped: play.stepped === "1", shade: play.shade, contours: play.contours, ice: document.getElementById("ice").checked, coast: document.getElementById("coast").checked,
+      climate: document.getElementById("climate").checked,
       az: +document.getElementById("az").value, alt: +document.getElementById("alt").value, exag: +document.getElementById("exag").value,
-      shadeK: play.palette === "bathy" ? 0.15 : 0.6, seaShadeK: play.palette === "bathy" ? 0.75 : 0.45,
       landInt: play.palette === "bathy" ? 1e6 : (play.zoom === "all" ? 500 : 200), seaInt: play.zoom === "all" ? 200 : 100, lineK: play.contours === "tanaka" ? 0.85 : 0.5 });
     const ms = R.draw(pc, { ...main, view: v }, pst);
     document.getElementById("playbars").innerHTML = colourBars(pst);
@@ -201,34 +251,7 @@ redrawAll();
 // readiness is signalled after the new sections below
 
 // ================================================================ new sections
-const LB = [0, 50, 150, 300, 600, 1000, 1500, 2000];   // land steps (m)
-const SB = [0, 20, 50, 100, 200, 500, 1000];           // sea steps (m depth): finest near the coast
-const LMAX = 2000, SMAX = 1300;
-const at = (breaks, cols, max) => breaks.map((b, i) => [b / max, cols[i]]).concat(cols.length > breaks.length ? [[1, cols.at(-1)]] : []);
-const ZPAL = {
-  light: {
-    temperate: ["#d6e8b8", "#c6dea0", "#bad38f", "#cbcf92", "#d9c897", "#ccb8a0", "#d8d0c6", "#efece8"],
-    boreal: ["#a9c7a6", "#97bb98", "#8aae8c", "#93a98b", "#a8ad96", "#ccb8a0", "#d8d0c6", "#efece8"],
-    tundra: ["#e0e3dc", "#d6dad2", "#cdd1c9", "#c6c8c0", "#c4c0b6", "#ccb8a0", "#d8d0c6", "#efece8"],
-    arid: ["#efe2c2", "#e9d6ac", "#e1c695", "#d6b382", "#c9a077", "#ccb8a0", "#d8d0c6", "#efece8"],
-    sea: ["#e3f2f9", "#c6e5f3", "#a6d3eb", "#82bde0", "#5fa3d2", "#3f85bd", "#29689f", "#1b4f80"],
-  },
-  dark: {
-    temperate: ["#46572f", "#4c5d33", "#536237", "#5d633b", "#665f42", "#655d50", "#85807a", "#aaa6a1"],
-    boreal: ["#2c4232", "#304836", "#354d39", "#3f513e", "#4e5547", "#655d50", "#85807a", "#aaa6a1"],
-    tundra: ["#55595a", "#585b5b", "#5b5d5c", "#5e5e5b", "#615d57", "#655d50", "#85807a", "#aaa6a1"],
-    arid: ["#5e533c", "#665a3f", "#6c5c40", "#6e5a43", "#6a5747", "#655d50", "#85807a", "#aaa6a1"],
-    sea: ["#2f7896", "#286a87", "#225c78", "#1c4e69", "#16405a", "#11334b", "#0c263c", "#081c2e"],
-  },
-};
-function nlStyle(opts = {}) {
-  const Z = ZPAL[theme];
-  const land = at(LB, Z.temperate, LMAX);
-  return { land, sea: at(SB, Z.sea, SMAX), landMax: LMAX, seaMax: SMAX, landStops: LB, seaStops: SB, stepped: true,
-    coastCol: theme === "dark" ? "#7a93a5" : "#6f8290", lo: theme === "dark" ? "#0b141b" : "#3c4d5b", hi: theme === "dark" ? "#cfe3ee" : "#ffffff",
-    iceCol: theme === "dark" ? "#e8f0f5" : "#ffffff", iceEdge: theme === "dark" ? "#8ea7b8" : "#8fa9bd", coast: true, ice: true,
-    zones: opts.climate ? { temperate: land, boreal: at(LB, Z.boreal, LMAX), tundra: at(LB, Z.tundra, LMAX), arid: at(LB, Z.arid, LMAX) } : null, ...opts };
-}
+const nlStyle = (opts = {}) => style("relief", { stepped: true, climate: false, ice: true, ...opts });
 
 // piecewise colour bar: equal width per step so the fine shallow steps stay readable
 function nlBar(label, cols, breaks, unit = "m") {
@@ -242,8 +265,6 @@ function bandCols(stops, breaks, max) {
   return breaks.map((lo, i) => { const hi = breaks[i + 1] ?? lo + (lo - (breaks[i - 1] ?? 0)) / 2 * 2; return rampAt(stops, ((lo + hi) / 2) / max); });
 }
 
-const [zonesImg, sourcesImg] = await Promise.all([loadImage(BASE + "zones.png"), loadImage(BASE + "sources.png")]);
-main.zones = zonesImg;
 const ZNAMES = { temperate: ["Temperate, humid", "Cfb: the outer coast"], boreal: ["Boreal (subarctic)", "Dfb, Dfc: inland valleys and slopes"],
   tundra: ["Tundra (Arctic, alpine)", "ET: plateaus above the tree line"], arid: ["Arid", "BW, BS: deserts and steppes (not in Vestland)"] };
 const ZONECOL = { temperate: "#6fa86a", boreal: "#3f7d6b", tundra: "#b9b7a8", arid: "#d6a85c" };

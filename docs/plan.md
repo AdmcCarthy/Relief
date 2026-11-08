@@ -65,3 +65,15 @@ self-intersections within segments (Yuksel et al. 2011). Topology-preserving DP 
 Chaikin amplified 3 kinks into 76 self-crossing rings. Recommended visual layer: Gaussian pre-blur (1 cell) +
 DP (1.5 cells) + Chaikin x2: 71 % fewer points than raw, no self-crossings, calm curves. The precise grid
 stays the record; the visual layer is for drawing (aesthetics over contour precision, as agreed).
+
+## Styles (2026-11-08)
+All land tints are now cross-blended by climate zone (one ramp per Köppen–Geiger group below 1,000 m, a shared
+alpine ramp above); the styles differ in how far they are detuned from that full-strength **relief** set:
+- **Relief**: full-strength tints, moderate shading (land 0.6, sea 0.45).
+- **Context**: the same ramps at 0.38 saturation, lifted (light) or sunk (dark), light shading: a quiet base for data.
+- **Sea floor**: land at 0.18 saturation, sea at full strength, strong sea shading (0.75).
+- **Detuned** (house style): land at half saturation; sea floor on its own wider, deeper indigo ramp with
+  strong shading (0.9), stepped or linear.
+The coastline is off by default (at skerry scale it reads as noise); when switched on it is drawn at 30 %
+opacity. Contour lines skip the 0 m level for the same reason. Colour bars show one height strip per climate
+zone present, then depth.

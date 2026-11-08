@@ -17,7 +17,7 @@ uniform vec2 uTex; uniform float uCell, uBase, uStep;
 uniform float uLandMax, uSeaMax;           // ramp ranges, metres
 uniform float uLandStops[12], uSeaStops[12]; uniform int uNLand, uNSea;
 uniform int uStepped, uShade, uContours, uIceOn, uCoast;
-uniform float uAz, uAlt, uExag, uShadeK, uSeaShadeK, uLineK;
+uniform float uAz, uAlt, uExag, uShadeK, uSeaShadeK, uLineK, uCoastK;
 uniform float uLandInt, uSeaInt;           // contour intervals, metres
 uniform vec3 uIceCol, uIceEdge, uCoastCol, uHi, uLo;
 uniform int uDark;
@@ -68,7 +68,7 @@ void main(){
     float zs = hs(uv, px * max(1.5, m));
     float I = zs > 0. ? uLandInt : uSeaInt; float f = (zs > 0. ? zs : -zs) / I;
     float d = abs(fract(f + .5) - .5) / max(fwidth(f), 1e-5);
-    float line = (1. - smoothstep(.6, 1.4, d)) * clamp(1.6 - fwidth(f) * 3.5, 0., 1.);  // fade where lines crowd under ~2 px
+    float line = (1. - smoothstep(.6, 1.4, d)) * clamp(1.6 - fwidth(f) * 3.5, 0., 1.) * smoothstep(.45, .75, f);  // no line at 0 m: it would trace every skerry  // fade where lines crowd under ~2 px
     if (uContours == 1) col = mix(col, uLo, line * uLineK);
     else { // Tanaka: edges facing the light are lit, others shaded
       vec2 g = normalize(vec2(dFdx(zs), -dFdy(zs)) + 1e-9); vec2 L = vec2(sin(radians(uAz)), cos(radians(uAz)));
@@ -77,7 +77,7 @@ void main(){
   if (uIceOn == 1) { float ice = texture(uIce, uv).r; vec3 ic = uIceCol * mix(1., clamp(sh, .75, 1.15), .6);
     col = mix(col, ic, smoothstep(.35, .65, ice));
     float e = 1. - smoothstep(.0, 1.2, abs(ice - .5) / max(fwidth(ice), 1e-4)); col = mix(col, uIceEdge, e * .7); }
-  if (uCoast == 1) { float zc = z - .5; float c = 1. - smoothstep(.4, 1.3, abs(zc) / max(fwidth(zc), 1e-4)); col = mix(col, uCoastCol, c * .8); }
+  if (uCoast == 1) { float zc = z - .5; float c = 1. - smoothstep(.4, 1.3, abs(zc) / max(fwidth(zc), 1e-4)); col = mix(col, uCoastCol, c * uCoastK); }
   o = vec4(col, 1.);
 }`;
 
@@ -147,7 +147,7 @@ export function createRenderer() {
     gl.uniform1i(U("uContours"), { none: 0, lines: 1, tanaka: 2 }[style.contours ?? "none"]);
     gl.uniform1i(U("uIceOn"), style.ice && src.ice ? 1 : 0); gl.uniform1i(U("uCoast"), style.coast ? 1 : 0);
     gl.uniform1f(U("uAz"), style.az ?? 315); gl.uniform1f(U("uAlt"), style.alt ?? 40); gl.uniform1f(U("uExag"), style.exag ?? 2);
-    gl.uniform1f(U("uShadeK"), style.shadeK ?? 0.6); gl.uniform1f(U("uSeaShadeK"), style.seaShadeK ?? 0.4); gl.uniform1f(U("uLineK"), style.lineK ?? 0.6);
+    gl.uniform1f(U("uShadeK"), style.shadeK ?? 0.6); gl.uniform1f(U("uSeaShadeK"), style.seaShadeK ?? 0.4); gl.uniform1f(U("uLineK"), style.lineK ?? 0.6); gl.uniform1f(U("uCoastK"), style.coastK ?? 0.3);
     gl.uniform1f(U("uLandInt"), style.landInt ?? 200); gl.uniform1f(U("uSeaInt"), style.seaInt ?? 100);
     gl.uniform3f(U("uIceCol"), ...hex(style.iceCol ?? "#ffffff")); gl.uniform3f(U("uIceEdge"), ...hex(style.iceEdge ?? "#9fb3c2"));
     gl.uniform3f(U("uCoastCol"), ...hex(style.coastCol ?? "#7f8f9a")); gl.uniform3f(U("uHi"), ...hex(style.hi ?? "#ffffff"));

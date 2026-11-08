@@ -63,6 +63,8 @@ a { color:var(--link); }
 .cb-kind { font:500 10.5px var(--mono); letter-spacing:.05em; text-transform:uppercase; color:var(--muted); }
 .cb { display:grid; grid-template-columns:44px minmax(0,1fr); column-gap:8px; align-items:center; }
 .cb-l { font-size:11.5px; color:var(--ink); grid-row:1 / span 2; }
+.cbg { display:grid; grid-template-columns:64px minmax(0,1fr); column-gap:8px; row-gap:3px; align-items:center; }
+.cbg .cb-l { grid-row:auto; }
 .cb-lin { height:10px; border-radius:2px; border:1px solid var(--rule); }
 .cb-steps { display:grid; grid-template-columns:repeat(var(--n), 1fr); height:10px; border:1px solid var(--rule); border-radius:2px; overflow:hidden; }
 .cb-steps .cb-band { display:block; }
@@ -97,7 +99,7 @@ a { color:var(--link); }
 <header class="wrap hero">
   <div class="kicker">Relief · techniques · Vestland, Norway</div>
   <h1>Ways to draw land and sea for data maps</h1>
-  <p class="dek">Nine ways to show the shape of the land and the sea floor, from quiet context for data to full relief. Every map on this page is drawn on the GPU from one 1.2 MB elevation file, so a style is a setting rather than another download.</p>
+  <p class="dek">Twelve ways to show the shape of the land and the sea floor, from quiet context for data to full relief. Every map on this page is drawn on the GPU from one 1.2 MB elevation file, so a style is a setting rather than another download.</p>
   <p class="nogl" id="nogl">This page needs WebGL 2, which this browser does not provide.</p>
 </header>
 
@@ -159,12 +161,14 @@ a { color:var(--link); }
   <div class="play">
     <canvas id="play" width="1032" height="1332" aria-label="Interactive relief map"></canvas>
     <div class="ctl" id="ctl">
-      <label>Palette <div class="seg" data-k="palette"><button data-v="context">Context</button><button data-v="showcase">Relief</button><button data-v="bathy">Sea floor</button></div></label>
+      <label>Palette <div class="seg" data-k="palette"><button data-v="context">Context</button><button data-v="relief">Relief</button><button data-v="bathy">Sea floor</button><button data-v="detuned">Detuned</button></div></label>
       <label>Gradient <div class="seg" data-k="stepped"><button data-v="0">Linear</button><button data-v="1">Stepped</button></div></label>
       <label>Shading <div class="seg" data-k="shade"><button data-v="none">None</button><button data-v="single">One light</button><button data-v="soft">Soft</button></div></label>
       <label>Contours <div class="seg" data-k="contours"><button data-v="none">None</button><button data-v="lines">Lines</button><button data-v="tanaka">Illuminated</button></div></label>
       <label>Area <div class="seg" data-k="zoom"><button data-v="all">Whole</button><button data-v="bergen">Bergen</button><button data-v="folgefonna">Folgefonna</button><button data-v="sogn">Sognefjord</button></div></label>
+      <label><span class="row"><input type="checkbox" id="climate" checked> Climate-aware land tints</span></label>
       <label><span class="row"><input type="checkbox" id="ice" checked> Glaciers in white</span></label>
+      <label><span class="row"><input type="checkbox" id="coast"> Faint coastline</span></label>
       <label>Sun direction <input type="range" id="az" min="0" max="360" value="315"></label>
       <label>Sun height <input type="range" id="alt" min="10" max="80" value="40"></label>
       <label>Vertical exaggeration <input type="range" id="exag" min="1" max="6" step="0.5" value="2"></label>
