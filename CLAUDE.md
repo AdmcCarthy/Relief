@@ -18,3 +18,11 @@ Voice and structure of written work (README, docs, published pages) follow Idiom
 - Print layers: terrain processing for map sheets lives here (`scripts/print_layers.py`, docs/print-layers.md): other repos consume its files and never contour, shade or resample terrain themselves. Keep the `layers.json` contract (`relief_layers: 1`) stable.
 - Sea colour: two linear ramps (shelf 0-1,300 m, ocean 0-7,000 m) chosen per region by `bathymetry` in regions.json; designed and checked by scripts/depth_ramp.py (OKLCH, lightness monotonic, even delta E per 500 m), mirrored in preview/palette.js and guarded by tests/test_depth_ramp.py. Change the generator and the JS together.
 - Print layers: terrain processing for map sheets lives here (`scripts/print_layers.py`, docs/print-layers.md): other repos consume its files and never contour, shade or resample terrain themselves. Keep the `layers.json` contract (`relief_layers: 1`) stable.
+
+## Idiom (private repo)
+
+Idiom is Adam McCarthy's private repo (`github.com/AdmcCarthy/Idiom`; `gh repo clone AdmcCarthy/Idiom` with access, normally linked at
+`../../shared/idiom`) of voice, house style, working rules and the lookup tables agents use first: `DIRECTORY.md` says which repo already
+does a job, `DATASETS.md` gives every dataset's terms, attribution line and status. Read the relevant one before choosing a repo or
+using data, and update it when you learn something new. Never copy anything from its `personal/` or `working/` folders into this repo
+or quote it in public output; if the folder is not available, say so and carry on with this file.
