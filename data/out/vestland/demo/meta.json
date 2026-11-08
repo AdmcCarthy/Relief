@@ -1,0 +1,56 @@
+{
+ "area": "vestland",
+ "crs": "EPSG:25832",
+ "cell": 200,
+ "bounds": [
+  207400,
+  6553000,
+  413800,
+  6819400
+ ],
+ "size": [
+  1032,
+  1332
+ ],
+ "zmin": -1272.611328125,
+ "zmax": 1826.382568359375,
+ "glaciers": {
+  "count": 388,
+  "area_km2_raster": 344,
+  "source": "RGI 6.0 (GLIMS), CC BY 4.0"
+ },
+ "compare": {
+  "bounds": [
+   260100,
+   6701400,
+   296100,
+   6737400
+  ],
+  "cell": 50,
+  "size": [
+   720,
+   720
+  ],
+  "sources": {
+   "gebco450": "EMODnet averaged to GEBCO's 15 arc-second grid (about 450 m)",
+   "emodnet115": "EMODnet DTM 2024 (about 115 m)",
+   "kartverket50": "Kartverket sea-floor terrain model, 50 m"
+  }
+ },
+ "encoding": {
+  "base": -2000.0,
+  "step": 0.5,
+  "channels": "R high byte, G low byte"
+ },
+ "files": {
+  "elev.webp": 1163112,
+  "glacier.png": 15610,
+  "emodnet115.webp": 309656,
+  "gebco450.webp": 230440,
+  "kartverket50.webp": 334462
+ },
+ "overlay": {
+  "wells": 30,
+  "fields": 12
+ }
+}
