@@ -21,8 +21,8 @@ const ready = () => page.waitForFunction(() => window.__relief && window.__relie
 await page.goto(`${BASE}/index.html`, { waitUntil: "networkidle", timeout: 90000 }); await ready();
 check(await page.evaluate(() => !!document.createElement("canvas").getContext("webgl2")), "WebGL 2 available");
 const cards = await page.$$eval(".card", (c) => c.map((x) => x.classList.contains("missing")));
-check(cards.length === 6 && cards.every((m) => !m), `gallery: 6 region cards, none missing (${cards.length})`);
-check((await page.$$eval("#plan tbody tr", (r) => r.length)) === 6, "data plan table has 6 rows");
+check(cards.length === 7 && cards.every((m) => !m), `gallery: 7 region cards, none missing (${cards.length})`);
+check((await page.$$eval("#plan tbody tr", (r) => r.length)) === 7, "data plan table has 7 rows");
 await shot("gallery");
 
 await page.goto(`${BASE}/explore.html?area=north_sea`, { waitUntil: "networkidle", timeout: 90000 }); await ready();
@@ -39,7 +39,7 @@ const level = (t) => +t.match(/Level (\d+)/)[1];
 check(level(zoomed) > level(fit) && zoomed.includes("150 m"), `zooming in reaches the finest tiles (${fit.slice(0, 22)} -> ${zoomed.slice(0, 40)})`);
 check(page.url().includes("m="), "view is kept in the URL");
 await shot("explore_zoom");
-for (const id of ["norwegian_sea", "barents_sea", "ne_europe", "world"]) {
+for (const id of ["norwegian_sea", "barents_sea", "ne_europe", "atlantic", "world"]) {
   await page.click(`#regions button[data-v="${id}"]`); await settle();
   check(/^Level \d+ of \d+ · tiles at/.test(await info()), `${id} opens`);
   await shot(`explore_${id}`);

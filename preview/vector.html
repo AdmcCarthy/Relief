@@ -53,7 +53,8 @@ td { padding:3px 0; border-bottom:1px solid var(--rule); } td:last-child { text-
   </aside>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
-<script>
+<script type="module">
+import { OCEAN_SB, OCEAN_MAX, DETUNED_OCEAN, at, rampAt } from "./palette.js";
 let AREA = new URLSearchParams(location.search).get("area") || "vestland", base = `data/${AREA}/`, REGIONS = [];
 const PAL = {  // stacked fills, low -> high (land) and shallow -> deep (sea); context is muted for data overlays
   context: {
@@ -99,7 +100,11 @@ async function draw() {
   const proj = d3.geoIdentity().reflectY(true).fitSize([W, H], { type: "MultiPoint", coordinates: [[x0, y0], [x1, y1]] });
   const path = d3.geoPath(proj, ctx);
   const cs = getComputedStyle(document.documentElement);
-  const style = state.style === "lines" ? "context" : state.style, P = PAL[style][state.theme];
+  const style = state.style === "lines" ? "context" : state.style, P = { ...PAL[style][state.theme] };
+  if (manifest.bathymetry === "ocean") {  // basins and the world: the ocean depth ramp (palette.js), one colour per level, taken mid-band
+    const stops = at(OCEAN_SB, DETUNED_OCEAN[state.theme], OCEAN_MAX), lv = manifest.sea;
+    P.sea = lv.map((d, i) => rampAt(stops, (d + ((lv[i + 1] ?? d + 1000) - d) / 2) / OCEAN_MAX));
+  }
   const sea = gj.features.filter((f) => f.properties.kind === "sea"), land = gj.features.filter((f) => f.properties.kind === "land");
   if (state.style === "lines") {
     ctx.fillStyle = cs.getPropertyValue("--surface"); ctx.fillRect(0, 0, W, H);

@@ -8,8 +8,8 @@ sea-floor depths from the EMODnet Bathymetry DTM, merged, projected, contoured i
 levels of detail and generalised by scale, with a hillshade for optional shading. Styles: muted context
 tints for data overlays, hypsometric "showcase" tints with hillshade, or contour lines; light and dark.
 
-Status: Vestland proof of concept plus five shared **regions** (North Sea, Norwegian Sea, Barents Sea in a north-polar
-view with Norway at the bottom, NE Europe, world). Regions are defined once in `regions/regions.json` for any app to
+Status: Vestland proof of concept plus six shared **regions** (North Sea, Norwegian Sea, Barents Sea in a north-polar
+view with Norway at the bottom, NE Europe, the Atlantic, world). Sea colour scales: [docs/depth-scale.md](docs/depth-scale.md). Regions are defined once in `regions/regions.json` for any app to
 reuse: [docs/regions.md](docs/regions.md). Plan: [docs/plan.md](docs/plan.md). Data sources and licences:
 [docs/sources.md](docs/sources.md).
 

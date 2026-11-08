@@ -4,7 +4,7 @@ import { createRenderer, loadImage } from "./relief.js";
 import { detunedStyle, regionBars } from "./palette.js";
 import { equalEarthRing, ringPath } from "./geo.js";
 
-const ORDER = ["north_sea", "norwegian_sea", "barents_sea", "ne_europe", "world", "vestland"];
+const ORDER = ["north_sea", "norwegian_sea", "barents_sea", "ne_europe", "atlantic", "world", "vestland"];
 const getJSON = (url) => fetch(url).then((r) => (r.ok ? r.json() : null)).catch(() => null);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -70,7 +70,7 @@ function equalEarthOutline(bounds, W, H) {
 
 function drawCard(c) {
   if (!c.src || !R) return;
-  const st = detunedStyle(theme), aspect = c.meta.size[1] / c.meta.size[0];
+  const st = detunedStyle(theme, c.reg.bathymetry), aspect = c.meta.size[1] / c.meta.size[0];
   const W = Math.round((c.canvas.clientWidth || 600) * dpr), H = Math.round(W * aspect);
   c.canvas.style.aspectRatio = `${c.meta.size[0]} / ${c.meta.size[1]}`;
   c.canvas.width = W; c.canvas.height = H;

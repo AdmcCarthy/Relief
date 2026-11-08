@@ -12,7 +12,8 @@ layers are built at.
 | `norwegian_sea` | Sodir Norwegian Sea blocks and fields, Nordland coast | Lambert conformal conic, 8 E (custom) | 1,070 × 1,000 km |
 | `barents_sea` | Barents Sea, northern Norway, Kola, Svalbard, Novaya Zemlya; **Norway at the bottom** | north-polar Lambert azimuthal equal-area, 30 E down (custom) | 2,150 × 1,800 km |
 | `ne_europe` | UK, Norwegian North Sea, Denmark, Netherlands, Germany, Poland; **not** the Norwegian Sea | ETRS89 / LAEA Europe (EPSG:3035) | 2,270 × 1,580 km |
-| `world` | Locator and global context | Equal Earth (EPSG:8857) | 34,488 × 16,786 km |
+| `atlantic` | The Atlantic, Arctic to Southern Ocean, for spreading ridges; ocean depth scale | Lambert azimuthal equal-area, 25 W (custom) | 11,790 × 15,080 km |
+| `world` | Locator and global context; ocean depth scale | Equal Earth (EPSG:8857) | 34,488 × 16,786 km |
 
 ## Using a region elsewhere
 
@@ -21,8 +22,8 @@ Published with the preview at `https://admccarthy.github.io/Relief/regions/`:
 maps) and `coverage.json` (the checks).
 
 Each region has: `id`, `name`, `description`, `crs.proj4` / `crs.epsg` / `crs.code`, `extent` `[x0, y0, x1, y1]`
-in projected metres, `bbox` `[w, s, e, n]` in degrees, `size_km`, `lods` (cell size per level), `built` (layers
-exist under `data/<id>/` on the preview).
+in projected metres, `bbox` `[w, s, e, n]` in degrees, `size_km`, `lods` (cell size per level), `bathymetry` (`shelf` or `ocean`: which sea colour scale, see [depth-scale.md](depth-scale.md)),
+`levels` (optional vector depth and height classes), `built` (layers exist under `data/<id>/` on the preview).
 
 ```js
 // d3 / proj4js: put your own data into the region's frame

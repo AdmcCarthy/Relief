@@ -30,6 +30,14 @@ export const DETUNED_SEA = {
   light: ["#e8f0f2", "#cfe1e6", "#aacdd8", "#7eb0c5", "#5891ae", "#3a6d94", "#264b73", "#162b50"],
   dark: ["#3a8aa2", "#2f7690", "#25647d", "#1c526b", "#144157", "#0e3045", "#092336", "#06172a"],
 };
+// Ocean ramp for basins and the world (scripts/depth_ramp.py designs and checks it in OKLCH): the shelf ramp above uses
+// up all its lightness by 1,300 m, so 76 % of the world's ocean floor (2,000 to 6,000 m, where spreading ridges, flanks,
+// fracture zones and abyssal plains lie) is one colour. This one spreads a steady lightness step over 7,000 m.
+export const OCEAN_SB = [0, 200, 1000, 2000, 3000, 4000, 5000, 6000, 7000], OCEAN_MAX = 7000;
+export const DETUNED_OCEAN = {
+  light: ["#e2f4f9", "#bfe2ed", "#83bddc", "#5c9acd", "#4579ba", "#355a9f", "#2a3e80", "#1e2763", "#131546"],
+  dark: ["#71b7c8", "#56a5bd", "#2c83aa", "#1d679c", "#154b8a", "#113375", "#101e5c", "#0a0b42", "#040027"],
+};
 export const ZK = ["temperate", "boreal", "tundra", "arid"];
 
 export const rgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
@@ -43,11 +51,12 @@ export function tune(h, sat, mix = 0) {
 // The house style, fixed for the region examples: land tints at half strength (stepped classes, one ramp per climate
 // zone), the sea floor on its own wide indigo ramp as a LINEAR gradient. No contours, no illumination, no coastline.
 // Returned in the shape relief.js draws: `stepped` applies to land, `seaStepped` is false.
-export function detunedStyle(theme) {
-  const dark = theme === "dark", Z = ZPAL[theme];
+export function detunedStyle(theme, bathymetry = "shelf") {
+  const dark = theme === "dark", Z = ZPAL[theme], ocean = bathymetry === "ocean";
   const land = Object.fromEntries(ZK.map((k) => [k, at(LB, Z[k].map((c) => tune(c, 0.5, dark ? -0.08 : 0.08)), LMAX)]));
-  const sea = at(SB, DETUNED_SEA[theme], SMAX);
-  return { land: land.temperate, zones: land, sea, landMax: LMAX, seaMax: SMAX, landStops: LB, seaStops: SB,
+  const sea = ocean ? at(OCEAN_SB, DETUNED_OCEAN[theme], OCEAN_MAX) : at(SB, DETUNED_SEA[theme], SMAX);
+  return { land: land.temperate, zones: land, sea, landMax: LMAX, seaMax: ocean ? OCEAN_MAX : SMAX, landStops: LB, seaStops: ocean ? OCEAN_SB : SB,
+    seaTicks: ocean ? [0, 1000, 2000, 3000, 4000, 5000, 6000] : [0, 250, 500, 1000],
     stepped: true, seaStepped: false, shade: "none", contours: "none", coast: false, ice: false };
 }
 
@@ -87,5 +96,5 @@ export function regionBars(st, share) {
   const names = { temperate: "Temperate", boreal: "Boreal", tundra: "Tundra", arid: "Arid" };
   return `<div class="cbs"><span class="cb-kind">Relief: stepped classes by climate zone, m · Bathymetry: linear, m</span><div class="cbg">` +
     present.map((k) => strip(names[k], st.zones[k], st.landMax, st.landStops, true)).join("") + axis(st.landMax, st.landStops, true, []) +
-    strip("Depth", st.sea, st.seaMax, st.seaStops, false) + axis(st.seaMax, st.seaStops, false, [0, 250, 500, 1000]) + "</div></div>";
+    strip("Depth", st.sea, st.seaMax, st.seaStops, false) + axis(st.seaMax, st.seaStops, false, st.seaTicks ?? [0, 250, 500, 1000]) + "</div></div>";
 }

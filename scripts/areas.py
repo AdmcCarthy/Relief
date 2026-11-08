@@ -12,6 +12,6 @@ _REG = json.loads((Path(__file__).resolve().parents[1] / "regions" / "regions.js
 
 AREAS = {
     r["id"]: {"box": tuple(r.get("bbox", ())), "crs": r["crs"]["code"], "extent": r.get("extent"),
-              "lods": r.get("lods", {}), "fetch": r.get("fetch", {}), "name": r["name"]}
+              "lods": r.get("lods", {}), "fetch": r.get("fetch", {}), "name": r["name"], "levels": r.get("levels", {}), "bathymetry": r.get("bathymetry", "shelf")}
     for r in _REG["regions"]
 }

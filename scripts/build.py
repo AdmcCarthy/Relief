@@ -56,6 +56,18 @@ def load_merged(area: str, a: dict, cell: float) -> tuple[np.ndarray, rasterio.A
     """
     crs = a["crs"]
     raw = Path("data/raw") / area
+    if (raw / "hires.tif").exists():  # the build_hires.py grid: region CRS, extent-aligned, already merged from the best sources
+        x0, y0, x1, y1 = a["extent"]
+        with rasterio.open(raw / "hires.tif") as src:
+            hz, hc = src.read(1).astype("float32"), abs(src.res[0])
+        if cell <= hc * 1.001:
+            return np.nan_to_num(hz, nan=0.0), rasterio.Affine(hc, 0, x0, 0, -hc, y1)
+        w, h = math.ceil((x1 - x0) / cell), math.ceil((y1 - y0) / cell)
+        tr = rasterio.Affine(cell, 0, x0, 0, -cell, y1)
+        z = np.full((h, w), np.nan, dtype="float32")
+        reproject(hz, z, src_transform=rasterio.Affine(hc, 0, x0, 0, -hc, y1), src_crs=crs, dst_transform=tr, dst_crs=crs,
+                  dst_nodata=np.nan, resampling=Resampling.average)
+        return np.nan_to_num(z, nan=0.0), tr
     if (raw / "merged.tif").exists():
         x0, y0, x1, y1 = a["extent"]
         w, h = math.ceil((x1 - x0) / cell), math.ceil((y1 - y0) / cell)
@@ -159,8 +171,9 @@ def main(area: str) -> None:
     a = AREAS[area]
     out = Path("data/out") / area
     out.mkdir(parents=True, exist_ok=True)
+    land_levels, sea_levels = a.get("levels", {}).get("land", LAND), a.get("levels", {}).get("sea", SEA)
     manifest = {"area": area, "name": a["name"], "crs": a["crs"], "extent": a["extent"], "bbox": list(a["box"]),
-                "land": LAND, "sea": SEA, "lods": {}}
+                "land": land_levels, "sea": sea_levels, "bathymetry": a.get("bathymetry", "shelf"), "lods": {}}
     frame = box(*a["extent"])
     for name, cfg in lods_for(a).items():
         t0 = time.time()
@@ -168,13 +181,13 @@ def main(area: str) -> None:
         zs = gaussian_filter(np.nan_to_num(z, nan=0.0), cfg["sigma"])
         feats = []
         raw_islands = None
-        for lv in LAND:
+        for lv in land_levels:
             g = band(zs, tr, lv + 1e-3 if lv == 0 else lv, cfg, cfg["cell"], deeper=False, clip=frame)
             if lv == 0:
                 gen = contourpy.contour_generator(z=z if cfg["cell"] == 125 else zs, fill_type=contourpy.FillType.OuterOffset)
                 raw_islands = len(gen.filled(1e-3, np.inf)[0])
             feats.append({"type": "Feature", "properties": {"kind": "land", "level": lv, "parts": count_parts(g)}, "geometry": mapping(g)})
-        for lv in SEA:
+        for lv in sea_levels:
             g = band(zs, tr, lv + 1e-3 if lv == 0 else lv, cfg, cfg["cell"], deeper=True, clip=frame)
             feats.append({"type": "Feature", "properties": {"kind": "sea", "level": -lv, "parts": count_parts(g)}, "geometry": mapping(g)})
         bounds = [round(v) for v in frame.bounds]

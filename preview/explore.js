@@ -5,7 +5,7 @@ import { createRenderer } from "./relief.js";
 import { detunedStyle, regionBars } from "./palette.js";
 import { equalEarthRing, ringPath } from "./geo.js";
 
-const ORDER = ["north_sea", "norwegian_sea", "barents_sea", "ne_europe", "world", "vestland"];
+const ORDER = ["north_sea", "norwegian_sea", "barents_sea", "ne_europe", "atlantic", "world", "vestland"];
 const getJSON = (url) => fetch(url).then((r) => (r.ok ? r.json() : null)).catch(() => null);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -120,7 +120,7 @@ async function render() {
   };
   const bw = Math.max(1, Math.round(((ix1 - ix0) / view.mpp) * dpr)), bh = Math.max(1, Math.round(((iy1 - iy0) / view.mpp) * dpr));
   buf.width = bw; buf.height = bh;
-  R.draw(buf, src, detunedStyle(theme));
+  R.draw(buf, src, detunedStyle(theme, cur.reg.bathymetry));
   const ox = ((ix0 - vx0) / view.mpp) * dpr, oy = ((vy1 - iy1) / view.mpp) * dpr;
   ctx.save();
   if (cur.reg.id === "world") {
@@ -155,7 +155,7 @@ function info(z, Z, cz, n, loading = false) {
 }
 function legend() {
   if (!cur) return;
-  $("legend").innerHTML = regionBars(detunedStyle(theme), cur.meta.zones.share_of_land);
+  $("legend").innerHTML = regionBars(detunedStyle(theme, cur.reg.bathymetry), cur.meta.zones.share_of_land);
 }
 
 // ---------------------------------------------------------------- open a region

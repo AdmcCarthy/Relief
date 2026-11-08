@@ -466,6 +466,19 @@
         "emodnet_dtm_2024"
       ],
       "gain": "Already uses Kartverket 50 m for the sea (demo page). Land would move from GLO-90 to the national model."
+    },
+    "atlantic": {
+      "web_cell_m": {
+        "now": 5000,
+        "hires": 5000
+      },
+      "land": [
+        "etopo_2022_60s"
+      ],
+      "sea": [
+        "etopo_2022_60s"
+      ],
+      "gain": "A basin-scale view for spreading ridges: ETOPO 2022 at its own 1.85 km grid (averaged to 2.5 km), shown on the ocean depth scale. GEBCO 2026 (450 m) would sharpen fracture zones and abyssal hills but is a 4 to 7 GB download."
     }
   }
 }
