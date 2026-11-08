@@ -82,7 +82,7 @@ def test_release_notes_and_dry_run(tmp_path, capsys):
     dist = tmp_path / "dist"
     m = pd.build(fake_out(tmp_path), dist)
     text = pd.release_notes(m)
-    assert "© north_sea data" in text and "Not for navigation" in text and "| north_sea |" in text
+    assert "© north_sea data" in text and "Köppen-Geiger" in text and "Not for navigation" in text and "| north_sea |" in text
     pd.release(dist, "data-test", "owner/repo", dry_run=True)
     assert "gh release create data-test" in capsys.readouterr().out
     assert json.loads((dist / "manifest.json").read_text())["tag"] == "data-test"

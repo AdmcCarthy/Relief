@@ -23,6 +23,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 IN_GIT = {"vestland"}  # regions whose outputs are committed
+KOPPEN = "Beck et al. (2023) Köppen-Geiger climate classification 1991–2020, CC BY 4.0 (climate-zone textures)"
 LICENCE_NOTE = ("Derived from open data under the licences listed per region (CC BY 4.0, Open Government Licence v3, "
                 "Copernicus, public domain). Keep the attribution with any use. Not for navigation.")
 
@@ -82,7 +83,7 @@ def release_notes(manifest: dict) -> str:
              "| Region | Packed | Finest cell | Tiles |", "|---|---|---|---|"]
     for rid, e in manifest["regions"].items():
         lines.append(f"| {rid} | {e['bytes'] / 1e6:.0f} MB | {e['finest_cell_m']:.0f} m | {'yes' if e['tiles'] else 'no'} |")
-    attrib = sorted({a for e in manifest["regions"].values() for a in e["attribution"]})
+    attrib = sorted({a for e in manifest["regions"].values() for a in e["attribution"]} | {KOPPEN})
     lines += ["", "**Attribution**", ""] + [f"- {a}" for a in attrib] + ["", manifest["licence"]]
     return "\n".join(lines)
 
