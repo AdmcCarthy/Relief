@@ -32,12 +32,14 @@ td { padding:3px 0; border-bottom:1px solid var(--rule); } td:last-child { text-
 </head>
 <body>
 <header>
-  <div class="kicker">Relief · proof of concept · Vestland</div>
+  <div class="kicker" id="kicker">Relief · regions</div>
+  <div class="kicker"><a href="./">Examples</a> · <a href="techniques.html">Techniques</a> · Vector layers</div>
   <h1>Topography and bathymetry, generalised for data maps</h1>
-  <p>Copernicus DEM (land) and the EMODnet Bathymetry DTM (sea floor), merged, projected to UTM 32N and contoured into stacked layers at three levels of detail. Coastlines are generalised by scale: islands and lakes too small to see are dropped and skerry fields merge.</p>
+  <p id="intro">Copernicus DEM (land) and the EMODnet Bathymetry DTM (sea floor), merged, projected and contoured into stacked layers at several levels of detail. Coastlines are generalised by scale: islands and lakes too small to see are dropped and skerry fields merge. Regions are defined once in <a href="regions/regions.json">regions/regions.json</a> for any app to reuse.</p>
 </header>
 <div class="tools">
-  <div class="seg" id="lod"><button data-v="overview">Overview · 1 km</button><button data-v="regional">Regional · 250 m</button><button data-v="detail">Detail · 125 m</button></div>
+  <div class="seg" id="area"></div>
+  <div class="seg" id="lod"></div>
   <div class="seg" id="style"><button data-v="context">Context</button><button data-v="showcase">Showcase</button><button data-v="lines">Contours</button></div>
   <div class="seg" id="theme"><button data-v="light">Light</button><button data-v="dark">Dark</button></div>
 </div>
@@ -47,12 +49,12 @@ td { padding:3px 0; border-bottom:1px solid var(--rule); } td:last-child { text-
     <h3>Land, metres</h3><div class="ramp" id="landramp"></div>
     <h3>Sea depth, metres</h3><div class="ramp" id="searamp"></div>
     <h3>This level of detail</h3><table id="stats"></table>
-    <p class="note">Sources: Copernicus DEM GLO-90 (© DLR e.V. 2010–2014 and © Airbus 2014–2018, provided under COPERNICUS by the European Union and ESA); EMODnet Bathymetry Consortium (2024) EMODnet Digital Bathymetry (DTM).</p>
+    <p class="note">Sources: Copernicus DEM GLO-90 (© DLR e.V. 2010–2014 and © Airbus 2014–2018, provided under COPERNICUS by the European Union and ESA); EMODnet Bathymetry Consortium (2024) EMODnet Digital Bathymetry (DTM); NOAA NCEI ETOPO 2022 (public domain) for the world and the sea east of 43 °E. Sodir blocks and fields are not drawn here.</p>
   </aside>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
 <script>
-const AREA = "vestland", base = `data/${AREA}/`;
+let AREA = new URLSearchParams(location.search).get("area") || "vestland", base = `data/${AREA}/`, REGIONS = [];
 const PAL = {  // stacked fills, low -> high (land) and shallow -> deep (sea); context is muted for data overlays
   context: {
     light: { land: ["#eef0ea", "#e6e9e1", "#dee2d8", "#d5d9cf", "#cdd1c8", "#c5c9c1", "#bec2bb", "#b8bcb6"], sea: ["#e4eef5", "#dbe8f1", "#d2e2ed", "#c9dce9", "#c0d6e5", "#b7d0e1", "#aecadd", "#a5c4d9", "#9cbed5", "#93b8d1", "#8ab2cd"] },
@@ -63,8 +65,8 @@ const PAL = {  // stacked fills, low -> high (land) and shallow -> deep (sea); c
     dark: { land: ["#2f3a2b", "#38452f", "#424f34", "#4e533a", "#5a5640", "#635a47", "#6a6560", "#8a8682"], sea: ["#173a52", "#16364d", "#153248", "#142e43", "#132a3e", "#122639", "#112234", "#101e2f", "#0f1a2a", "#0e1625", "#0d1220"] },
   },
 };
-const state = { lod: "regional", style: "context", theme: matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light" };
-const cache = {};
+const state = { lod: "regional", area: AREA, style: "context", theme: matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light" };
+let cache = {};
 const canvas = document.getElementById("map"), ctx = canvas.getContext("2d");
 let manifest;
 
@@ -77,9 +79,17 @@ async function load(lod) {
   return cache[lod];
 }
 
+const LOD_NAMES = { overview: "Overview", regional: "Regional", detail: "Detail" };
+function fmtCell(m) { return m >= 1000 ? `${m / 1000} km` : `${m} m`; }
+
 async function draw() {
+  if (!manifest) return;
   document.documentElement.dataset.theme = state.theme;
-  ["lod", "style", "theme"].forEach((k) => document.querySelectorAll(`#${k} button`).forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === state[k])));
+  if (!manifest.lods[state.lod]) state.lod = Object.keys(manifest.lods).includes("regional") ? "regional" : Object.keys(manifest.lods)[0];
+  document.getElementById("lod").innerHTML = Object.entries(manifest.lods).map(([k, L]) => `<button data-v="${k}">${LOD_NAMES[k]} · ${fmtCell(L.cell)}</button>`).join("");
+  document.getElementById("area").innerHTML = REGIONS.map((r) => `<button data-v="${r.id}">${r.name.split(" (")[0]}</button>`).join("");
+  document.getElementById("kicker").textContent = `Relief · ${(REGIONS.find((r) => r.id === AREA) || {}).name || AREA}`;
+  ["area", "lod", "style", "theme"].forEach((k) => document.querySelectorAll(`#${k} button`).forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === state[k])));
   const { gj, img } = await load(state.lod);
   const W = canvas.clientWidth, [x0, y0, x1, y1] = gj.bbox, H = Math.round(W * (y1 - y0) / (x1 - x0));
   const dpr = Math.min(2, devicePixelRatio || 1);
@@ -115,9 +125,16 @@ async function draw() {
   ramp("landramp", P.land, manifest.land, (a, b) => b == null ? `${a}+` : `${a}–${b}`);
   ramp("searamp", P.sea, manifest.sea, (a, b) => b == null ? `${a}+` : `${a}–${b}`);
 }
+async function openArea(id) {
+  AREA = state.area = id; base = `data/${AREA}/`; cache = {};
+  history.replaceState(null, "", `?area=${id}`);
+  manifest = await fetch(`${base}manifest.json`).then((r) => r.json());
+  draw();
+}
 ["lod", "style", "theme"].forEach((k) => document.getElementById(k).addEventListener("click", (e) => { const v = e.target.dataset.v; if (v) { state[k] = v; draw(); } }));
+document.getElementById("area").addEventListener("click", (e) => { const v = e.target.dataset.v; if (v && v !== AREA) openArea(v); });
 addEventListener("resize", () => draw());
-fetch(`${base}manifest.json`).then((r) => r.json()).then((m) => { manifest = m; draw(); });
+fetch("regions/regions.json").then((r) => r.json()).then((d) => { REGIONS = d.regions.filter((r) => r.built); openArea(AREA); });
 </script>
 </body>
 </html>

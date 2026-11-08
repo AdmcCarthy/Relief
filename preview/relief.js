@@ -16,7 +16,7 @@ uniform int uZoneOn;  // 1: land colour = zone-weighted mix of four ramps (tempe
 uniform vec2 uTex; uniform float uCell, uBase, uStep;
 uniform float uLandMax, uSeaMax;           // ramp ranges, metres
 uniform float uLandStops[12], uSeaStops[12]; uniform int uNLand, uNSea;
-uniform int uStepped, uShade, uContours, uIceOn, uCoast;
+uniform int uStepped, uSeaStepped, uShade, uContours, uIceOn, uCoast;  // uStepped: land classes; uSeaStepped: sea classes
 uniform float uAz, uAlt, uExag, uShadeK, uSeaShadeK, uLineK, uCoastK;
 uniform float uLandInt, uSeaInt;           // contour intervals, metres
 uniform vec3 uIceCol, uIceEdge, uCoastCol, uHi, uLo;
@@ -44,7 +44,7 @@ vec3 ramp(float z){
     if (uZoneOn == 0) return row(t, 0.);
     vec3 w = texture(uZones, uv).rgb; float a = max(0., 1. - w.r - w.g - w.b);
     return row(t, 0.)*w.r + row(t, 1.)*w.g + row(t, 2.)*w.b + row(t, 3.)*a; }
-  float d = -z; float v = uStepped == 1 ? bandOf(d, false) : d; return row(v/uSeaMax, 4.); }
+  float d = -z; float v = uSeaStepped == 1 ? bandOf(d, false) : d; return row(v/uSeaMax, 4.); }
 float lightAt(vec3 n, float az, float alt){ vec3 L = vec3(sin(az)*cos(alt), cos(az)*cos(alt), sin(alt)); return max(dot(n, L), 0.); }
 void main(){
   vec2 px = 1.0/uTex;
@@ -143,6 +143,7 @@ export function createRenderer() {
     gl.uniform1fv(U("uLandStops"), pad(style.landStops)); gl.uniform1fv(U("uSeaStops"), pad(style.seaStops));
     gl.uniform1i(U("uNLand"), style.landStops.length); gl.uniform1i(U("uNSea"), style.seaStops.length);
     gl.uniform1i(U("uStepped"), style.stepped ? 1 : 0);
+    gl.uniform1i(U("uSeaStepped"), (style.seaStepped ?? style.stepped) ? 1 : 0);  // default: same as land
     gl.uniform1i(U("uShade"), { none: 0, single: 1, soft: 2 }[style.shade ?? "none"]);
     gl.uniform1i(U("uContours"), { none: 0, lines: 1, tanaka: 2 }[style.contours ?? "none"]);
     gl.uniform1i(U("uIceOn"), style.ice && src.ice ? 1 : 0); gl.uniform1i(U("uCoast"), style.coast ? 1 : 0);

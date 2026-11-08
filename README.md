@@ -1,15 +1,17 @@
 # Relief
 
 **Open topography and bathymetry, generalised into fast contour maps for data visualisation.**
-Techniques page: https://admccarthy.github.io/Relief/ · vector layers: https://admccarthy.github.io/Relief/vector.html
+Region examples: https://admccarthy.github.io/Relief/ · techniques: https://admccarthy.github.io/Relief/techniques.html · vector layers: https://admccarthy.github.io/Relief/vector.html
 
 Reusable across areas and stories (SubScout figures, MapLibre maps): land heights from the Copernicus DEM,
 sea-floor depths from the EMODnet Bathymetry DTM, merged, projected, contoured into stacked layers at several
 levels of detail and generalised by scale, with a hillshade for optional shading. Styles: muted context
 tints for data overlays, hypsometric "showcase" tints with hillshade, or contour lines; light and dark.
 
-Status: **proof of concept** for Vestland (Bergen coast: fjords, skerries, the Norwegian Trench).
-Plan: [docs/plan.md](docs/plan.md). Data sources and licences: [docs/sources.md](docs/sources.md).
+Status: Vestland proof of concept plus five shared **regions** (North Sea, Norwegian Sea, Barents Sea in a north-polar
+view with Norway at the bottom, NE Europe, world). Regions are defined once in `regions/regions.json` for any app to
+reuse: [docs/regions.md](docs/regions.md). Plan: [docs/plan.md](docs/plan.md). Data sources and licences:
+[docs/sources.md](docs/sources.md).
 
 ```
 uv sync --all-groups
@@ -20,6 +22,27 @@ uv run python scripts/render_demo.py vestland  # -> data/out/vestland/demo: 16-b
 uv run pytest
 ```
 
+Higher-resolution data (researched, scripted, not yet run: see [docs/hires-sources.md](docs/hires-sources.md)):
+
+```
+uv run python scripts/build_hires.py plan                   # per region: sources, what runs and why, no network
+uv run python scripts/build_hires.py run north_sea          # fetch -> merge -> render; hours, resumable
+uv run python scripts/render_region.py north_sea            # page assets from the data on disk (what the examples show today)
+```
+
+The example pages draw every region in one fixed style: Detuned, stepped relief by climate zone, linear bathymetry,
+no contours, no illumination.
+
+Regions (large areas, fetched coarser, no whole datasets):
+
+```
+uv run python scripts/regions.py sync                       # derive extents, outlines, proj4 from regions/regions.json
+uv run python scripts/fetch_region.py north_sea             # -> data/raw/north_sea/merged.tif (land + sea, lon/lat)
+uv run python scripts/build.py north_sea                    # -> data/out/north_sea: layers per level of detail
+uv run python scripts/fetch_sodir.py && uv run python scripts/regions.py check   # coverage against Sodir blocks and fields
+```
+
 Attribution: Copernicus DEM GLO-90 © DLR e.V. 2010–2014 and © Airbus 2014–2018, provided under COPERNICUS by
-the European Union and ESA. EMODnet Bathymetry Consortium (2024): EMODnet Digital Bathymetry (DTM).
+the European Union and ESA. EMODnet Bathymetry Consortium (2024): EMODnet Digital Bathymetry (DTM). World and the
+sea east of 43 E: NOAA NCEI ETOPO 2022 (public domain). Sodir block and field outlines (coverage checks only): NLOD.
 Code: MIT.

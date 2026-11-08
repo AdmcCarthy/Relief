@@ -26,8 +26,9 @@ Proof of concept (Vestland, 3.5–7.5°E, 59–61.5°N): coastline pieces 1,049 
 250 m, 11 → 6 at 1 km; files 0.11 / 0.90 / 2.2 MB (uncompressed GeoJSON); draw 3 / 18 / 48 ms on canvas.
 
 ## Roadmap
-1. **Areas**: North Sea (SODIR licences, Wildcat), Norwegian Sea, Barents Sea (EMODnet + GEBCO north of its
-   coverage), Norway land. One config line per area in `scripts/areas.py`.
+1. **Areas** (done 2026-11-08): North Sea, Norwegian Sea, Barents Sea (north-polar, Norway at the bottom), NE Europe, world,
+   all in `regions/regions.json` with coverage checked against Sodir blocks and fields (see docs/regions.md). Next: Norway
+   land areas, UK/Dutch/Danish detail, GEBCO instead of ETOPO east of 43 E.
 2. **Coastline and lakes from Kartverket N-series**; Natural Earth for the overview.
 3. **Formats**: TopoJSON (shared arcs, quantised) for d3 figures in SubScout; PMTiles vector tiles plus a
    hillshade raster PMTiles for MapLibre maps (SubScout's planned map stack), both static on GitHub Pages.
@@ -65,6 +66,13 @@ self-intersections within segments (Yuksel et al. 2011). Topology-preserving DP 
 Chaikin amplified 3 kinks into 76 self-crossing rings. Recommended visual layer: Gaussian pre-blur (1 cell) +
 DP (1.5 cells) + Chaikin x2: 71 % fewer points than raw, no self-crossings, calm curves. The precise grid
 stays the record; the visual layer is for drawing (aesthetics over contour precision, as agreed).
+
+## Region examples and higher-resolution data (2026-11-08)
+The landing page now leads with the regions in one fixed style (Detuned, stepped relief, linear bathymetry, no contours,
+no illumination); the twelve-case techniques page moved to `techniques.html`. Better sources were researched per region
+(docs/hires-sources.md) and are scripted in `scripts/build_hires.py` (plan, fetch, merge, render; resumable; manual drop-in
+for GEBCO, IBCAO, Danish and German models). Not run yet. Next: run it for Barents Sea and the world first (largest real
+gain), then tiled elevation delivery so 25 to 50 m data is visible when zoomed.
 
 ## Styles (2026-11-08)
 All land tints are now cross-blended by climate zone (one ramp per Köppen–Geiger group below 1,000 m, a shared

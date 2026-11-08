@@ -1,0 +1,476 @@
+{
+  "version": 1,
+  "about": "Named map regions shared by Relief and any app that wants the same frames. 'design' is the hand-written input; 'extent', 'bbox' and 'size_km' are derived by `uv run python scripts/regions.py sync`. All coordinates in 'extent' are projected metres in the region's own CRS (x0, y0, x1, y1); 'bbox' is lon/lat (west, south, east, north).",
+  "regions": [
+    {
+      "id": "vestland",
+      "name": "Vestland (proof of concept)",
+      "description": "Bergen coast: fjords, skerries and the Norwegian Trench. The hardest generalisation case.",
+      "crs": {
+        "code": "EPSG:25832",
+        "name": "ETRS89 / UTM zone 32N",
+        "proj4": "+proj=utm +zone=32 +ellps=GRS80 +units=m +no_defs +type=crs",
+        "epsg": 25832
+      },
+      "design": {
+        "lonlat_box": [
+          3.5,
+          59.0,
+          7.5,
+          61.5
+        ],
+        "fit": "inner"
+      },
+      "fetch": {
+        "step_deg": 0.0010416666666666667,
+        "legacy": true
+      },
+      "lods": {
+        "overview": {
+          "cell": 1000
+        },
+        "regional": {
+          "cell": 250
+        },
+        "detail": {
+          "cell": 125
+        }
+      },
+      "extent": [
+        207460,
+        6553058,
+        413826,
+        6819400
+      ],
+      "bbox": [
+        3.5,
+        59.0,
+        7.5,
+        61.5
+      ],
+      "size_km": [
+        206,
+        266
+      ],
+      "built": true
+    },
+    {
+      "id": "north_sea",
+      "name": "North Sea (Norwegian sector and neighbours)",
+      "description": "Norwegian North Sea (Sodir blocks 1/2 to 35/x) with the UK, Danish, German and Dutch margins as context. North edge 0.5 degrees above the 62 N boundary with the Norwegian Sea.",
+      "crs": {
+        "code": "EPSG:25832",
+        "name": "ETRS89 / UTM zone 32N",
+        "proj4": "+proj=utm +zone=32 +ellps=GRS80 +units=m +no_defs +type=crs",
+        "epsg": 25832
+      },
+      "design": {
+        "lonlat_box": [
+          -1.0,
+          55.0,
+          10.5,
+          62.5
+        ],
+        "fit": "outer"
+      },
+      "fetch": {
+        "step_deg": 0.004166666666666667,
+        "sea": [
+          "emodnet",
+          "etopo"
+        ],
+        "land": [
+          "copernicus",
+          "etopo"
+        ]
+      },
+      "lods": {
+        "overview": {
+          "cell": 2000
+        },
+        "regional": {
+          "cell": 1000
+        },
+        "detail": {
+          "cell": 500
+        }
+      },
+      "coverage": {
+        "sodir_blocks": {
+          "include": [
+            "North sea"
+          ],
+          "min_area_inside": 0.99
+        },
+        "sodir_fields": {
+          "include": [
+            "North sea"
+          ],
+          "min_area_inside": 1.0
+        }
+      },
+      "extent": [
+        -140000,
+        6090000,
+        600000,
+        6970000
+      ],
+      "bbox": [
+        -3.409,
+        54.54,
+        10.974,
+        62.87
+      ],
+      "size_km": [
+        740,
+        880
+      ],
+      "built": true
+    },
+    {
+      "id": "norwegian_sea",
+      "name": "Norwegian Sea",
+      "description": "Sodir Norwegian Sea blocks (62 N to 68.6 N) and the Nordland coast, in a Lambert conformal conic centred on 8 E so the coast does not lean.",
+      "crs": {
+        "code": "+proj=lcc +lat_1=62 +lat_2=70 +lat_0=66 +lon_0=8 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs",
+        "name": "Relief Norwegian Sea LCC (8 E)",
+        "proj4": "+proj=lcc +lat_0=66 +lon_0=8 +lat_1=62 +lat_2=70 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs +type=crs",
+        "epsg": null
+      },
+      "design": {
+        "lonlat_box": [
+          -3.0,
+          61.5,
+          17.0,
+          70.0
+        ],
+        "fit": "outer"
+      },
+      "fetch": {
+        "step_deg": 0.004166666666666667,
+        "sea": [
+          "emodnet",
+          "etopo"
+        ],
+        "land": [
+          "copernicus",
+          "etopo"
+        ]
+      },
+      "lods": {
+        "overview": {
+          "cell": 2000
+        },
+        "regional": {
+          "cell": 1000
+        },
+        "detail": {
+          "cell": 500
+        }
+      },
+      "coverage": {
+        "sodir_blocks": {
+          "include": [
+            "Norwegian sea"
+          ],
+          "min_area_inside": 0.99
+        },
+        "sodir_fields": {
+          "include": [
+            "Norwegian sea"
+          ],
+          "min_area_inside": 1.0
+        }
+      },
+      "extent": [
+        -590000,
+        -510000,
+        480000,
+        490000
+      ],
+      "bbox": [
+        -7.435,
+        60.946,
+        20.645,
+        70.41
+      ],
+      "size_km": [
+        1070,
+        1000
+      ],
+      "built": true
+    },
+    {
+      "id": "barents_sea",
+      "name": "Barents Sea and surroundings (north polar, Norway at the bottom)",
+      "description": "Barents Sea from northern Norway and the Kola Peninsula to Svalbard and Novaya Zemlya, in a north-polar Lambert azimuthal equal-area projection centred on 30 E: the 30 E meridian runs straight down, so Finnmark and the Norwegian coast sit at the bottom of the map.",
+      "crs": {
+        "code": "+proj=laea +lat_0=90 +lon_0=30 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs",
+        "name": "Relief Barents polar LAEA (30 E down)",
+        "proj4": "+proj=laea +lat_0=90 +lon_0=30 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs +type=crs",
+        "epsg": null
+      },
+      "design": {
+        "points": [
+          [
+            13.0,
+            68.2
+          ],
+          [
+            19.0,
+            69.7
+          ],
+          [
+            25.8,
+            71.2
+          ],
+          [
+            31.0,
+            70.4
+          ],
+          [
+            33.0,
+            68.9
+          ],
+          [
+            41.0,
+            67.1
+          ],
+          [
+            44.0,
+            68.5
+          ],
+          [
+            10.5,
+            79.7
+          ],
+          [
+            22.0,
+            80.5
+          ],
+          [
+            31.0,
+            80.2
+          ],
+          [
+            53.0,
+            70.7
+          ],
+          [
+            68.5,
+            77.1
+          ],
+          [
+            68.0,
+            73.0
+          ],
+          [
+            20.0,
+            66.5
+          ]
+        ],
+        "margin_m": 100000,
+        "round_m": 50000,
+        "fit": "outer"
+      },
+      "fetch": {
+        "step_deg": 0.008333333333333333,
+        "sea": [
+          "emodnet",
+          "etopo"
+        ],
+        "land": [
+          "copernicus",
+          "etopo"
+        ]
+      },
+      "lods": {
+        "overview": {
+          "cell": 4000
+        },
+        "regional": {
+          "cell": 2000
+        },
+        "detail": {
+          "cell": 1000
+        }
+      },
+      "coverage": {
+        "sodir_blocks": {
+          "include": [
+            "Barents sea"
+          ],
+          "min_area_inside": 0.99
+        },
+        "sodir_fields": {
+          "include": [
+            "Barents sea"
+          ],
+          "min_area_inside": 1.0
+        }
+      },
+      "extent": [
+        -850000,
+        -2700000,
+        1300000,
+        -900000
+      ],
+      "bbox": [
+        -13.373,
+        62.89,
+        85.315,
+        81.945
+      ],
+      "size_km": [
+        2150,
+        1800
+      ],
+      "built": true
+    },
+    {
+      "id": "ne_europe",
+      "name": "NE Europe (UK, Norwegian North Sea, Germany, Poland)",
+      "description": "Hydrocarbon provinces of the UK, the Norwegian North Sea, Denmark, the Netherlands, Germany and Poland, in ETRS89 LAEA. North edge follows the 62 N Sodir boundary with the Norwegian Sea (pinned to it at 3 E, because a rectangle cannot follow a curved parallel); Norwegian Sea fields and blocks are out. West edge reaches 12 W to include Rockall and West of Shetland; onshore Poland and Germany are framed from basin knowledge, not data (EMODnet wells are offshore only).",
+      "crs": {
+        "code": "EPSG:3035",
+        "name": "ETRS89 / LAEA Europe",
+        "proj4": "+proj=laea +lat_0=52 +lon_0=10 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +units=m +no_defs +type=crs",
+        "epsg": 3035
+      },
+      "design": {
+        "lonlat_box": [
+          -6.0,
+          48.0,
+          24.5,
+          62.0
+        ],
+        "fit": "outer",
+        "north_at": [
+          62.0,
+          3
+        ]
+      },
+      "fetch": {
+        "step_deg": 0.008333333333333333,
+        "sea": [
+          "emodnet",
+          "etopo"
+        ],
+        "land": [
+          "copernicus",
+          "etopo"
+        ]
+      },
+      "lods": {
+        "overview": {
+          "cell": 4000
+        },
+        "regional": {
+          "cell": 2000
+        },
+        "detail": {
+          "cell": 1000
+        }
+      },
+      "coverage": {
+        "sodir_blocks": {
+          "include": [
+            "North sea"
+          ],
+          "exclude": [
+            "Norwegian sea",
+            "Barents sea"
+          ],
+          "min_area_inside": 0.99,
+          "max_excluded_area_inside": 0.01
+        },
+        "sodir_fields": {
+          "include": [
+            "North sea"
+          ],
+          "exclude": [
+            "Norwegian sea",
+            "Barents sea"
+          ],
+          "min_area_inside": 1.0,
+          "max_excluded_area_inside": 0.0
+        },
+        "wells": {
+          "countries": [
+            "United Kingdom",
+            "Netherlands",
+            "Denmark",
+            "Germany",
+            "Poland"
+          ],
+          "min_inside": 0.99
+        }
+      },
+      "extent": [
+        3130000,
+        2760000,
+        5400000,
+        4340000
+      ],
+      "bbox": [
+        -12.018,
+        46.801,
+        30.063,
+        62.172
+      ],
+      "size_km": [
+        2270,
+        1580
+      ],
+      "built": true
+    },
+    {
+      "id": "world",
+      "name": "World (Equal Earth)",
+      "description": "Whole world in Equal Earth (EPSG:8857) for locator maps and global context.",
+      "crs": {
+        "code": "EPSG:8857",
+        "name": "WGS 84 / Equal Earth Greenwich",
+        "proj4": "+proj=eqearth +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs +type=crs",
+        "epsg": 8857
+      },
+      "design": {
+        "world": true
+      },
+      "fetch": {
+        "step_deg": 0.08333333333333333,
+        "sea": [
+          "etopo"
+        ],
+        "land": [
+          "etopo"
+        ]
+      },
+      "lods": {
+        "overview": {
+          "cell": 20000
+        },
+        "regional": {
+          "cell": 10000
+        }
+      },
+      "extent": [
+        -17243959,
+        -8392928,
+        17243959,
+        8392928
+      ],
+      "bbox": [
+        -180.0,
+        -90.0,
+        180.0,
+        90.0
+      ],
+      "size_km": [
+        34488,
+        16786
+      ],
+      "built": true
+    }
+  ]
+}

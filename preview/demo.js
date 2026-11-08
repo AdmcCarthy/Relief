@@ -1,6 +1,7 @@
 // Relief techniques page: case studies, sea-floor resolution comparison and a playground,
 // all drawn by one WebGL renderer from one elevation texture.
 import { createRenderer, loadImage } from "./relief.js";
+import { LB, SB, LMAX, SMAX, at, ZPAL, DETUNED_SEA, ZK, tune, rampAt, fmtM, strip, axis } from "./palette.js";
 
 const BASE = "data/vestland/demo/";
 const meta = await fetch(BASE + "meta.json").then((r) => r.json());
@@ -22,42 +23,7 @@ themeSeg.addEventListener("click", (e) => { if (e.target.dataset.v) { setTheme(e
 setTheme(theme);
 
 // ---------------------------------------------------------------- palettes
-// Non-linear steps (metres). Sea is finest near the coast, where most of the sea-floor shape is; land is coarser.
-const LB = [0, 50, 150, 300, 600, 1000, 1500, 2000];
-const SB = [0, 20, 50, 100, 200, 500, 1000];
-const LMAX = 2000, SMAX = 1300;
-const at = (breaks, cols, max) => breaks.map((b, i) => [b / max, cols[i]]).concat(cols.length > breaks.length ? [[1, cols.at(-1)]] : []);
-// Cross-blended hypsometric tints (Patterson & Jenny): one land ramp per climate zone below 1,000 m and a shared
-// alpine ramp above. ZPAL is the full-strength "relief" set; every other style is derived from it by detuning.
-const ZPAL = {
-  light: {
-    temperate: ["#d6e8b8", "#c6dea0", "#bad38f", "#cbcf92", "#d9c897", "#ccb8a0", "#d8d0c6", "#efece8"],
-    boreal: ["#a9c7a6", "#97bb98", "#8aae8c", "#93a98b", "#a8ad96", "#ccb8a0", "#d8d0c6", "#efece8"],
-    tundra: ["#e0e3dc", "#d6dad2", "#cdd1c9", "#c6c8c0", "#c4c0b6", "#ccb8a0", "#d8d0c6", "#efece8"],
-    arid: ["#efe2c2", "#e9d6ac", "#e1c695", "#d6b382", "#c9a077", "#ccb8a0", "#d8d0c6", "#efece8"],
-    sea: ["#e3f2f9", "#c6e5f3", "#a6d3eb", "#82bde0", "#5fa3d2", "#3f85bd", "#29689f", "#1b4f80"],
-  },
-  dark: {
-    temperate: ["#46572f", "#4c5d33", "#536237", "#5d633b", "#665f42", "#655d50", "#85807a", "#aaa6a1"],
-    boreal: ["#2c4232", "#304836", "#354d39", "#3f513e", "#4e5547", "#655d50", "#85807a", "#aaa6a1"],
-    tundra: ["#55595a", "#585b5b", "#5b5d5c", "#5e5e5b", "#615d57", "#655d50", "#85807a", "#aaa6a1"],
-    arid: ["#5e533c", "#665a3f", "#6c5c40", "#6e5a43", "#6a5747", "#655d50", "#85807a", "#aaa6a1"],
-    sea: ["#2f7896", "#286a87", "#225c78", "#1c4e69", "#16405a", "#11334b", "#0c263c", "#081c2e"],
-  },
-};
-// "Detuned": the sea floor gets more room than the land (wider range, deeper indigo) while land is held back.
-const DETUNED_SEA = {
-  light: ["#e8f0f2", "#cfe1e6", "#aacdd8", "#7eb0c5", "#5891ae", "#3a6d94", "#264b73", "#162b50"],
-  dark: ["#3a8aa2", "#2f7690", "#25647d", "#1c526b", "#144157", "#0e3045", "#092336", "#06172a"],
-};
-const rgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
-const hexOf = (v) => "#" + v.map((x) => Math.round(Math.min(255, Math.max(0, x))).toString(16).padStart(2, "0")).join("");
-// Detune a colour: scale its saturation towards its own grey, then lift (mix > 0, towards white) or sink (< 0, towards black).
-function tune(h, sat, mix = 0) {
-  const c = rgb(h), y = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2], t = mix > 0 ? 255 : 0, m = Math.abs(mix);
-  return hexOf(c.map((v) => { const g = y + (v - y) * sat; return g + (t - g) * m; }));
-}
-const ZK = ["temperate", "boreal", "tundra", "arid"];
+// Class breaks, tints, tune() and the Detuned sea ramp live in palette.js, shared with the region examples.
 function paletteSet(name) {
   const Z = ZPAL[theme], dark = theme === "dark", calm = dark ? -0.22 : 0.3;
   const land = (sat, mix) => Object.fromEntries(ZK.map((k) => [k, at(LB, Z[k].map((c) => tune(c, sat, mix)), LMAX)]));
@@ -84,32 +50,6 @@ function style(name, opts = {}) {
 }
 
 // ---------------------------------------------------------------- colour bars
-// Same interpolation as the shader's ramp texture, so the bar shows exactly the colours on the map.
-function rampAt(stops, t) {
-  t = Math.min(1, Math.max(0, t)); let k = 0;
-  while (k < stops.length - 2 && t > stops[k + 1][0]) k++;
-  const [t0, c0] = stops[k], [t1, c1] = stops[k + 1], f = Math.min(1, Math.max(0, (t - t0) / (t1 - t0 || 1)));
-  const a = [1, 3, 5].map((i) => parseInt(c0.slice(i, i + 2), 16)), b = [1, 3, 5].map((i) => parseInt(c1.slice(i, i + 2), 16));
-  return `rgb(${a.map((v, j) => Math.round(v + (b[j] - v) * f)).join(",")})`;
-}
-const fmtM = (v) => v.toLocaleString("en-GB");
-function strip(label, stops, max, bands, stepped) {
-  if (stepped) {  // hypsometric classes: one block per band, labelled with its range
-    const cells = bands.map((lo, i) => {
-      const hi = bands[i + 1];
-      const mid = hi == null ? lo + (lo - bands[i - 1]) / 2 : (lo + hi) / 2;
-      return `<span class="cb-band" style="background:${rampAt(stops, mid / max)}" title="${fmtM(lo)}${hi == null ? "+" : `–${fmtM(hi)}`} m"></span>`;
-    }).join("");
-    return `<span class="cb-l">${label}</span><div class="cb-steps" style="--n:${bands.length}">${cells}</div>`;
-  }
-  const grad = Array.from({ length: 24 }, (_, i) => `${rampAt(stops, i / 23)} ${(i / 23 * 100).toFixed(1)}%`).join(",");
-  return `<span class="cb-l">${label}</span><div class="cb-lin" style="background:linear-gradient(90deg,${grad})"></div>`;
-}
-function axis(max, bands, stepped, ticks) {
-  if (stepped) return `<span></span><div class="cb-labs" style="--n:${bands.length}">${bands.map((v, i) => `<span>${fmtM(v)}${i === bands.length - 1 ? "+" : ""}</span>`).join("")}<span></span></div>`;
-  const tk = ticks.filter((v) => v / max < 0.85).map((v) => `<span style="left:${(v / max) * 100}%">${fmtM(v)}</span>`).join("");
-  return `<span></span><div class="cb-ticks">${tk}<span style="left:100%">${fmtM(max)}+</span></div>`;
-}
 // One height strip per climate zone present (arid only where the area has any), then depth: the legend is
 // honest about which tints appear where.
 function colourBars(st) {

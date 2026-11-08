@@ -3,68 +3,63 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Relief · ways to draw land and sea</title>
-<meta name="description" content="Open topography and bathymetry for data maps: case studies of gradients, hillshading, illuminated contours and glaciers, rendered on the GPU from one elevation file.">
+<title>Relief · regions</title>
+<meta name="description" content="Open topography and bathymetry for the North Sea, Norwegian Sea, Barents Sea, NE Europe and the world, in one house style: stepped relief, linear bathymetry, no contours, no illumination.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
 /* SubScout Ledger type and the Nordic cool room: shale-white by day, mørketid blue-grey by night */
-:root { --canvas:#f3f7fb; --surface:#fdfeff; --raised:#ecf1f5; --ink:#2d3439; --muted:#596c7b; --rule:#ccd6dd; --link:#20565c; --accent:#1a7f88; --accent-ink:#fdfeff;
+:root { --canvas:#f3f7fb; --surface:#fdfeff; --raised:#ecf1f5; --ink:#2d3439; --muted:#596c7b; --rule:#ccd6dd; --link:#20565c; --accent:#1a7f88;
   --display:"Newsreader","Iowan Old Style",Georgia,serif; --body:"Instrument Sans","Segoe UI",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,Menlo,monospace; color-scheme:light; }
-:root[data-theme="dark"] { --canvas:#0e1820; --surface:#15212a; --raised:#1e2b35; --ink:#f5fdff; --muted:#b4c7d7; --rule:#2c3a45; --link:#86d2da; --accent:#55b3bd; --accent-ink:#0e1820; color-scheme:dark; }
+:root[data-theme="dark"] { --canvas:#0e1820; --surface:#15212a; --raised:#1e2b35; --ink:#f5fdff; --muted:#b4c7d7; --rule:#2c3a45; --link:#86d2da; --accent:#55b3bd; color-scheme:dark; }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--canvas); color:var(--ink); font:400 16px/1.6 var(--body); }
 .wrap { max-width:1180px; margin:0 auto; padding-inline:max(16px, env(safe-area-inset-left,0px)); }
 .top { position:sticky; top:0; z-index:5; background:color-mix(in oklab, var(--canvas) 90%, transparent); backdrop-filter:blur(8px); border-bottom:1px solid var(--rule); }
-.top .wrap { display:flex; gap:12px; align-items:center; justify-content:space-between; padding-block:8px; }
-.brand { font:500 1.05rem var(--display); }
+.top .wrap { display:flex; gap:12px; align-items:center; justify-content:space-between; padding-block:8px; flex-wrap:wrap; }
+.brand { font:500 1.05rem var(--display); color:inherit; text-decoration:none; }
+.nav { font-size:13px; color:var(--muted); display:flex; gap:14px; flex-wrap:wrap; } .nav b { color:var(--ink); font-weight:600; }
 .seg { display:inline-flex; background:var(--raised); border:1px solid var(--rule); border-radius:999px; padding:2px; }
 .seg button { font:500 12.5px var(--body); color:var(--muted); background:none; border:0; padding:5px 11px; border-radius:999px; cursor:pointer; }
 .seg button[aria-pressed="true"] { background:var(--surface); color:var(--ink); box-shadow:0 1px 2px rgb(0 0 0/.12); }
-.seg button:focus-visible, select:focus-visible, input:focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
+.seg button:focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
 .kicker { font:500 12px/1.4 var(--mono); letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
-h1 { font:500 clamp(2.2rem,5.5vw,3.6rem)/1.05 var(--display); letter-spacing:-.015em; margin:10px 0 14px; max-width:20ch; text-wrap:balance; }
+h1 { font:500 clamp(2.2rem,5.5vw,3.6rem)/1.05 var(--display); letter-spacing:-.015em; margin:10px 0 14px; max-width:22ch; text-wrap:balance; }
 .dek { font:400 clamp(1.1rem,2.2vw,1.3rem)/1.5 var(--display); max-width:62ch; margin:0 0 10px; }
 h2 { font:500 clamp(1.5rem,3vw,2rem)/1.15 var(--display); margin:56px 0 6px; text-wrap:balance; }
 .lead { max-width:68ch; color:var(--muted); margin:0 0 18px; }
 .hero { padding-block:40px 8px; }
-.grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap:18px; }
+.style { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.3fr); gap:20px; background:var(--surface); border:1px solid var(--rule); border-radius:12px; padding:16px 18px; margin-top:22px; align-items:center; }
+@media (max-width:820px) { .style { grid-template-columns:minmax(0,1fr); } }
+.style ul { margin:0; padding-left:18px; font-size:14.5px; } .style li { margin-bottom:3px; }
+.grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(min(100%, 520px), 1fr)); gap:20px; }
 .card { background:var(--surface); border:1px solid var(--rule); border-radius:12px; overflow:hidden; display:flex; flex-direction:column; }
-.card canvas { display:block; width:100%; height:auto; aspect-ratio:1032/1332; background:var(--raised); }
-.card .txt { padding:12px 14px 14px; display:flex; flex-direction:column; gap:6px; }
-.card h3 { font:600 1rem/1.3 var(--body); margin:0; }
+.card canvas { display:block; width:100%; height:auto; background:var(--raised); }
+.card .ph { display:none; padding:40px 18px; color:var(--muted); font-size:13.5px; background:var(--raised); }
+.card.missing canvas { display:none; } .card.missing .ph { display:block; }
+.card .txt { padding:12px 16px 16px; display:flex; flex-direction:column; gap:8px; }
+.card h3 { font:600 1.05rem/1.3 var(--body); margin:0; }
 .card p { margin:0; font-size:13.5px; color:var(--muted); line-height:1.5; }
-.tags { display:flex; flex-wrap:wrap; gap:4px 6px; margin-top:2px; }
+.tags { display:flex; flex-wrap:wrap; gap:4px 6px; }
 .tag { font:500 10.5px var(--mono); letter-spacing:.04em; text-transform:uppercase; color:var(--muted); background:var(--raised); padding:2px 6px; border-radius:4px; }
-.best { font-size:12.5px; } .best b { font-weight:600; }
-.cmp { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:14px; }
-@media (max-width:760px) { .cmp { grid-template-columns:minmax(0,1fr); } }
-.cmp figure { margin:0; background:var(--surface); border:1px solid var(--rule); border-radius:12px; overflow:hidden; }
-.cmp canvas { display:block; width:100%; aspect-ratio:1; }
-.cmp figcaption { padding:10px 12px; font-size:13px; color:var(--muted); } .cmp figcaption b { color:var(--ink); display:block; font-size:14px; }
-.play { display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:18px; align-items:start; }
-@media (max-width:860px) { .play { grid-template-columns:minmax(0,1fr); } }
-.play canvas { display:block; width:100%; height:auto; border:1px solid var(--rule); border-radius:12px; background:var(--raised); }
-.ctl { display:flex; flex-direction:column; gap:12px; font-size:13px; background:var(--surface); border:1px solid var(--rule); border-radius:12px; padding:14px; }
-.ctl label { display:flex; flex-direction:column; gap:4px; color:var(--muted); }
-.ctl .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; color:var(--ink); }
-.ctl input[type=range] { width:100%; accent-color:var(--accent); }
-.ctl .stat { font:500 12px var(--mono); color:var(--muted); }
-table { border-collapse:collapse; width:100%; font-size:13.5px; }
-.tw { overflow-x:auto; background:var(--surface); border:1px solid var(--rule); border-radius:12px; }
-th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--rule); vertical-align:top; }
-th { font:600 12px var(--body); color:var(--muted); background:var(--raised); }
-td.c { white-space:nowrap; } .ok { color:var(--accent); font-weight:600; }
-ul.notes { max-width:72ch; padding-left:18px; color:var(--muted); font-size:14.5px; } ul.notes li { margin-bottom:6px; }
-footer { margin:56px 0 40px; padding-top:14px; border-top:1px solid var(--rule); font-size:12.5px; color:var(--muted); }
+.data { font-size:12.5px; color:var(--muted); border-top:1px solid var(--rule); padding-top:8px; } .data b { color:var(--ink); font-weight:600; }
+.links { font-size:12.5px; }
 a { color:var(--link); }
-.cbs { display:flex; flex-direction:column; gap:6px; margin:4px 0 2px; }
+.tw { overflow-x:auto; background:var(--surface); border:1px solid var(--rule); border-radius:12px; }
+table { border-collapse:collapse; width:100%; font-size:13.5px; }
+th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--rule); vertical-align:top; }
+th { font:600 12px var(--body); color:var(--muted); background:var(--raised); } td.n { white-space:nowrap; }
+.three { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:18px; }
+@media (max-width:860px) { .three { grid-template-columns:minmax(0,1fr); } }
+.three h3 { font:600 1rem var(--body); margin:0 0 4px; } .three p { margin:0; font-size:14px; color:var(--muted); }
+footer { margin:56px 0 40px; padding-top:14px; border-top:1px solid var(--rule); font-size:12.5px; color:var(--muted); }
+.nogl { display:none; padding:12px 14px; border:1px solid var(--rule); border-radius:10px; background:var(--surface); margin-top:14px; }
+/* colour bars (same markup as palette.js writes) */
+.cbs { display:flex; flex-direction:column; gap:6px; margin:2px 0; }
 .cb-kind { font:500 10.5px var(--mono); letter-spacing:.05em; text-transform:uppercase; color:var(--muted); }
-.cb { display:grid; grid-template-columns:44px minmax(0,1fr); column-gap:8px; align-items:center; }
-.cb-l { font-size:11.5px; color:var(--ink); grid-row:1 / span 2; }
 .cbg { display:grid; grid-template-columns:64px minmax(0,1fr); column-gap:8px; row-gap:3px; align-items:center; }
-.cbg .cb-l { grid-row:auto; }
+.cb-l { font-size:11.5px; color:var(--ink); }
 .cb-lin { height:10px; border-radius:2px; border:1px solid var(--rule); }
 .cb-steps { display:grid; grid-template-columns:repeat(var(--n), 1fr); height:10px; border:1px solid var(--rule); border-radius:2px; overflow:hidden; }
 .cb-steps .cb-band { display:block; }
@@ -73,157 +68,56 @@ a { color:var(--link); }
 .cb-ticks { position:relative; height:13px; font:400 9.5px var(--body); color:var(--muted); }
 .cb-ticks span { position:absolute; top:0; transform:translateX(-50%); white-space:nowrap; }
 .cb-ticks span:first-child { transform:none; } .cb-ticks span:last-child { transform:translateX(-100%); }
-.trio { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:14px; }
-.duo { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:14px; }
-@media (max-width:820px) { .trio, .duo { grid-template-columns:minmax(0,1fr); } }
-.pane { margin:0; background:var(--surface); border:1px solid var(--rule); border-radius:12px; overflow:hidden; }
-.pane canvas { display:block; width:100%; height:auto; }
-.pane figcaption { padding:10px 12px; font-size:13px; color:var(--muted); line-height:1.45; } .pane figcaption b { color:var(--ink); display:block; font-size:14px; }
-.txtpane { padding:14px 16px; font-size:14px; } .txtpane table { margin-top:8px; }
-.zonebars { display:grid; grid-template-columns:repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap:10px 24px; margin:16px 0 4px; }
-.zonebars .zb h4 { margin:0 0 4px; font:600 13px var(--body); } .zonebars .zb p { margin:0 0 4px; font-size:12px; color:var(--muted); }
-#stepbars { max-width:620px; margin:14px 0 0; }
-.note { font-size:13px; color:var(--muted); max-width:72ch; }
-.lines { display:grid; grid-template-columns:repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap:14px; margin-bottom:14px; }
-.lines canvas { aspect-ratio:1; }
-.sw { display:inline-block; width:11px; height:11px; border-radius:2px; vertical-align:-1px; margin:0 4px 0 10px; }
-.nogl { display:none; padding:12px 14px; border:1px solid var(--rule); border-radius:10px; background:var(--surface); }
 </style>
 </head>
 <body>
 <div class="top"><div class="wrap">
-  <span class="brand">Relief</span>
+  <a class="brand" href="./">Relief</a>
+  <nav class="nav"><b>Examples</b><a href="techniques.html">Techniques</a><a href="vector.html">Vector layers</a><a href="regions/regions.json">Regions (JSON)</a></nav>
   <div class="seg" id="theme" role="group" aria-label="Colour scheme"><button data-v="light">Light</button><button data-v="dark">Dark</button></div>
 </div></div>
 
 <header class="wrap hero">
-  <div class="kicker">Relief · techniques · Vestland, Norway</div>
-  <h1>Ways to draw land and sea for data maps</h1>
-  <p class="dek">Twelve ways to show the shape of the land and the sea floor, from quiet context for data to full relief. Every map on this page is drawn on the GPU from one 1.2 MB elevation file, so a style is a setting rather than another download.</p>
+  <div class="kicker">Relief · regions</div>
+  <h1>Land and sea floor for the places we map</h1>
+  <p class="dek">The North Sea, Norwegian Sea, Barents Sea, NE Europe and the world, each framed once and drawn the same way, so a map of any of them looks like it belongs with the others.</p>
+  <div class="style">
+    <div>
+      <div class="kicker">The house style</div>
+      <ul>
+        <li><b>Detuned</b>: land held back at half strength, the sea floor on its own deep indigo ramp.</li>
+        <li><b>Relief</b>: stepped classes, tinted by climate zone.</li>
+        <li><b>Bathymetry</b>: a linear gradient.</li>
+        <li>No contours, no illumination, no coastline line.</li>
+      </ul>
+    </div>
+    <div id="legend" aria-label="Colour key"></div>
+  </div>
   <p class="nogl" id="nogl">This page needs WebGL 2, which this browser does not provide.</p>
 </header>
 
 <section class="wrap">
-  <h2>Case studies</h2>
-  <p class="lead">The same 206 × 266 km of western Norway: the coast from Stavanger's islands to Sognefjorden, Folgefonna and Hardangerjøkulen, and the Norwegian Trench offshore. Land from the Copernicus DEM, the sea floor from Kartverket's 50 m model and EMODnet, glaciers from the Randolph Glacier Inventory.</p>
-  <div class="grid" id="cases"></div>
-</section>
-
-<section class="wrap" id="sec-climate">
-  <h2>Steps that know the climate</h2>
-  <p class="lead">A green lowland reads as "lush" even in the high Arctic or a desert. Cross-blended hypsometric tints (Patterson and Jenny, 2011) keep the height steps but change the lowland colours by climate: green where it is humid, sand where it is arid, lichen-grey on tundra. Here the steps below 1,000 m change with the Köppen–Geiger zone (Beck et al. 2023, 1 km); above 1,000 m all zones share one alpine ramp. Zone edges blend over a few kilometres so no border is drawn.</p>
-  <div class="trio">
-    <figure class="pane"><canvas id="cl-conv"></canvas><figcaption><b>One ramp everywhere</b>Conventional stepped tints: the coast and the Hardangervidda plateau share the same greens.</figcaption></figure>
-    <figure class="pane"><canvas id="cl-zone"></canvas><figcaption><b>Climate-aware steps</b>Temperate coast in fresh green, boreal valleys in cooler green, tundra plateaus in lichen grey.</figcaption></figure>
-    <figure class="pane"><canvas id="cl-map"></canvas><figcaption><b>Climate zones, 1991–2020</b><span id="cl-share"></span></figcaption></figure>
-  </div>
-  <div class="zonebars" id="zonebars"></div>
-  <p class="note">Arid tints are shown in the legend for completeness: Vestland has no arid land, but the same file format and shader carry them, so a Barents Sea or Middle East map would switch automatically.</p>
-</section>
-
-<section class="wrap" id="sec-steps">
-  <h2>Non-linear steps, and can the sea floor take a hillshade?</h2>
-  <p class="lead">Depth steps are finest near the coast, where most of the sea-floor shape is: 0–20, 20–50, 50–100, 100–200, 200–500, 500–1,000 m and deeper. Land uses its own, coarser steps: 0–50, 50–150, 150–300, 300–600, 600–1,000, 1,000–1,500 m and higher. Then the same steps with and without soft shading on the sea floor.</p>
-  <div class="trio">
-    <figure class="pane"><canvas id="st-flat"></canvas><figcaption><b>Stepped, no shading</b>Clean classes; the trench and fjords read as flat bands.</figcaption></figure>
-    <figure class="pane"><canvas id="st-soft"></canvas><figcaption><b>Stepped with soft shading</b>Six lights and sky light, 3× vertical exaggeration on the sea floor only.</figcaption></figure>
-    <figure class="pane"><canvas id="st-zoom"></canvas><figcaption><b>Same, at 50 m near Bergen</b>Kartverket's model: sills, channels and moraine ridges show clearly.</figcaption></figure>
-  </div>
-  <div id="stepbars"></div>
-  <ul class="notes" id="shade-notes"></ul>
-</section>
-
-<section class="wrap" id="sec-sources">
-  <h2>One sea floor from four sources</h2>
-  <p class="lead">Relief combines sea-floor sources finest first: Kartverket 50 m in Norwegian waters, Denmark's 50 m model in Danish waters, EMODnet's 115 m across European seas, and GEBCO's 450 m anywhere else. Each finer source fades in over 1.5 km at its edge so seams never show as steps in the shading.</p>
-  <div class="duo">
-    <figure class="pane"><canvas id="src-map"></canvas><figcaption><b>Which source each cell uses</b><span id="src-legend"></span></figcaption></figure>
-    <div class="pane txtpane" id="src-stats"></div>
-  </div>
-</section>
-
-<section class="wrap" id="sec-lines">
-  <h2>Contours for the eye</h2>
-  <p class="lead">The precise grid stays as the record. For drawing, Relief keeps a second, visual contour layer: traced from the 50 m surface, then thinned and smoothed. Douglas–Peucker keeps the points that matter most; Visvalingam–Whyatt removes the least significant first; Chaikin cuts corners into a smooth curve inside the original; centripetal Catmull–Rom passes through every kept point without loops. 18 × 18 km near Bergen, depth contours at 20, 50, 100, 200 and 500 m, land at 50, 150, 300 and 600 m.</p>
-  <div class="lines" id="lines"></div>
-  <div class="tw"><table id="lines-table"></table></div>
+  <h2>Examples</h2>
+  <p class="lead">Each map is drawn on your GPU from one 16-bit elevation file. The first five are the shared regions; the last is the proof of concept the techniques page is built on.</p>
+  <div class="grid" id="cards"></div>
 </section>
 
 <section class="wrap">
-  <h2>How much detail the sea floor can hold</h2>
-  <p class="lead">GEBCO's global grid is about 450 m. In European seas EMODnet resolves about 115 m, and Kartverket's open model for Norwegian waters 50 m. The same 36 × 36 km of skerries and sounds north-west of Bergen, drawn identically from each; land is the same in all three.</p>
-  <div class="cmp" id="cmp"></div>
+  <h2>Where the data stands</h2>
+  <p class="lead">Every example here is drawn from the first-pass data: Copernicus GLO-90 for land, EMODnet (115 m) for the sea floor, NOAA ETOPO 2022 where EMODnet stops. Better sources were researched for each region and are scripted, not yet run.</p>
+  <div class="tw"><table id="plan"></table></div>
 </section>
 
 <section class="wrap">
-  <h2>Playground</h2>
-  <p class="lead">Every option is a shader setting on the same file. Move the sun, change the gradient, add contours or glaciers, and zoom to a detail.</p>
-  <div class="play">
-    <canvas id="play" width="1032" height="1332" aria-label="Interactive relief map"></canvas>
-    <div class="ctl" id="ctl">
-      <label>Palette <div class="seg" data-k="palette"><button data-v="context">Context</button><button data-v="relief">Relief</button><button data-v="bathy">Sea floor</button><button data-v="detuned">Detuned</button></div></label>
-      <label>Gradient <div class="seg" data-k="stepped"><button data-v="0">Linear</button><button data-v="1">Stepped</button></div></label>
-      <label>Shading <div class="seg" data-k="shade"><button data-v="none">None</button><button data-v="single">One light</button><button data-v="soft">Soft</button></div></label>
-      <label>Contours <div class="seg" data-k="contours"><button data-v="none">None</button><button data-v="lines">Lines</button><button data-v="tanaka">Illuminated</button></div></label>
-      <label>Area <div class="seg" data-k="zoom"><button data-v="all">Whole</button><button data-v="bergen">Bergen</button><button data-v="folgefonna">Folgefonna</button><button data-v="sogn">Sognefjord</button></div></label>
-      <label><span class="row"><input type="checkbox" id="climate" checked> Climate-aware land tints</span></label>
-      <label><span class="row"><input type="checkbox" id="ice" checked> Glaciers in white</span></label>
-      <label><span class="row"><input type="checkbox" id="coast"> Faint coastline</span></label>
-      <label>Sun direction <input type="range" id="az" min="0" max="360" value="315"></label>
-      <label>Sun height <input type="range" id="alt" min="10" max="80" value="40"></label>
-      <label>Vertical exaggeration <input type="range" id="exag" min="1" max="6" step="0.5" value="2"></label>
-      <div id="playbars"></div>
-      <span class="stat" id="stat"></span>
-    </div>
+  <h2>How the examples are built</h2>
+  <div class="three">
+    <div><h3>Data</h3><p>Sources are open and merged per region by priority, finest first, with a feathered seam. The source plan is a JSON file other tools can read; the long-running build is a resumable script that plans before it fetches. See <a href="https://github.com/AdmcCarthy/Relief/blob/main/docs/hires-sources.md">the research notes</a>.</p></div>
+    <div><h3>Style</h3><p>Land classes (0, 50, 150, 300, 600, 1,000, 1,500, 2,000 m) take one of four ramps by climate zone (Köppen–Geiger, cross-blended over about 6 km). Depth is a continuous gradient on a wider, deeper ramp, so shelves and trenches both read.</p></div>
+    <div><h3>Delivery</h3><p>Heights are packed into a lossless WebP (height = −11,000 m + 16-bit value × 0.5 m). The shader does the colouring, so the style is a few uniforms. A whole-region texture stays under 8,192 px and about 10 MB, which sets how fine a region example can be.</p></div>
   </div>
 </section>
 
-<section class="wrap">
-  <h2>Open data for Norway, Denmark and the UK</h2>
-  <p class="lead">What can be used freely for land and sea floor, at what resolution, and what this page uses now. Checked November 2026; read each licence before publishing.</p>
-  <div class="tw"><table>
-    <thead><tr><th>Country</th><th>Land</th><th>Sea floor</th><th>Coastline</th><th>Notes</th></tr></thead>
-    <tbody>
-      <tr><td class="c"><b>Norway</b></td>
-        <td>Kartverket DTM 10 and the national height model (10 m, 1 m), CC BY 4.0; coverage service (WCS) available</td>
-        <td><span class="ok">Used:</span> Kartverket sea-floor terrain model 50 m, CC BY 4.0, ordered by half-degree cell through Geonorge's download API. 5 m and 25 m grids inside 12 nautical miles are classified</td>
-        <td>Kartverket N50, N250, N1000, CC BY 4.0</td>
-        <td>Glaciers: NVE inventory 2018–19 (Sentinel-2); RGI 6.0 used here. No mapped permanent snow line</td></tr>
-      <tr><td class="c"><b>Denmark</b></td>
-        <td>Danmarks Højdemodel (DHM) terrain, 0.4 m from airborne lidar, free via Dataforsyningen (free account)</td>
-        <td>Denmark's Depth Model, 50 m (2024 edition), free GeoTIFF or web service; credit "Danmarks Dybdemodel, 50 m opløsning" with retrieval date; not for navigation</td>
-        <td>GeoDanmark</td>
-        <td>Covers the Danish EEZ, so the Skagerrak and the Danish North Sea at 50 m</td></tr>
-      <tr><td class="c"><b>United Kingdom</b></td>
-        <td>OS Terrain 50 (50 m, 4 m vertical RMSE), OS OpenData; Environment Agency lidar for England</td>
-        <td>UKHO ADMIRALTY Marine Data Portal: over 4,000 survey surfaces, Open Government Licence with a no-navigation term and attribution; no single national grid</td>
-        <td>OS Boundary-Line, OS Open Zoomstack</td>
-        <td>Surfaces are survey footprints; EMODnet already composites many of them</td></tr>
-      <tr><td class="c"><b>Europe</b></td>
-        <td><span class="ok">Used:</span> Copernicus DEM GLO-90 (GLO-30 where released), Copernicus licence</td>
-        <td><span class="ok">Used:</span> EMODnet DTM 2024, about 115 m, WCS by box; source references per survey</td>
-        <td>EuroGeographics, Natural Earth</td>
-        <td>EMODnet fills gaps with GEBCO and IBCAO</td></tr>
-      <tr><td class="c"><b>Global</b></td>
-        <td>GEBCO, Copernicus DEM</td>
-        <td>GEBCO_2026, 15 arc-seconds (about 450 m), public domain</td>
-        <td>Natural Earth</td>
-        <td>Fallback north of EMODnet coverage</td></tr>
-    </tbody></table></div>
-  <ul class="notes">
-    <li><b>Better than GEBCO, now:</b> in Norwegian waters the 50 m Kartverket model is about 80 times as many cells as GEBCO for the same area; Denmark's 50 m model does the same for Danish waters; EMODnet's 115 m covers the rest of the North Sea, including UK waters.</li>
-    <li><b>Permanent snow:</b> no country here publishes a permanent snow line. Glacier outlines are the observed "always white" layer; a modelled snow line (by height and aspect) would have to be labelled Interpreted.</li>
-    <li><b>Performance:</b> 1.16 MB of elevation (lossless WebP, 16-bit, 0.5 m steps, 200 m cells) plus a 16 KB glacier mask drive every map; each draw takes a few milliseconds on the GPU. Vector contours remain available for d3 figures (<a href="vector.html">vector layers</a>).</li>
-  </ul>
-</section>
-
-<footer class="wrap">
-  Sources: Copernicus DEM GLO-90 © DLR e.V. 2010–2014 and © Airbus 2014–2018, provided under COPERNICUS by the European Union and ESA ·
-  Kartverket sea-floor terrain model 50 m (CC BY 4.0) · EMODnet Bathymetry Consortium (2024): EMODnet Digital Bathymetry (DTM) ·
-  RGI Consortium (2017), Randolph Glacier Inventory 6.0, via GLIMS (CC BY 4.0) · Wells and fields: Sodir (NLOD 2.0).
-  Code: <a href="https://github.com/AdmcCarthy/Relief">github.com/AdmcCarthy/Relief</a>.
-</footer>
-
-<script type="module" src="demo.js"></script>
+<footer class="wrap" id="credits"></footer>
+<script type="module" src="regions.js"></script>
 </body>
 </html>

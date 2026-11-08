@@ -13,6 +13,7 @@ Usage: python scripts/build.py <area>
 from __future__ import annotations
 
 import json
+import math
 import sys
 import time
 from pathlib import Path
@@ -32,16 +33,40 @@ from shapely.ops import unary_union
 
 LAND = [0, 100, 250, 500, 750, 1000, 1250, 1500]
 SEA = [0, 50, 100, 150, 200, 250, 300, 400, 500, 750, 1000]  # depths, metres
-LODS = {  # cell size (m), smoothing (cells), drop features under MIN_AREA_PX cells, merge gaps under CLOSE_PX cells
-    "overview": {"cell": 1000, "sigma": 1.2, "min_area_px": 6, "close_px": 1.5},
-    "regional": {"cell": 250, "sigma": 1.0, "min_area_px": 5, "close_px": 1.0},
-    "detail": {"cell": 125, "sigma": 0.8, "min_area_px": 4, "close_px": 0.0},
+# Generalisation per level of detail, in CELLS: smoothing, drop features under MIN_AREA_PX cells, merge gaps under
+# CLOSE_PX cells. The cell size in metres comes from the region (regions/regions.json), so one LOD name means the
+# same visual treatment at any scale. Vestland: overview 1000 m, regional 250 m, detail 125 m.
+LOD_RULES = {
+    "overview": {"sigma": 1.2, "min_area_px": 6, "close_px": 1.5},
+    "regional": {"sigma": 1.0, "min_area_px": 5, "close_px": 1.0},
+    "detail": {"sigma": 0.8, "min_area_px": 4, "close_px": 0.0},
 }
 
 
-def load_merged(area: str, crs: str, cell: float) -> tuple[np.ndarray, rasterio.Affine]:
-    """Copernicus GLO-90 where it shows land, EMODnet everywhere else, projected to `crs` at `cell` metres."""
+def lods_for(area: dict) -> dict:
+    return {name: {"cell": cfg["cell"], **LOD_RULES[name]} for name, cfg in area["lods"].items()}
+
+
+def load_merged(area: str, a: dict, cell: float) -> tuple[np.ndarray, rasterio.Affine]:
+    """Heights on a grid of `cell` metres in the region's CRS, aligned to the top-left of its extent.
+
+    Regions fetched by fetch_region.py have one merged lon/lat GeoTIFF (land, EMODnet sea, ETOPO fallback), warped
+    here by averaging (or bilinear when the grid is finer than the source). The legacy path (Vestland) merges the
+    full-resolution Copernicus tiles and EMODnet cut itself: Copernicus where it shows land, EMODnet elsewhere.
+    """
+    crs = a["crs"]
     raw = Path("data/raw") / area
+    if (raw / "merged.tif").exists():
+        x0, y0, x1, y1 = a["extent"]
+        w, h = math.ceil((x1 - x0) / cell), math.ceil((y1 - y0) / cell)
+        tr = rasterio.Affine(cell, 0, x0, 0, -cell, y1)
+        z = np.full((h, w), np.nan, dtype="float32")
+        with rasterio.open(raw / "merged.tif") as src:
+            step_m = src.res[1] * 111_000
+            # tolerance=0: GDAL's approximate transformer misplaces whole row bands in Equal Earth (found on `world`)
+            reproject(rasterio.band(src, 1), z, dst_transform=tr, dst_crs=crs, dst_nodata=np.nan, tolerance=0.0,
+                      resampling=Resampling.average if cell >= step_m else Resampling.bilinear)
+        return np.nan_to_num(z, nan=0.0), tr
     with rasterio.open(raw / "emodnet_dtm.tif") as em:
         tr, w, h = calculate_default_transform(em.crs, crs, em.width, em.height, *em.bounds, resolution=cell)
         sea = np.full((h, w), np.nan, dtype="float32")
@@ -102,7 +127,9 @@ def band(z: np.ndarray, tr, lo: float, cfg: dict, cell: float, deeper: bool, cli
     return set_precision(g, 10.0)  # 10 m grid: compact integers, invisible at these scales
 
 
-def hillshade(z: np.ndarray, cell: float, az: float = 315, alt: float = 45, exag: float = 2.0) -> np.ndarray:
+def hillshade(z: np.ndarray, cell: float, az: float = 315, alt: float = 45, exag: float | None = None) -> np.ndarray:
+    """Hillshade with vertical exaggeration growing with the cell size (2 up to 1 km), or relief goes flat."""
+    exag = exag if exag is not None else 2.0 * max(1.0, cell / 1000)
     zz = np.nan_to_num(z, nan=0.0) * exag
     gy, gx = np.gradient(zz, cell)
     slope = np.arctan(np.hypot(gx, gy))
@@ -132,11 +159,12 @@ def main(area: str) -> None:
     a = AREAS[area]
     out = Path("data/out") / area
     out.mkdir(parents=True, exist_ok=True)
-    manifest = {"area": area, "crs": a["crs"], "land": LAND, "sea": SEA, "lods": {}}
-    frame = inner_rect(a["box"], a["crs"])
-    for name, cfg in LODS.items():
+    manifest = {"area": area, "name": a["name"], "crs": a["crs"], "extent": a["extent"], "bbox": list(a["box"]),
+                "land": LAND, "sea": SEA, "lods": {}}
+    frame = box(*a["extent"])
+    for name, cfg in lods_for(a).items():
         t0 = time.time()
-        z, tr = load_merged(area, a["crs"], cfg["cell"])
+        z, tr = load_merged(area, a, cfg["cell"])
         zs = gaussian_filter(np.nan_to_num(z, nan=0.0), cfg["sigma"])
         feats = []
         raw_islands = None

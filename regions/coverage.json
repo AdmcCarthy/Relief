@@ -1,0 +1,233 @@
+{
+ "north_sea": {
+  "sodir_blocks": {
+   "north sea": {
+    "total": 284,
+    "inside": 284,
+    "touching": 284,
+    "share_inside": 1.0,
+    "share_area_inside": 1.0,
+    "role": "wanted"
+   },
+   "norwegian sea": {
+    "total": 596,
+    "inside": 35,
+    "touching": 53,
+    "share_inside": 0.0587,
+    "share_area_inside": 0.0763
+   },
+   "barents sea": {
+    "total": 947,
+    "inside": 0,
+    "touching": 0,
+    "share_inside": 0.0,
+    "share_area_inside": 0.0
+   }
+  },
+  "sodir_fields": {
+   "north sea": {
+    "total": 107,
+    "inside": 107,
+    "touching": 107,
+    "share_inside": 1.0,
+    "share_area_inside": 1.0,
+    "role": "wanted"
+   },
+   "norwegian sea": {
+    "total": 31,
+    "inside": 0,
+    "touching": 0,
+    "share_inside": 0.0,
+    "share_area_inside": 0.0
+   },
+   "barents sea": {
+    "total": 3,
+    "inside": 0,
+    "touching": 0,
+    "share_inside": 0.0,
+    "share_area_inside": 0.0
+   }
+  }
+ },
+ "norwegian_sea": {
+  "sodir_blocks": {
+   "north sea": {
+    "total": 284,
+    "inside": 21,
+    "touching": 30,
+    "share_inside": 0.0739,
+    "share_area_inside": 0.0922
+   },
+   "norwegian sea": {
+    "total": 596,
+    "inside": 596,
+    "touching": 596,
+    "share_inside": 1.0,
+    "share_area_inside": 1.0,
+    "role": "wanted"
+   },
+   "barents sea": {
+    "total": 947,
+    "inside": 1,
+    "touching": 3,
+    "share_inside": 0.0011,
+    "share_area_inside": 0.0006
+   }
+  },
+  "sodir_fields": {
+   "north sea": {
+    "total": 107,
+    "inside": 9,
+    "touching": 14,
+    "share_inside": 0.0841,
+    "share_area_inside": 0.1021
+   },
+   "norwegian sea": {
+    "total": 31,
+    "inside": 31,
+    "touching": 31,
+    "share_inside": 1.0,
+    "share_area_inside": 1.0,
+    "role": "wanted"
+   },
+   "barents sea": {
+    "total": 3,
+    "inside": 0,
+    "touching": 0,
+    "share_inside": 0.0,
+    "share_area_inside": 0.0
+   }
+  }
+ },
+ "barents_sea": {
+  "sodir_blocks": {
+   "north sea": {
+    "total": 284,
+    "inside": 0,
+    "touching": 0,
+    "share_inside": 0.0,
+    "share_area_inside": 0.0
+   },
+   "norwegian sea": {
+    "total": 596,
+    "inside": 24,
+    "touching": 39,
+    "share_inside": 0.0403,
+    "share_area_inside": 0.0329
+   },
+   "barents sea": {
+    "total": 947,
+    "inside": 947,
+    "touching": 947,
+    "share_inside": 1.0,
+    "share_area_inside": 1.0,
+    "role": "wanted"
+   }
+  },
+  "sodir_fields": {
+   "north sea": {
+    "total": 107,
+    "inside": 0,
+    "touching": 0,
+    "share_inside": 0.0,
+    "share_area_inside": 0.0
+   },
+   "norwegian sea": {
+    "total": 31,
+    "inside": 0,
+    "touching": 0,
+    "share_inside": 0.0,
+    "share_area_inside": 0.0
+   },
+   "barents sea": {
+    "total": 3,
+    "inside": 3,
+    "touching": 3,
+    "share_inside": 1.0,
+    "share_area_inside": 1.0,
+    "role": "wanted"
+   }
+  }
+ },
+ "ne_europe": {
+  "sodir_blocks": {
+   "north sea": {
+    "total": 284,
+    "inside": 278,
+    "touching": 284,
+    "share_inside": 0.9789,
+    "share_area_inside": 0.9969,
+    "role": "wanted"
+   },
+   "norwegian sea": {
+    "total": 596,
+    "inside": 0,
+    "touching": 6,
+    "share_inside": 0.0,
+    "share_area_inside": 0.0018,
+    "role": "unwanted"
+   },
+   "barents sea": {
+    "total": 947,
+    "inside": 0,
+    "touching": 0,
+    "share_inside": 0.0,
+    "share_area_inside": 0.0,
+    "role": "unwanted"
+   }
+  },
+  "sodir_fields": {
+   "north sea": {
+    "total": 107,
+    "inside": 107,
+    "touching": 107,
+    "share_inside": 1.0,
+    "share_area_inside": 1.0,
+    "role": "wanted"
+   },
+   "norwegian sea": {
+    "total": 31,
+    "inside": 0,
+    "touching": 0,
+    "share_inside": 0.0,
+    "share_area_inside": 0.0,
+    "role": "unwanted"
+   },
+   "barents sea": {
+    "total": 3,
+    "inside": 0,
+    "touching": 0,
+    "share_inside": 0.0,
+    "share_area_inside": 0.0,
+    "role": "unwanted"
+   }
+  },
+  "wells": {
+   "Denmark": {
+    "total": 752,
+    "inside": 752,
+    "share_inside": 1.0
+   },
+   "Germany": {
+    "total": 271,
+    "inside": 271,
+    "share_inside": 1.0
+   },
+   "Netherlands": {
+    "total": 2184,
+    "inside": 2184,
+    "share_inside": 1.0
+   },
+   "Poland": {
+    "total": 63,
+    "inside": 63,
+    "share_inside": 1.0
+   },
+   "United Kingdom": {
+    "total": 13139,
+    "inside": 13101,
+    "share_inside": 0.9971
+   }
+  }
+ }
+}

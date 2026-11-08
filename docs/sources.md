@@ -5,6 +5,8 @@ Checked 2026-11-07. Keep the attribution lines with any map made from these data
 | Use | Dataset | Resolution | Coverage | Access | Licence / terms | Status here |
 |---|---|---|---|---|---|---|
 | Sea floor (primary, Europe) | **EMODnet Digital Bathymetry DTM 2024** | 1/16 arc-minute (~115 m) | European seas incl. North Sea, Norwegian Sea, Barents Sea | WCS `ows.emodnet-bathymetry.eu/wcs` (coverage `emodnet__mean`), or 59 tiles (GeoTIFF, NetCDF, ASCII) | Open access; attribution "EMODnet Bathymetry Consortium (2024): EMODnet Digital Bathymetry (DTM)". Check each tile's metadata licence: some contributing surveys are not open data in raw form | **Used** (WCS box cut) |
+| World, and sea outside EMODnet (east of 43 E) | **NOAA NCEI ETOPO 2022** surface elevation | 60 arc-second (~1.8 km) | Global | THREDDS OPeNDAP `ngdc.noaa.gov` (slow, about 0.5 MB/s: windows only) | Public domain; cite NOAA NCEI (2022) ETOPO 2022 15 Arc-Second Global Relief Model | **Used** (`fetch_region.py`) |
+| Coverage checks | **Sodir FactMaps** blocks (layer 802) and fields (layer 502); **EMODnet Human Activities** hydrocarbon wells and platforms | outlines, points | Norwegian shelf; European offshore | `scripts/fetch_sodir.py`; EMODnet WFS `ows.emodnet-humanactivities.eu` | NLOD (Sodir); EMODnet open | **Used** for `regions/coverage.json` only, not drawn |
 | Sea floor (global fallback, Arctic) | **GEBCO_2026 Grid** | 15 arc-second (~450 m) | Global ocean and land | download.gebco.net (user-defined area: netCDF, GeoTIFF, Esri ASCII) | Public domain, free of charge; acknowledge GEBCO | Planned (outside EMODnet, e.g. north of Svalbard) |
 | Sea floor (Norway, higher detail) | **Kartverket dybdedata: terrain models 50 m grid** | 50 m | Norwegian waters | Geonorge download | CC BY 4.0 for the 50 m model; 5 m and 25 m grids inside 12 nm are classified; raw data on application | Candidate for coastal detail |
 | Land (primary) | **Copernicus DEM GLO-90** (GLO-30 where released) | 90 m (30 m) | Global | Open AWS buckets `copernicus-dem-90m`, `copernicus-dem-30m` (1° Cloud Optimized GeoTIFFs) | Copernicus licence, free; attribution "© DLR e.V. 2010–2014 and © Airbus 2014–2018, provided under COPERNICUS by the European Union and ESA". Heights on EGM2008 | **Used** (GLO-90) |
@@ -26,3 +28,5 @@ Notes
 
 - Permanent snow: no Norwegian, Danish or UK agency publishes a permanent snow line. Glacier outlines are the
   observed "always white" layer; any modelled snow line must be labelled Interpreted.
+
+Higher-resolution candidates per region (GLO-30, ArcticDEM, NPI Svalbard, Kartverket seamless terrain and 25 m sea floor, IBCAO v5, GEBCO_2026, OS Terrain 50 and others), with access method, licence and how far each was checked: [hires-sources.md](hires-sources.md) and `regions/sources.json`.

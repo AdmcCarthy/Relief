@@ -28,6 +28,7 @@ jobs:
           mkdir -p _site/data
           cp preview/*.html preview/*.js _site/
           cp -r data/out/* _site/data/
+          mkdir -p _site/regions && cp regions/*.json regions/*.geojson _site/regions/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

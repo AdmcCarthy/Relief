@@ -1,0 +1,472 @@
+{
+  "version": 1,
+  "researched": "2026-11-08",
+  "about": "Source plan for higher-resolution relief (land) and bathymetry (sea) per region. Read by scripts/build_hires.py and docs/hires-sources.md. Nothing in this file has been downloaded: 'status' records how far each source was checked. verified = the endpoint answered a metadata or HEAD request on the research date; documented = described by the provider but not called; unverified = could not be confirmed (script refuses it unless --include-unverified); manual = no public API found, drop the file in data/raw/<region>/manual/<source id>/.",
+  "limits": {
+    "texture_px": 8192,
+    "web_budget_mb_per_region": 10,
+    "note": "The elevation texture the browser draws from must stay under about 8,192 px a side and about 10 MB as lossless 16-bit WebP (Vestland: 0.9 byte per pixel). That caps the web cell of a whole-region example at 250 to 600 m whatever the source resolution; finer sources only pay off with a tiled, zoomable delivery (see docs/hires-sources.md, 'What resolution can the page show')."
+  },
+  "style": {
+    "name": "Detuned",
+    "relief": "stepped (non-linear classes, cross-blended by climate zone)",
+    "bathymetry": "linear gradient",
+    "contours": false,
+    "illumination": false,
+    "coastline": false
+  },
+  "sources": {
+    "cop_glo90": {
+      "kind": "land",
+      "name": "Copernicus DEM GLO-90",
+      "res_m": 90,
+      "adapter": "cog_tiles",
+      "url": "https://copernicus-dem-90m.s3.amazonaws.com/{name}/{name}.tif",
+      "tile_name": "Copernicus_DSM_COG_30_{NS}{lat:02d}_00_{EW}{lon:03d}_00_DEM",
+      "status": "verified",
+      "licence": "Copernicus (free; check current annex)",
+      "attribution": "© DLR e.V. 2010–2014 and © Airbus 2014–2018, provided under COPERNICUS by the European Union and ESA",
+      "note": "Current land source (fetch_region.py). Heights on EGM2008.",
+      "bbox": [
+        -180,
+        -90,
+        180,
+        90
+      ]
+    },
+    "cop_glo30": {
+      "kind": "land",
+      "name": "Copernicus DEM GLO-30",
+      "res_m": 30,
+      "adapter": "cog_tiles",
+      "url": "https://copernicus-dem-30m.s3.amazonaws.com/{name}/{name}.tif",
+      "tile_name": "Copernicus_DSM_COG_10_{NS}{lat:02d}_00_{EW}{lon:03d}_00_DEM",
+      "status": "verified",
+      "licence": "Copernicus (free for the general public; the AWS readme links an older annex, check the current one)",
+      "attribution": "© DLR e.V. 2010–2014 and © Airbus 2014–2018, provided under COPERNICUS by the European Union and ESA",
+      "est_mb_per_tile_native": 10,
+      "note": "3x finer than GLO-90 everywhere. COG with internal overviews: reading at a 300 m cell transfers about 1/100 of the tile. Tile URL checked 2026-11-08 (N60 E010). Some countries' tiles are withheld; the script falls back to GLO-90.",
+      "bbox": [
+        -180,
+        -90,
+        180,
+        90
+      ]
+    },
+    "arcticdem_32m": {
+      "kind": "land",
+      "name": "ArcticDEM mosaic v4.1, 32 m",
+      "res_m": 32,
+      "adapter": "cog_vrt",
+      "url": "https://pgc-opendata-dems.s3.us-west-2.amazonaws.com/arcticdem/mosaics/v4.1/32m_dem_tiles.vrt",
+      "crs": "EPSG:3413",
+      "status": "verified",
+      "licence": "CC BY 4.0",
+      "attribution": "ArcticDEM (Porter et al.), Polar Geospatial Center, University of Minnesota; accessed {date} from https://registry.opendata.aws/pgc-arcticdem",
+      "note": "Covers land north of about 60 N: Svalbard, Kola, Novaya Zemlya, Franz Josef Land, northern Norway. Index VRT and 32 m and 10 m tiles listed on the open bucket. Fills voids in GLO-30/90 at high latitude but is a surface model (trees, ice): use only where GLO is weak.",
+      "bbox": [
+        -180,
+        60,
+        180,
+        90
+      ]
+    },
+    "arcticdem_10m": {
+      "kind": "land",
+      "name": "ArcticDEM mosaic v4.1, 10 m",
+      "res_m": 10,
+      "adapter": "cog_vrt",
+      "url": "https://pgc-opendata-dems.s3.us-west-2.amazonaws.com/arcticdem/mosaics/v4.1/10m_dem_tiles.vrt",
+      "crs": "EPSG:3413",
+      "status": "verified",
+      "licence": "CC BY 4.0",
+      "attribution": "as arcticdem_32m",
+      "note": "Only for zoomed views; far more than a whole-region example can show.",
+      "bbox": [
+        -180,
+        60,
+        180,
+        90
+      ]
+    },
+    "npi_svalbard_dtm20": {
+      "kind": "land",
+      "name": "NPI Svalbard DTM 20",
+      "res_m": 20,
+      "adapter": "geonorge_download",
+      "uuid": "9d118d31-182c-495b-b7be-d819cc7444b1",
+      "area": {
+        "code": "2100",
+        "type": "kommune"
+      },
+      "crs": "EPSG:25833",
+      "status": "verified",
+      "licence": "Open (Norwegian Polar Institute); exact licence wording to confirm on the NPI record",
+      "attribution": "© Norwegian Polar Institute",
+      "note": "Capabilities answered: a single area (the whole archipelago). Built from NPI aerial photogrammetry; better than GLO on the glaciers' edges and fjord coasts. Also Svalbard DTM 5 (010bfb4a-65aa-4d30-aba9-7d090a432df7) and DTM 50 (3a83e0a7-113e-4850-8fed-1646838acb02).",
+      "bbox": [
+        8,
+        76,
+        35,
+        81
+      ]
+    },
+    "npi_janmayen_dtm5": {
+      "kind": "land",
+      "name": "NPI Jan Mayen DTM 5",
+      "res_m": 5,
+      "adapter": "geonorge_download",
+      "uuid": "731a0602-d262-483d-aaa6-474cef68e82a",
+      "status": "documented",
+      "licence": "Open (NPI)",
+      "attribution": "© Norwegian Polar Institute",
+      "note": "Jan Mayen is outside every region frame except possibly norwegian_sea's west edge; listed for completeness.",
+      "bbox": [
+        -10,
+        70,
+        -5,
+        72
+      ]
+    },
+    "kartverket_dtm_seamless": {
+      "kind": "land",
+      "name": "Kartverket national terrain model, seamless WCS",
+      "res_m": 1,
+      "adapter": "wcs",
+      "url": "https://wcs.geonorge.no/skwms1/wcs.hoyde-dtm_somlos",
+      "coverage": "las_dtm",
+      "crs": "EPSG:25833",
+      "status": "verified",
+      "scaling": "unverified",
+      "licence": "Open (Kartverket, likely CC BY 4.0: confirm on the Geonorge record)",
+      "attribution": "© Kartverket",
+      "note": "Capabilities and DescribeCoverage answered: one coverage, EPSG:25833, native step 0.25 m ('best resolution': 0.25 to 1 m lidar mosaic). Whether the server resamples (SCALESIZE) or rejects large requests was not tested; the script tries a scaled request on one chunk and drops the source if that fails. Bare terrain (no trees or buildings).",
+      "bbox": [
+        4,
+        57.5,
+        32,
+        71.5
+      ]
+    },
+    "kartverket_dtm10_historic": {
+      "kind": "land",
+      "name": "Kartverket DTM 10, historic annual version",
+      "res_m": 10,
+      "adapter": "manual",
+      "uuid": {
+        "EPSG:25832": "fd851873-f363-46f9-9fc6-bb1b403575df",
+        "EPSG:25833": "dddbb667-1303-4ac5-8640-7ec04c0e3918",
+        "EPSG:25835": "294c21ca-eb83-49b9-8861-bb1595ce8768"
+      },
+      "status": "verified",
+      "licence": "Open (Geonorge record says 'open licence'; CC BY 4.0 not confirmed)",
+      "attribution": "© Kartverket",
+      "note": "Capabilities and 146 map-sheet areas answered for UTM 32. Marked 'Historisk': Kartverket says the current model is exported from hoydedata.no. A fallback if the WCS cannot scale. Not scripted: its areas are map sheets (e.g. 6403-1) without published outlines, so choosing sheets for a region needs a manual order on geonorge.no; drop the GeoTIFFs in data/raw/<region>/manual/kartverket_dtm10_historic/.",
+      "bbox": [
+        4,
+        57.5,
+        32,
+        71.5
+      ]
+    },
+    "os_terrain50": {
+      "kind": "land",
+      "name": "OS Terrain 50",
+      "res_m": 50,
+      "adapter": "http_zip",
+      "url": "https://api.os.uk/downloads/v1/products/Terrain50/downloads?area=GB&format=ASCII+Grid+and+GML+%28Grid%29&redirect",
+      "crs": "EPSG:27700",
+      "format": "AAIGrid in 10 km tiles (zip, 162 MB)",
+      "est_mb": 162,
+      "status": "verified",
+      "licence": "OS OpenData, Open Government Licence v3",
+      "attribution": "Contains OS data © Crown copyright and database right {year}",
+      "note": "Listing answered without a key. Great Britain including Shetland and Orkney. Not a GeoTIFF: read the .asc tiles directly.",
+      "bbox": [
+        -9,
+        49.8,
+        2.2,
+        61.2
+      ]
+    },
+    "etopo_2022_60s": {
+      "kind": "both",
+      "name": "NOAA ETOPO 2022, 60 arc-second surface",
+      "res_m": 1850,
+      "adapter": "opendap",
+      "url": "https://www.ngdc.noaa.gov/thredds/dodsC/global/ETOPO2022/60s/60s_surface_elev_netcdf/ETOPO_2022_v1_60s_N90W180_surface.nc",
+      "status": "verified",
+      "licence": "Public domain",
+      "attribution": "NOAA NCEI (2022) ETOPO 2022 15 Arc-Second Global Relief Model",
+      "note": "Current world and far-Arctic source. Server is slow (about 0.5 MB/s): windows only, sampled for coarse grids.",
+      "bbox": [
+        -180,
+        -90,
+        180,
+        90
+      ]
+    },
+    "gebco_2026": {
+      "kind": "both",
+      "name": "GEBCO_2026 Grid",
+      "res_m": 450,
+      "adapter": "manual",
+      "url": "https://download.gebco.net",
+      "status": "manual",
+      "licence": "Public domain; acknowledge GEBCO; not for navigation",
+      "attribution": "GEBCO Bathymetric Compilation Group 2026 (2026) The GEBCO_2026 Grid. doi:10.5285/4f68d5c7-45eb-f999-e063-7086abc036fa",
+      "est_mb": 4400,
+      "note": "Published April 2026, 15 arc-second. Global file is 7 GB (NetCDF) or 8 tiles of 90 deg (GeoTIFF, about 4 GB zipped). Cut the region with the download app (user-defined area, GeoTIFF) and drop it in data/raw/<region>/manual/gebco_2026/. A Cloud Optimized GeoTIFF copy exists on Source Cooperative (giswqs/gebco-bathymetry, 4.4 GB, EPSG:4326) but its object URL could not be confirmed, so it is not scripted: if you find it, set 'url' and change 'adapter' to 'cog_file'.",
+      "bbox": [
+        -180,
+        -90,
+        180,
+        90
+      ]
+    },
+    "ibcao_v5": {
+      "kind": "sea",
+      "name": "IBCAO v5.0",
+      "res_m": 100,
+      "adapter": "manual",
+      "url": "https://doi.org/10.17043/ibcao-5.0",
+      "crs": "EPSG:3996",
+      "status": "manual",
+      "licence": "Open; terms on the GEBCO/IBCAO page (confirm); not for navigation",
+      "attribution": "Jakobsson et al. (2024) The International Bathymetric Chart of the Arctic Ocean Version 5.0, Scientific Data. doi:10.1038/s41597-024-04278-w",
+      "note": "100 m, published December 2024, four GeoTIFFs in polar stereographic. The right source for the Barents Sea east of 43 E and north of Svalbard, where EMODnet stops and the current build falls back to 1.8 km ETOPO. EMODnet 2024 already folds IBCAO 5 into its own grid inside its coverage.",
+      "bbox": [
+        -180,
+        64,
+        180,
+        90
+      ]
+    },
+    "emodnet_dtm_2024": {
+      "kind": "sea",
+      "name": "EMODnet Bathymetry DTM 2024",
+      "res_m": 115,
+      "adapter": "wcs_chunks",
+      "url": "https://ows.emodnet-bathymetry.eu/wcs",
+      "coverage": "emodnet__mean",
+      "crs": "EPSG:4326",
+      "chunk_deg": 2,
+      "status": "verified",
+      "licence": "Open; cite EMODnet Bathymetry Consortium (2024)",
+      "attribution": "EMODnet Bathymetry Consortium (2024): EMODnet Digital Bathymetry (DTM)",
+      "note": "Current sea source. Covers 11 N to 90 N, 70.5 W to 43 E. WCS scaling is not supported (500 errors) and requests over about 2 degrees are refused. EMODnet also lists 'high-resolution snapshots' at 1/32 to 1/512 arc-minute for some areas: not scripted (areas not published in a form I could read).",
+      "bbox": [
+        -70.5,
+        11,
+        43,
+        90
+      ]
+    },
+    "kartverket_sea_50": {
+      "kind": "sea",
+      "name": "Kartverket sea-floor terrain model, 50 m",
+      "res_m": 50,
+      "adapter": "geonorge_download",
+      "uuid": "67a3a191-49cc-45bc-baf0-eaaf7c513549",
+      "cell_type": "celle",
+      "status": "verified",
+      "licence": "CC BY 4.0, © Kartverket",
+      "attribution": "© Kartverket",
+      "note": "Already scripted (fetch_kartverket_sea.py). Cells NHS-Drrcc, half a degree each. Agrees with EMODnet to a median of 0 m (EMODnet already contains these surveys): the gain is resolution, not different depths.",
+      "bbox": [
+        0,
+        55,
+        40,
+        82
+      ]
+    },
+    "kartverket_sea_25": {
+      "kind": "sea",
+      "name": "Kartverket sea-floor terrain model, 25 m (MAREANO)",
+      "res_m": 25,
+      "adapter": "geonorge_download",
+      "uuid": "39e022aa-c352-4351-b172-b980b03c578c",
+      "cell_type": "celle",
+      "status": "verified",
+      "licence": "Open (Geonorge record); confirm CC BY 4.0",
+      "attribution": "© Kartverket / MAREANO",
+      "note": "Capabilities answered: 1,085 half-degree cells. Only outside the 12 nm limit and only where MAREANO has surveyed (Møre to Finnmark, the eastern Barents Sea, parts around Svalbard). Overlay on the 50 m model where present.",
+      "bbox": [
+        0,
+        55,
+        40,
+        82
+      ]
+    },
+    "dk_dybdemodel_50": {
+      "kind": "sea",
+      "name": "Denmark's Depth Model, 50 m (2024)",
+      "res_m": 50,
+      "adapter": "manual",
+      "url": "https://dataforsyningen.dk",
+      "crs": "EPSG:3034",
+      "status": "manual",
+      "licence": "Free incl. commercial; not for navigation; the agency may withdraw downloads",
+      "attribution": "Danmarks Dybdemodel, 50 m opløsning, retrieved {date} (Danish Geodata Agency)",
+      "note": "Covers the Danish EEZ. GeoTIFF or web service via a free Dataforsyningen account/token. seabed.py already reads data/raw/<region>/denmark_dybdemodel50/.",
+      "bbox": [
+        3,
+        53.2,
+        16,
+        58.5
+      ]
+    },
+    "bsh_dtm_50": {
+      "kind": "sea",
+      "name": "BSH seabed DTM North Sea and Baltic, 50 m",
+      "res_m": 50,
+      "adapter": "manual",
+      "url": "https://www.bsh.de/EN/TOPICS/Surveying_and_cartography/Hydrographic_surveys/Results/results_node.html",
+      "crs": "EPSG:25832",
+      "status": "manual",
+      "licence": "Free under GeoZG; no licence name found: confirm on the GeoSeaPortal",
+      "attribution": "© BSH",
+      "note": "German EEZ, 50 m grid via the GeoSeaPortal (no API found). 1 m grids by request, possibly for a fee.",
+      "bbox": [
+        3,
+        53,
+        15,
+        56
+      ]
+    },
+    "ukho_mdp": {
+      "kind": "sea",
+      "name": "UKHO ADMIRALTY Marine Data Portal bathymetry",
+      "res_m": 10,
+      "adapter": "manual",
+      "url": "https://www.admiralty.co.uk/access-data",
+      "status": "unverified",
+      "licence": "UKHO Bathymetry Data Licence (OGL plus a not-for-navigation term)",
+      "attribution": "Contains public sector information licensed under the Open Government Licence v3.0 and © Crown copyright UKHO",
+      "note": "Over 4,000 survey surfaces; formats found were GeoJSON, KML and Shapefile (outlines) and I could not confirm gridded downloads. Not scriptable yet. EMODnet already composites the UK surveys at 115 m.",
+      "bbox": [
+        -9,
+        49,
+        3,
+        61.5
+      ]
+    }
+  },
+  "regions": {
+    "north_sea": {
+      "web_cell_m": {
+        "now": 500,
+        "hires": 250
+      },
+      "land": [
+        "kartverket_dtm_seamless",
+        "kartverket_dtm10_historic",
+        "os_terrain50",
+        "cop_glo30",
+        "cop_glo90"
+      ],
+      "sea": [
+        "kartverket_sea_25",
+        "kartverket_sea_50",
+        "dk_dybdemodel_50",
+        "bsh_dtm_50",
+        "emodnet_dtm_2024",
+        "etopo_2022_60s"
+      ],
+      "gain": "Norwegian shelf and fjord mouths from 115 m to 25 to 50 m; Norwegian land from GLO-90 to the national terrain model. At a 250 m cell the land sources are all finer than the picture, so GLO-30 alone would look the same: the national models earn their keep in zoomed views."
+    },
+    "norwegian_sea": {
+      "web_cell_m": {
+        "now": 500,
+        "hires": 400
+      },
+      "land": [
+        "kartverket_dtm_seamless",
+        "kartverket_dtm10_historic",
+        "cop_glo30",
+        "cop_glo90"
+      ],
+      "sea": [
+        "kartverket_sea_25",
+        "kartverket_sea_50",
+        "emodnet_dtm_2024",
+        "etopo_2022_60s"
+      ],
+      "gain": "MAREANO's 25 m grid over the Norwegian Sea shelf, banks and the Storegga slide area (outside 12 nm), plus Nordland's coast."
+    },
+    "barents_sea": {
+      "web_cell_m": {
+        "now": 1000,
+        "hires": 600
+      },
+      "land": [
+        "npi_svalbard_dtm20",
+        "kartverket_dtm_seamless",
+        "arcticdem_32m",
+        "cop_glo30",
+        "cop_glo90"
+      ],
+      "sea": [
+        "kartverket_sea_25",
+        "kartverket_sea_50",
+        "ibcao_v5",
+        "emodnet_dtm_2024",
+        "gebco_2026",
+        "etopo_2022_60s"
+      ],
+      "gain": "The biggest real upgrade: the sea east of 43 E and north of 80 N goes from 1.8 km ETOPO to 100 m IBCAO v5; Svalbard from GLO-90 to NPI 20 m or ArcticDEM 32 m; the Norwegian Barents shelf to MAREANO 25 m."
+    },
+    "ne_europe": {
+      "web_cell_m": {
+        "now": 1000,
+        "hires": 600
+      },
+      "land": [
+        "cop_glo30",
+        "os_terrain50",
+        "cop_glo90"
+      ],
+      "sea": [
+        "emodnet_dtm_2024",
+        "dk_dybdemodel_50",
+        "bsh_dtm_50",
+        "kartverket_sea_50",
+        "etopo_2022_60s"
+      ],
+      "gain": "Modest. At a 600 m cell GLO-30 (30 m) and EMODnet (115 m) are already finer than the picture; national models (Germany DGM, Poland NMT 1 m, Netherlands AHN, Denmark DHM) add nothing visible at this scale and were not scripted. The gain here is cleaner averaging from GLO-30 and the Danish and German 50 m models in their own waters."
+    },
+    "world": {
+      "web_cell_m": {
+        "now": 10000,
+        "hires": 8000
+      },
+      "land": [
+        "gebco_2026",
+        "etopo_2022_60s"
+      ],
+      "sea": [
+        "gebco_2026",
+        "etopo_2022_60s"
+      ],
+      "gain": "Replaces ETOPO sampled every fifth cell (1.8 km source, 9 km sample) with GEBCO 2026 averaged properly from 450 m: no aliasing on coasts and ridges. The only new thing needed is the GEBCO download."
+    },
+    "vestland": {
+      "web_cell_m": {
+        "now": 200,
+        "hires": 100
+      },
+      "land": [
+        "kartverket_dtm_seamless",
+        "kartverket_dtm10_historic",
+        "cop_glo30",
+        "cop_glo90"
+      ],
+      "sea": [
+        "kartverket_sea_25",
+        "kartverket_sea_50",
+        "emodnet_dtm_2024"
+      ],
+      "gain": "Already uses Kartverket 50 m for the sea (demo page). Land would move from GLO-90 to the national model."
+    }
+  }
+}
