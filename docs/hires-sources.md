@@ -208,6 +208,17 @@ neighbouring cells that belong to different sources, in water deeper than 200 m.
 
 Median step, with the 90th percentile in brackets. The patches with straight edges in deep water on the zoom page (for
 example the pale block in the lower left of the Norwegian Sea) are source boundaries, but the depths either side agree to
-1 to 3 m: what shows is the finer model's detail meeting EMODnet's smoother surface, not an offset. The real offsets are
-where ETOPO 2022 (1.85 km) is the only source: 34 to 57 m, from a few per cent of the sea at the region edges. Replacing
-ETOPO with GEBCO 2026 (450 m) as the deep base there is the remaining fix; it needs a fetch of the region-edge windows.
+1 to 3 m: what shows is the finer model's detail meeting EMODnet's smoother surface, not an offset. The large steps are
+where a coarse source fills ground the fine ones do not cover, 34 to 57 m with ETOPO 2022 (1.85 km) as the only source.
+`scripts/seam_steps.py` reproduces the table and adds a control: the step between same-source neighbours near the same
+boundaries is 1.7 to 1.9 m, so slope alone does not explain it.
+
+**Where the large steps are (checked 2026-11-09).** Mapped on the North Sea grid, they follow the walls of the deep
+Norwegian fjords (the Sognefjord region), not the region edges: the fine Kartverket models do not reach the fjord floors, so
+a coarse source fills them and the surfaces disagree most on the steep walls.
+
+**GEBCO 2026 as the deep base (tried 2026-11-09, North Sea and Norwegian Sea; 21 and 40 MB read, about 30 s each).** It
+took 0.8 % and 0.4 % of the sea and left ETOPO with 1.0 % and 0.6 %. The excess step against the fine models fell from 37 to
+62 m (ETOPO) to 23 to 33 m (GEBCO): about halved, not removed, because 463 m cells still cannot follow a fjord wall. Not worth
+a data release by itself. The remaining fix is a finer open source inside the fjords (Kartverket's 5 m and 25 m grids inside
+12 nm are classified; the open DTM 10 and N50 coast are the candidates).
