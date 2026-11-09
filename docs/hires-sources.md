@@ -193,3 +193,21 @@ was the constraint: a 1.5 km Atlantic grid is 79 million cells, which this machi
 million), and the merge skips the feathering pass for a layer with nothing beneath it. Effect: small-scale deep-ocean relief
 3 to 6 % higher than the ETOPO version, visually similar: see [depth-scale.md](depth-scale.md). GEBCO is not used for the world
 (5 km) or the Barents Sea, where the existing sources already match the cell.
+
+### Seam measurements (2026-11-09)
+
+Measured on the built grids (`data/raw/<region>/hires.tif` against `hires_sources.png`): the absolute depth step between
+neighbouring cells that belong to different sources, in water deeper than 200 m. Derived, one pass per region.
+
+| Boundary | North Sea | Norwegian Sea | Barents Sea |
+|---|---|---|---|
+| EMODnet to Kartverket 25 m | 0.6 m (p90 24) | 1.4 m (p90 6) | 1.7 m (p90 15) |
+| EMODnet to Kartverket 50 m | 1.5 m (p90 33) | 2.3 m (p90 19) | 2.2 m (p90 29) |
+| EMODnet to IBCAO 400 m | none | none | 1.2 m (p90 185) |
+| EMODnet or Kartverket to ETOPO 2022 | **34 m** (p90 96 to 116) | **48 to 57 m** (p90 123 to 135) | not measured |
+
+Median step, with the 90th percentile in brackets. The patches with straight edges in deep water on the zoom page (for
+example the pale block in the lower left of the Norwegian Sea) are source boundaries, but the depths either side agree to
+1 to 3 m: what shows is the finer model's detail meeting EMODnet's smoother surface, not an offset. The real offsets are
+where ETOPO 2022 (1.85 km) is the only source: 34 to 57 m, from a few per cent of the sea at the region edges. Replacing
+ETOPO with GEBCO 2026 (450 m) as the deep base there is the remaining fix; it needs a fetch of the region-edge windows.
