@@ -44,6 +44,13 @@ for (const id of ["norwegian_sea", "barents_sea", "ne_europe", "atlantic", "worl
   check(/^Level \d+ of \d+ · tiles at/.test(await info()), `${id} opens`);
   await shot(`explore_${id}`);
 }
+// the sea-floor shading toggle belongs to ocean regions only
+await page.click('#regions button[data-v="atlantic"]'); await settle();
+check(await page.$eval("#shadeseg", (e) => !e.hidden), "shading toggle shown for the Atlantic (ocean scale)");
+await page.click("#shadeon"); await settle();
+check((await page.$eval("#shadeon", (e) => e.getAttribute("aria-pressed"))) === "false", "shading can be switched off");
+await page.click('#regions button[data-v="north_sea"]'); await settle();
+check(await page.$eval("#shadeseg", (e) => e.hidden), "no shading toggle on a shelf region");
 await browser.close();
 if (problems.length) { console.log("\nProblems:\n - " + problems.join("\n - ")); process.exit(1); }
 console.log("\nall checks passed");
