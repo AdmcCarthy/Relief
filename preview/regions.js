@@ -70,7 +70,7 @@ function equalEarthOutline(bounds, W, H) {
 
 function drawCard(c) {
   if (!c.src || !R) return;
-  const st = detunedStyle(theme, c.reg.bathymetry), aspect = c.meta.size[1] / c.meta.size[0];
+  const st = detunedStyle(theme, c.reg.bathymetry, (c.meta.bounds[2] - c.meta.bounds[0]) / Math.round((c.canvas.clientWidth || 600) * dpr)), aspect = c.meta.size[1] / c.meta.size[0];
   const W = Math.round((c.canvas.clientWidth || 600) * dpr), H = Math.round(W * aspect);
   c.canvas.style.aspectRatio = `${c.meta.size[0]} / ${c.meta.size[1]}`;
   c.canvas.width = W; c.canvas.height = H;

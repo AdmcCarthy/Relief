@@ -88,7 +88,7 @@ footer { margin:56px 0 40px; padding-top:14px; border-top:1px solid var(--rule);
         <li><b>Detuned</b>: land held back at half strength, the sea floor on its own deep indigo ramp.</li>
         <li><b>Relief</b>: stepped classes, tinted by climate zone.</li>
         <li><b>Bathymetry</b>: a linear gradient.</li>
-        <li>No contours, no illumination, no coastline line.</li>
+        <li>No contours, no coastline line, no illumination: except soft shading of the sea floor in ocean basins (Norwegian Sea, Atlantic, world).</li>
       </ul>
     </div>
     <div id="legend" aria-label="Colour key"></div>
@@ -98,7 +98,7 @@ footer { margin:56px 0 40px; padding-top:14px; border-top:1px solid var(--rule);
 
 <section class="wrap">
   <h2>Examples</h2>
-  <p class="lead">Each map is drawn on your GPU from one 16-bit elevation file. The shelf and coast regions use a shelf depth scale (0 to 1,300 m); the Norwegian Sea, the Atlantic and the world use an ocean scale (0 to 7,000 m) so that ridges, fracture zones and abyssal plains show. The last card is the proof of concept the techniques page is built on.</p>
+  <p class="lead">Each map is drawn on your GPU from one 16-bit elevation file. The shelf and coast regions use a shelf depth scale (0 to 1,300 m); the Norwegian Sea, the Atlantic and the world use an ocean scale (0 to 7,000 m) with soft sea-floor shading (the one exception to the no-illumination rule; land stays unshaded) so that ridges, fracture zones and abyssal plains show. The last card is the proof of concept the techniques page is built on.</p>
   <div class="grid" id="cards"></div>
 </section>
 

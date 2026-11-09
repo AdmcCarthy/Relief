@@ -51,13 +51,22 @@ export function tune(h, sat, mix = 0) {
 // The house style, fixed for the region examples: land tints at half strength (stepped classes, one ramp per climate
 // zone), the sea floor on its own wide indigo ramp as a LINEAR gradient. No contours, no illumination, no coastline.
 // Returned in the shape relief.js draws: `stepped` applies to land, `seaStepped` is false.
-export function detunedStyle(theme, bathymetry = "shelf") {
+export function detunedStyle(theme, bathymetry = "shelf", mpp = 0, tune_ = null) {
   const dark = theme === "dark", Z = ZPAL[theme], ocean = bathymetry === "ocean";
   const land = Object.fromEntries(ZK.map((k) => [k, at(LB, Z[k].map((c) => tune(c, 0.5, dark ? -0.08 : 0.08)), LMAX)]));
   const sea = ocean ? at(OCEAN_SB, DETUNED_OCEAN[theme], OCEAN_MAX) : at(SB, DETUNED_SEA[theme], SMAX);
   return { land: land.temperate, zones: land, sea, landMax: LMAX, seaMax: ocean ? OCEAN_MAX : SMAX, landStops: LB, seaStops: ocean ? OCEAN_SB : SB,
     seaTicks: ocean ? [0, 1000, 2000, 3000, 4000, 5000, 6000] : [0, 250, 500, 1000],
-    stepped: true, seaStepped: false, shade: "none", contours: "none", coast: false, ice: false };
+    stepped: true, seaStepped: false, shade: "none", contours: "none", coast: false, ice: false,
+    ...(ocean && mpp > 0 ? oceanShade(mpp, tune_) : {}) };
+}
+
+// Soft multi-directional shading for ocean basins only (land stays unshaded): fracture zones, ridge-parallel abyssal hills and
+// trenches are a few hundred metres on grids of 2 to 20 km, too faint for colour alone at the full-basin view. Vertical
+// exaggeration has to grow with the metres each screen pixel covers, or the relief goes flat as the map zooms out.
+export function oceanShade(mpp, t = null) {
+  const exag = t?.exag ?? Math.min(40, Math.max(4, mpp / 1500));  // about 14 at 21 km per pixel (the Atlantic fitted to a screen)
+  return { shade: "soft", shadeK: 0, seaShadeK: t?.k ?? 0.8, exag, alt: 40 };
 }
 
 // ---------------------------------------------------------------- colour bars

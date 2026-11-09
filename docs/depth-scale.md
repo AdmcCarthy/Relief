@@ -69,9 +69,7 @@ Norway basins.
 
 ## Limits
 
-- Colour only. Fracture zones and abyssal hills are a few hundred metres high; at the global view they are at the edge of
-  visibility, and zooming in reveals them. Shading would show them better, but the house style has no illumination. If an
-  exception is wanted for ocean basins, the renderer already has soft shading and a sea-floor shade strength.
+- Colour alone leaves fracture zones and abyssal hills at the edge of visibility at the full-basin view (see Shading, below).
 - **GEBCO 2026 for the Atlantic** (15 arc-second, about 463 m, averaged to 2 km; replaces ETOPO 2022 at 2.5 km): measured on
   four 1,800 km patches of deep sea floor (2,000 to 6,500 m), small-scale relief (std of height minus a 20 km blur) rose only
   3 to 6 % (for example 244 to 250 m at the Romanche fracture zone, 210 to 222 m on the southern ridge), and side by side the two
@@ -80,3 +78,18 @@ Norway basins.
   abyssal-hill lineations visible. Zoomed in (the zoom page), both resolve fracture zones and ridge-parallel hills.
 - Two ramps mean the same depth has a different colour in a shelf map and an ocean map (200 m is the same pale tone in
   both; 1,000 m is not). Every map carries its own depth key.
+
+## Shading for ocean basins (an exception to the house style)
+
+The house style has no illumination. For the three ocean-scale regions only (Norwegian Sea, Atlantic, world) the sea floor gets
+the renderer's soft multi-directional shading; land stays unshaded and shelf regions are unchanged. It can be switched off on the
+zoom page (the "Shading" button) or with `?shade=off`.
+
+- **Why:** colour alone puts a 300 m fracture-zone offset at delta E 2 to 3; shading turns the same offset into a lit and a
+  shaded edge, which reads at a glance, and makes ridge-parallel abyssal hills visible as texture.
+- **Strength:** vertical exaggeration has to grow with the metres each screen pixel covers, or the relief goes flat when zoomed
+  out: `exag = clamp(m per pixel / 1500, 4, 40)`, about 14 for the Atlantic fitted to a screen; sea-floor shade 0.8, land 0.
+  Tried at 6, 14 and 30 on the Atlantic: 6 barely changes the colour map, 30 darkens coasts and islands and muddies the depth
+  colours, 14 shows ridge texture and fracture zones without hiding the depth key. `?exag=N&k=K` overrides it for experiments.
+- **Cost:** shading modulates the colours, so the depth key is read less exactly in shaded maps; the colour bar is unchanged.
+

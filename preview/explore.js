@@ -36,6 +36,8 @@ for (const id of ORDER) {
 }
 const params = new URLSearchParams(location.search);
 let cur = null;  // { reg, tiles, meta, zones, ext: [x0, y0, x1, y1] }
+let shading = params.get("shade") !== "off";  // ocean regions only: soft shading of the sea floor
+const override = params.get("exag") ? { exag: +params.get("exag"), k: +(params.get("k") ?? 0.8) } : null;
 const view = { cx: 0, cy: 0, mpp: 1 };  // centre in region metres; metres per CSS pixel
 const canvas = $("map"), ctx = canvas.getContext("2d");
 const buf = document.createElement("canvas"), stitch = document.createElement("canvas");
@@ -120,7 +122,7 @@ async function render() {
   };
   const bw = Math.max(1, Math.round(((ix1 - ix0) / view.mpp) * dpr)), bh = Math.max(1, Math.round(((iy1 - iy0) / view.mpp) * dpr));
   buf.width = bw; buf.height = bh;
-  R.draw(buf, src, detunedStyle(theme, cur.reg.bathymetry));
+  R.draw(buf, src, detunedStyle(theme, cur.reg.bathymetry, shading ? view.mpp / dpr : 0, override));
   const ox = ((ix0 - vx0) / view.mpp) * dpr, oy = ((vy1 - iy1) / view.mpp) * dpr;
   ctx.save();
   if (cur.reg.id === "world") {
@@ -166,6 +168,8 @@ async function openRegion(id) {
   const zonesImg = await new Promise((res) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = `data/${entry.reg.id}/demo/zones.png`; });
   cur = { ...entry, meta, zones: zonesImg, ext: entry.tiles.extent };
   $("regions").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === entry.reg.id)));
+  $("shadeseg").hidden = entry.reg.bathymetry !== "ocean";  // shading is an ocean-basin option only
+  $("shadeon").setAttribute("aria-pressed", String(shading));
   $("rname").textContent = entry.reg.name;
   $("rdesc").textContent = entry.reg.description;
   const finest = entry.tiles.levels.at(-1).cell;
@@ -202,6 +206,7 @@ canvas.addEventListener("wheel", (e) => { e.preventDefault(); const r = canvas.g
 canvas.addEventListener("dblclick", (e) => { const r = canvas.getBoundingClientRect(); zoomAt(2, e.clientX - r.left, e.clientY - r.top); });
 $("zin").addEventListener("click", () => zoomAt(2, size().w / 2, size().h / 2));
 $("zout").addEventListener("click", () => zoomAt(0.5, size().w / 2, size().h / 2));
+$("shadeon").addEventListener("click", () => { shading = !shading; $("shadeon").setAttribute("aria-pressed", String(shading)); render(); });
 $("zfit").addEventListener("click", () => { if (cur) { fit(); render(); saveUrl(); } });
 canvas.addEventListener("keydown", (e) => {
   const step = size().w * view.mpp * 0.15;

@@ -30,6 +30,7 @@ h1 { font:500 clamp(1.8rem,4vw,2.6rem)/1.1 var(--display); margin:8px 0 6px; }
 .stage { position:relative; }
 #map { display:block; width:100%; height:min(74vh, 820px); min-height:360px; border:1px solid var(--rule); border-radius:12px; background:var(--raised); cursor:grab; touch-action:none; }
 #map:active { cursor:grabbing; }
+.seg[hidden] { display:none; }
 .info { font:500 12px var(--mono); color:var(--muted); margin:8px 0; }
 .nogl { display:none; padding:12px 14px; border:1px solid var(--rule); border-radius:10px; background:var(--surface); margin:12px 0; }
 .legend { margin:12px 0; max-width:640px; }
@@ -62,6 +63,7 @@ a { color:var(--link); }
   <p class="nogl" id="nogl">This page needs WebGL 2, which this browser does not provide.</p>
   <div class="tools">
     <div class="seg" id="regions" role="group" aria-label="Region"></div>
+    <div class="seg" id="shadeseg" role="group" aria-label="Sea-floor shading" hidden title="Soft shading of the sea floor (ocean regions only)"><button id="shadeon" aria-pressed="true">Shading</button></div>
     <div class="seg" role="group" aria-label="Zoom"><button id="zin" aria-label="Zoom in">＋</button><button id="zout" aria-label="Zoom out">－</button><button id="zfit">Fit</button></div>
   </div>
   <div class="stage"><canvas id="map" tabindex="0" aria-label="Zoomable relief map: arrow keys pan, plus and minus zoom"></canvas></div>
