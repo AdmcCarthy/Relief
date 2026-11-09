@@ -17,7 +17,6 @@ Voice and structure of written work (README, docs, published pages) follow Idiom
 - Browser JS can be run: Node is at ~/.local/node/bin (add to PATH) and Playwright's Chromium is cached in ~/.cache/ms-playwright; `tests/e2e/check_pages.mjs` smoke-tests the gallery and zoom viewer (setup in its header). `node --check` on a .mjs copy syntax-checks a page script.
 - Print layers: terrain processing for map sheets lives here (`scripts/print_layers.py`, docs/print-layers.md): other repos consume its files and never contour, shade or resample terrain themselves. Keep the `layers.json` contract (`relief_layers: 1`) stable.
 - Sea colour: two linear ramps (shelf 0-1,300 m, ocean 0-7,000 m) chosen per region by `bathymetry` in regions.json; designed and checked by scripts/depth_ramp.py (OKLCH, lightness monotonic, even delta E per 500 m), mirrored in preview/palette.js and guarded by tests/test_depth_ramp.py. Change the generator and the JS together.
-- Print layers: terrain processing for map sheets lives here (`scripts/print_layers.py`, docs/print-layers.md): other repos consume its files and never contour, shade or resample terrain themselves. Keep the `layers.json` contract (`relief_layers: 1`) stable.
 
 ## Idiom (private repo)
 
