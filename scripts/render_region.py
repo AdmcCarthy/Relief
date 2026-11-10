@@ -9,7 +9,8 @@ Sources, in order of preference (`--source auto`):
   current  data/raw/<region>/merged.tif  from scripts/fetch_region.py: lon/lat, warped here to the web cell
 
 Usage: python scripts/render_region.py <region> [--source auto|hires|current] [--cell METRES]
-Writes data/out/<region>/demo/{elev.webp, zones.png, meta.json}.
+Writes data/out/<region>/demo/{elev.webp, zones.png, meta.json}, and elev_card.webp when the texture is wider than CARD_PX:
+the same encoding averaged down for the gallery cards, which are drawn about 900 px wide and should not download 5 to 9 MB each.
 """
 
 from __future__ import annotations
@@ -46,6 +47,25 @@ def encode(z: np.ndarray, method: int = 6) -> bytes:
     buf = io.BytesIO()
     Image.fromarray(rgb, "RGB").save(buf, "WEBP", lossless=True, quality=100, method=method)
     return buf.getvalue()
+
+
+CARD_PX = 1800  # widest gallery-card texture: a card is drawn at most about 900 CSS px wide, so 2x for a dense screen
+
+
+def card_texture(z: np.ndarray, cell: float, max_w: int = CARD_PX) -> tuple[np.ndarray, float] | None:
+    """The grid averaged k x k (the smallest integer k that brings the width within `max_w`), or None if it is already small enough.
+
+    The grid is padded to a whole number of blocks by repeating its last row and column, so the card covers the same extent as
+    the full texture (the last card cell overshoots the edge by less than one card cell); cutting the remainder would shift it."""
+    h, w = z.shape
+    k = -(-w // max_w)
+    if k <= 1:
+        return None
+    z = np.nan_to_num(z, nan=0.0)  # as encode() does
+    ph, pw = -h % k, -w % k
+    zp = np.pad(z, ((0, ph), (0, pw)), mode="edge")
+    small = zp.reshape(zp.shape[0] // k, k, zp.shape[1] // k, k).mean(axis=(1, 3))
+    return small.astype("float32"), cell * k
 
 
 def decode(blob: bytes) -> np.ndarray:
@@ -118,6 +138,12 @@ def main(region: str, source: str = "auto", cell: float | None = None) -> None:
     out.mkdir(parents=True, exist_ok=True)
     blob = encode(z)
     (out / "elev.webp").write_bytes(blob)
+    card = card_texture(z, cell_m)
+    card_blob = encode(card[0]) if card else None
+    if card_blob:
+        (out / "elev_card.webp").write_bytes(card_blob)
+    else:
+        (out / "elev_card.webp").unlink(missing_ok=True)  # never leave a card from an earlier, larger build
     zones, small = zones_texture(region, tr, w, h)
     Image.fromarray(small, "RGB").save(out / "zones.png", optimize=True)
     land = z > 0
@@ -135,6 +161,9 @@ def main(region: str, source: str = "auto", cell: float | None = None) -> None:
         "built": date.today().isoformat(),
         "files": {"elev.webp": len(blob), "zones.png": (out / "zones.png").stat().st_size},
     }
+    if card:
+        meta["card"] = {"file": "elev_card.webp", "size": [card[0].shape[1], card[0].shape[0]], "cell": card[1]}
+        meta["files"]["elev_card.webp"] = len(card_blob)
     (out / "meta.json").write_text(json.dumps(meta, indent=1, ensure_ascii=False))
     mb = len(blob) / 1e6
     warn = ""
@@ -142,7 +171,9 @@ def main(region: str, source: str = "auto", cell: float | None = None) -> None:
         warn += f"  WARNING: {max(w, h)} px exceeds the {PLAN['limits']['texture_px']} px texture limit"
     if mb > PLAN["limits"]["web_budget_mb_per_region"]:
         warn += f"  WARNING: {mb:.1f} MB exceeds the {PLAN['limits']['web_budget_mb_per_region']} MB web budget"
-    print(f"{region}: {use}, {w} x {h} at {cell_m:.0f} m, elev.webp {mb:.2f} MB ({time.time() - t0:.0f} s){warn}")
+    print(f"{region}: {use}, {w} x {h} at {cell_m:.0f} m, elev.webp {mb:.2f} MB"
+          + (f", card {card[0].shape[1]} x {card[0].shape[0]} at {card[1]:.0f} m {len(card_blob) / 1e6:.2f} MB" if card else "")
+          + f" ({time.time() - t0:.0f} s){warn}")
 
 
 if __name__ == "__main__":

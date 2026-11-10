@@ -58,7 +58,22 @@ def test_a_stamp_ignores_a_new_timestamp_but_not_new_content(tmp_path):
     assert runs(rb.plan(tmp_path, [REGION])) == {}
     (raw / "hires.tif").write_bytes(b"grid-v2")
     r = runs(rb.plan(tmp_path, [REGION]))
-    assert r["render"] == "input changed" and r["tiles"] == "input changed" and r["vectors"] == "input changed" and "base" in r
+    assert r["render"] == "input or script changed" and r["tiles"] == "input or script changed" and "base" in r
+
+
+def test_a_changed_stage_script_rebuilds_only_that_stage_and_what_follows(tmp_path, monkeypatch):
+    tree(tmp_path)
+    scripts = tmp_path / "scripts"
+    scripts.mkdir()
+    for n in ("render_region.py", "build_tiles.py", "build.py", "base_tint.py"):
+        (scripts / n).write_text("v1")
+    monkeypatch.setattr(rb, "SCRIPTS", scripts)
+    for st in ("render", "tiles", "vectors", "base"):
+        rb.record(tmp_path, REGION, st)
+    assert runs(rb.plan(tmp_path, [REGION])) == {}
+    (scripts / "render_region.py").write_text("v2")
+    r = runs(rb.plan(tmp_path, [REGION]))
+    assert set(r) == {"render", "base"} and r["render"] == "input or script changed" and r["base"] == "render was rebuilt"
 
 
 def test_base_reruns_when_vectors_dropped_its_manifest_entry(tmp_path):

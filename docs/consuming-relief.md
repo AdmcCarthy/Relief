@@ -33,6 +33,7 @@ prototype; a published product should read a pinned tag.
 | `<lod>_hillshade.png` | hillshade for the same rectangle as the LOD's `bounds` |
 | `regional_base_{light,dark}.png` | the Detuned base map; named under `manifest.base.regional` |
 | `demo/elev.webp`, `demo/zones.png`, `demo/meta.json` | one 16-bit elevation texture (height = `encoding.base` + (R × 256 + G) × `encoding.step`) and the climate-zone weights |
+| `demo/elev_card.webp` | optional, named by `meta.card` (`file`, `size`, `cell`): the same texture averaged down to at most 1,800 px wide, for small previews |
 | `tiles/tiles.json`, `tiles/<z>/<x>_<y>.webp` | the same heights as a pyramid of 512 px tiles, level 0 coarsest |
 
 Only the keys listed in `scripts/contract.py` are part of the agreement; other keys in a manifest are private. A region may have

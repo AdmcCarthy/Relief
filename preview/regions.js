@@ -45,16 +45,18 @@ async function loadCard(c) {
   const meta = await getJSON(base + "meta.json");
   if (!meta) { c.el.classList.add("missing"); return; }
   try {
-    const [elev, zones] = await Promise.all([loadImage(base + "elev.webp"), loadImage(base + "zones.png")]);
+    const card = meta.card || null;  // a smaller texture for the card when the full one is wide (render_region.py); the zoom page has the detail
+    const [elev, zones] = await Promise.all([loadImage(base + (card ? card.file : "elev.webp")), loadImage(base + "zones.png")]);
     c.meta = meta;
-    c.src = { key: c.reg.id, elev, ice: null, zones, size: meta.size, cell: meta.cell, base: meta.encoding.base, step: meta.encoding.step };
+    c.drawnAt = card ? card.cell : meta.cell;
+    c.src = { key: c.reg.id, elev, ice: null, zones, size: card ? card.size : meta.size, cell: c.drawnAt, base: meta.encoding.base, step: meta.encoding.step };
   } catch { c.el.classList.add("missing"); return; }
   const d = meta.data;
   if (d) {
     const names = d.sources.map((s) => `${esc(s.name)} (${s.res_m >= 1000 ? s.res_m / 1000 + " km" : s.res_m + " m"})`).join(", ");
-    c.data.innerHTML = `<b>Drawn at ${meta.cell.toLocaleString("en-GB")} m</b> · ${d.kind === "hires" ? "high-resolution build" : "first-pass data"}<br>${names}`;
+    c.data.innerHTML = `<b>Drawn at ${c.drawnAt.toLocaleString("en-GB")} m</b> · ${d.kind === "hires" ? "high-resolution build" : "first-pass data"}<br>${names}`;
   } else {
-    c.data.innerHTML = `<b>Drawn at ${meta.cell.toLocaleString("en-GB")} m</b> · Copernicus GLO-90, EMODnet 2024, Kartverket 50 m`;
+    c.data.innerHTML = `<b>Drawn at ${c.drawnAt.toLocaleString("en-GB")} m</b> · Copernicus GLO-90, EMODnet 2024, Kartverket 50 m`;
   }
   const tiles = await getJSON(`data/${c.reg.id}/tiles/tiles.json`);
   const fine = tiles ? tiles.levels.at(-1).cell : null;
@@ -99,7 +101,7 @@ function drawPlan() {
     cards.map((c) => {
       const p = plan && plan.regions[c.reg.id], d = c.meta && c.meta.data;
       const srcs = d ? d.sources.map((s) => `${esc(s.name)} (${res(s.res_m)})`).join("; ") : "Copernicus GLO-90; EMODnet 2024; Kartverket 50 m";
-      return `<tr><td class="n"><b>${esc(c.reg.name.split(" (")[0])}</b></td><td class="n">${c.meta ? res(c.meta.cell) : "–"}</td>
+      return `<tr><td class="n"><b>${esc(c.reg.name.split(" (")[0])}</b></td><td class="n">${c.meta ? res(c.drawnAt) : "–"}</td>
         <td class="n">${c.fine ? "<b>" + res(c.fine) + "</b>" : "none"}</td><td>${srcs}</td><td>${p ? esc(p.gain) : ""}</td></tr>`;
     }).join("") + "</tbody>";
 }

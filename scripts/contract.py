@@ -79,7 +79,8 @@ def check_region_dir(region_dir: Path) -> list[str]:
         meta = _load(region_dir / "demo" / "meta.json", problems)
         if meta is not None:
             problems += _missing(meta, META_KEYS, f"{rid}/demo/meta.json") + _missing(meta.get("encoding"), ENCODING_KEYS, f"{rid}/demo/meta.json encoding")
-            problems += [f"{rid}: demo/{f} is missing" for f in ("elev.webp", "zones.png") if not (region_dir / "demo" / f).exists()]
+            files = ["elev.webp", "zones.png"] + ([meta["card"]["file"]] if isinstance(meta.get("card"), dict) and "file" in meta["card"] else [])
+            problems += [f"{rid}: demo/{f} is missing" for f in files if not (region_dir / "demo" / f).exists()]
     if (region_dir / "tiles" / "tiles.json").exists():
         t = _load(region_dir / "tiles" / "tiles.json", problems)
         if t is not None:

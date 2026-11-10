@@ -8,9 +8,9 @@ The stages, in order (each region is done one at a time to stay inside memory):
   vectors  {overview,regional,detail}.geojson, hillshades, manifest.json    scripts/build.py
   base     regional_base_{light,dark}.png and manifest "base"               scripts/base_tint.py (after render and vectors)
 
-A stage is stale when an output is missing, its inputs changed, or an upstream stage ran in this invocation. "Changed" means a
-different content hash from the one recorded after the last successful run (data/out/<region>/.rebuild-stamps.json); with no
-stamp yet it falls back to file times. `adopt` records the stamps for outputs you know are current. Nothing
+A stage is stale when an output is missing, its inputs or its own script changed, or an upstream stage ran in this invocation.
+"Changed" means a different content hash from the one recorded after the last successful run
+(data/out/<region>/.rebuild-stamps.json); with no stamp yet it falls back to file times. `adopt` records the stamps for outputs you know are current. Nothing
 touches the network unless --download is given, and that only fetches Relief's own grids-* release; fetching and merging the
 source data stays with build_hires.py, which is never run from here.
 
@@ -80,6 +80,17 @@ def inputs(root: Path, region: str, stage: str) -> list[Path]:
             "base": [out / "demo" / "elev.webp", out / "demo" / "zones.png"]}[stage]
 
 
+def stage_script(stage: str) -> Path | None:
+    name = {"render": "render_region.py", "tiles": "build_tiles.py", "vectors": "build.py", "base": "base_tint.py"}.get(stage)
+    return SCRIPTS / name if name else None
+
+
+def stamped(root: Path, region: str, stage: str) -> list[Path]:
+    """Everything a stage's outputs depend on: its input files and its own script (a code change must rebuild too)."""
+    script = stage_script(stage)
+    return [p for p in [*inputs(root, region, stage), script] if p is not None and p.exists()]
+
+
 def newest(paths: list[Path]) -> float:
     return max((p.stat().st_mtime for p in paths if p.exists()), default=0.0)
 
@@ -107,11 +118,10 @@ def read_stamps(root: Path, region: str) -> dict:
 
 def record(root: Path, region: str, stage: str) -> None:
     """Remember which inputs this stage's outputs were built from."""
-    ins = [p for p in inputs(root, region, stage) if p.exists()]
-    if not ins:
+    if not [p for p in inputs(root, region, stage) if p.exists()]:
         return
     st = read_stamps(root, region)
-    st[stage] = digest(ins)
+    st[stage] = digest(stamped(root, region, stage))
     stamp_file(root, region).parent.mkdir(parents=True, exist_ok=True)
     stamp_file(root, region).write_text(json.dumps(st, indent=1), encoding="utf-8")
 
@@ -130,7 +140,7 @@ def own_reason(root: Path, region: str, stage: str) -> str | None:
         return None
     stamp = read_stamps(root, region).get(stage)
     if stamp is not None:
-        return None if stamp == digest(ins) else "input changed"
+        return None if stamp == digest(stamped(root, region, stage)) else "input or script changed"
     if newest(ins) > min(p.stat().st_mtime for p in outs):
         return "older than its input (no stamp yet)"
     return None

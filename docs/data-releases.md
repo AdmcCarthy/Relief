@@ -77,6 +77,27 @@ region plan, its licence has to be on record in `regions/sources.json`; sources 
 record is under the Norge digitalt licence (partners only), so the Norwegian land in released tiles is Copernicus GLO-30,
 not that lidar model.
 
+## What the browser downloads (measured 2026-11-10)
+
+Where the bytes go, per region, before any change:
+
+| Part | Size | Notes |
+|---|---|---|
+| Example texture (`demo/elev.webp`) | 4.7 to 9.4 MB | what each gallery card used to download in full: about 39 MB for the landing page |
+| Tile pyramid | 15 to 58 MB, 100 to 245 files | fetched by view and zoom level, so a visit loads a small part |
+| Vector layers, detail LOD | 2.0 to 5.3 MB raw, 0.6 to 1.7 MB gzipped | GitHub Pages compresses text, so this is the wire size |
+| Hillshade PNGs | 3.1 to 7.3 MB | read only by consumers and the vector page |
+
+Two formats were considered and left out because the numbers do not support them. **TopoJSON** would shave a fraction of
+the gzipped vector layers (stacked bands share little boundary), under 1 MB a region. **A single-file tile archive
+(PMTiles)** would not reduce what a visitor fetches, since the tiles are already fetched one by one, there are only a few
+hundred of them, and release asset URLs are not a dependable range-request host.
+
+What did pay: the gallery cards now load `demo/elev_card.webp`, the same lossless 16-bit encoding averaged down to at most
+1,800 px wide (0.9 to 2.1 MB), so the landing page loads about 10 MB instead of 39 MB. The zoom page still reads the tiles at
+full detail, and `meta.json` keeps the full texture's size and cell. `tests/e2e/check_pages.mjs` fails if the gallery goes
+back above 20 MB.
+
 ## If it outgrows releases
 
 Finer data (50 m or less) multiplies the size. The same tarballs can move to object storage with CORS (for example
