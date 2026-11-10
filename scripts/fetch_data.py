@@ -21,6 +21,7 @@ import tempfile
 from pathlib import Path
 
 import requests
+from contract import check_release_manifest
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_REPO = "AdmcCarthy/Relief"
@@ -75,6 +76,21 @@ def download(url: str, to: Path) -> None:
             f.writelines(r.iter_content(1 << 22))
 
 
+def list_releases(releases: list[dict], repo: str) -> None:
+    """Print each published data-* / grids-* release (newest first) with its regions, read from its manifest."""
+    for r in releases:
+        if r.get("draft") or not r["tag_name"].startswith(("data-", "grids-")):
+            continue
+        asset = next((x for x in r["assets"] if x["name"] == "manifest.json"), None)
+        regions = "no manifest"
+        if asset:
+            try:
+                regions = ", ".join(requests.get(asset["browser_download_url"], timeout=60).json()["regions"])
+            except (requests.RequestException, ValueError, KeyError):
+                regions = "manifest unreadable"
+        print(f"{r['tag_name']:24s} {r['published_at'][:10]}  {regions}")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("regions", nargs="*")
@@ -83,10 +99,14 @@ def main() -> None:
     ap.add_argument("--dest", default=None, help="default data/out, or data/raw with --grids")
     ap.add_argument("--grids", action="store_true", help="fetch the merged grids (grids-* releases) into data/raw instead of the built layers")
     ap.add_argument("--force", action="store_true", help="download even if this release is already unpacked, or a local grid exists")
+    ap.add_argument("--list", action="store_true", help="list the published data-* and grids-* releases and their regions, then stop")
     a = ap.parse_args()
     prefix, marker_name = ("grids-", ".grids-release") if a.grids else ("data-", ".data-release")
     r = requests.get(f"{API}/repos/{a.repo}/releases", headers=headers(), params={"per_page": 30}, timeout=60)
     r.raise_for_status()
+    if a.list:
+        list_releases(r.json(), a.repo)
+        return
     rel = pick_release(r.json(), a.tag, prefix)
     if not rel:
         sys.exit(f"no published {prefix}* release found in {a.repo} (tag {a.tag}); publish one with scripts/publish_data.py")
@@ -94,6 +114,9 @@ def main() -> None:
     if "manifest.json" not in assets:
         sys.exit(f"release {rel['tag_name']} has no manifest.json")
     manifest = requests.get(assets["manifest.json"]["browser_download_url"], timeout=60).json()
+    problems = check_release_manifest(manifest)
+    if problems:
+        sys.exit(f"release {rel['tag_name']} does not match the consumer contract this checkout understands:\n  - " + "\n  - ".join(problems[:8]))
     dest = Path(a.dest or ROOT / "data" / ("raw" if a.grids else "out"))
     print(f"{a.repo} release {rel['tag_name']} ({manifest['created']}): {', '.join(manifest['regions'])}")
     for rid in a.regions or list(manifest["regions"]):

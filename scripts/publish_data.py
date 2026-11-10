@@ -26,6 +26,8 @@ import tarfile
 from datetime import date
 from pathlib import Path
 
+from contract import CONTRACT
+
 ROOT = Path(__file__).resolve().parents[1]
 IN_GIT = {"vestland"}  # regions whose outputs are committed
 KOPPEN = "Beck et al. (2023) Köppen-Geiger climate classification 1991–2020, CC BY 4.0 (climate-zone textures)"
@@ -73,7 +75,7 @@ def build(out_root: Path, dist: Path, wanted: list[str] | None = None, tag: str 
     dist.mkdir(parents=True, exist_ok=True)
     for old in dist.glob("relief-data-*.tar.gz"):
         old.unlink()
-    manifest = {"schema": 1, "tag": tag, "created": date.today().isoformat(), "licence": LICENCE_NOTE, "regions": {}}
+    manifest = {"schema": 1, "contract": CONTRACT, "tag": tag, "created": date.today().isoformat(), "licence": LICENCE_NOTE, "regions": {}}
     for rid in regions_to_pack(out_root, wanted):
         manifest["regions"][rid] = pack_region(out_root, rid, dist)
         e = manifest["regions"][rid]
@@ -151,7 +153,7 @@ def build_grids(raw_root: Path, dist: Path, plan: dict, wanted: list[str] | None
     dist.mkdir(parents=True, exist_ok=True)
     for old in dist.glob("relief-grids-*.tar.gz"):
         old.unlink()
-    manifest = {"schema": 1, "kind": "grids", "tag": None, "created": date.today().isoformat(), "licence": LICENCE_NOTE, "regions": {}}
+    manifest = {"schema": 1, "contract": CONTRACT, "kind": "grids", "tag": None, "created": date.today().isoformat(), "licence": LICENCE_NOTE, "regions": {}}
     for rid in grid_regions(raw_root, wanted):
         e = manifest["regions"][rid] = pack_grid(raw_root, rid, dist, plan)
         print(f"  {rid:14s} {e['bytes'] / 1e6:7.1f} MB packed ({e['unpacked_bytes'] / 1e6:.0f} MB, {e['files']} files, {e['cell_m']:.0f} m cell)")
