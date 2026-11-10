@@ -199,8 +199,12 @@ def main(area: str) -> None:
         c0 = int((bounds[0] - grid_bounds[0]) / cfg["cell"]); c1 = int((bounds[2] - grid_bounds[0]) / cfg["cell"])
         r0 = int((grid_bounds[3] - bounds[3]) / cfg["cell"]); r1 = int((grid_bounds[3] - bounds[1]) / cfg["cell"])
         write_png(out / f"{name}_hillshade.png", hillshade(z, cfg["cell"])[r0:r1, c0:c1])
+        # flat ground in the PNG is sin(alt) = 0.707 -> 180 of 255; a consumer compositing with soft-light (neutral at 128)
+        # remaps around this value (docs/base-maps.md, docs/plan-europe-frame.md)
         manifest["lods"][name] = {**cfg, "bounds": bounds, "shape": list(z.shape), "bytes": len(text),
                                   "coast_parts": feats[0]["properties"]["parts"], "coast_parts_ungeneralised": raw_islands,
+                                  "hillshade": {"file": f"{name}_hillshade.png", "flat": int(round(np.sin(np.radians(45)) * 255)), "range": [0, 255],
+                                                "model": "one light at 315/45, vertical exaggeration 2 x max(1, cell/1000)"},
                                   "seconds": round(time.time() - t0, 1)}
         print(f"{name:9s} cell {cfg['cell']:>5} m  {z.shape[1]}x{z.shape[0]}  {len(text) / 1e6:5.2f} MB  coast parts {raw_islands} -> "
               f"{feats[0]['properties']['parts']}  ({time.time() - t0:.0f} s)")
