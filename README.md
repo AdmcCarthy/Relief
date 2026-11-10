@@ -55,6 +55,13 @@ the European Union and ESA. EMODnet Bathymetry Consortium (2024): EMODnet Digita
 sea east of 43 E: NOAA NCEI ETOPO 2022 (public domain). Sodir block and field outlines (coverage checks only): NLOD.
 Code: MIT License with Acknowledgement.
 
+## Base maps for other repos
+
+`scripts/base_tint.py <region>` renders the Detuned base once per frame (`regional_base_{light,dark}.png`: linear
+bathymetry on the region's depth scale, stepped land classes cross-blended by climate zone) and records it in the
+frame's `manifest.json`. Repos that draw data on Relief draw that image, their data, then the hillshade, and print the
+depth key the manifest gives; see [docs/base-maps.md](docs/base-maps.md).
+
 ## Licence and acknowledgement
 
 MIT License with Acknowledgement ([LICENSE](LICENSE)): the MIT terms plus one condition. Anything built with this work says so,
