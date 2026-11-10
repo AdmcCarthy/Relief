@@ -24,6 +24,7 @@ from pathlib import Path
 
 import numpy as np
 import rasterio
+import fetch_climate
 from areas import AREAS
 from PIL import Image
 from rasterio.enums import Resampling
@@ -32,7 +33,6 @@ from rasterio.warp import reproject
 ROOT = Path(__file__).resolve().parents[1]
 PLAN = json.loads((ROOT / "regions" / "sources.json").read_text())
 BASE, STEP = -11000.0, 0.5
-KOPPEN = ROOT / "data" / "raw" / "climate" / "1991_2020" / "koppen_geiger_0p00833333.tif"
 CURRENT_SOURCES = {  # what fetch_region.py merges, by region (see regions.json 'fetch')
     "default": ["cop_glo90", "emodnet_dtm_2024", "etopo_2022_60s"],
     "world": ["etopo_2022_60s"],
@@ -89,7 +89,7 @@ def resample(z: np.ndarray, cell: float, to: float, region: str) -> np.ndarray:
 
 def zones_texture(region: str, tr, w: int, h: int) -> tuple[np.ndarray, np.ndarray]:
     import render_demo  # climate_zones: Köppen-Geiger classes -> blurred zone weights (cross-blended tints)
-    zones = render_demo.climate_zones(KOPPEN, tr, w, h, AREAS[region]["crs"])
+    zones = render_demo.climate_zones(fetch_climate.ensure(), tr, w, h, AREAS[region]["crs"])
     q = max(1, min(4, h // 64, w // 64))  # smooth field: quarter size for big grids, full size for tiny ones
     hh, ww = h // q * q, w // q * q
     small = zones[:hh, :ww, :3].reshape(hh // q, q, ww // q, q, 3).mean(axis=(1, 3))

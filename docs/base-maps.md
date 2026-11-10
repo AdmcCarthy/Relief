@@ -22,6 +22,7 @@ A base map is Relief's Detuned style, in this order from the bottom:
 
 ```
 uv run python scripts/base_tint.py ne_europe north_sea norwegian_sea
+# the Köppen-Geiger raster these need is fetched on first use (scripts/fetch_climate.py, 131 MB, md5-checked)
 ```
 
 writes, for each region, `data/out/<region>/regional_base_light.png` and `regional_base_dark.png` (RGB, the regional
