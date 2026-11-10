@@ -17,6 +17,7 @@ BUILT = [rid for rid in REGIONS if (ROOT / "data" / "out" / rid / "manifest.json
 BUDGET_MB = {"overview": 0.6, "regional": 2.5, "detail": 5.0}
 # whole-world coastlines are long, and the ocean regions carry 14 sea levels instead of 11
 BUDGET_OVERRIDE = {"world": {"overview": 1.5, "regional": 5.0}, "atlantic": {"overview": 1.0, "regional": 3.0, "detail": 6.0},
+                   "north_sea_wide": {"overview": 0.6, "regional": 2.5, "detail": 6.5},
                    "norwegian_sea": {"overview": 0.6, "regional": 2.5, "detail": 5.0}}
 
 

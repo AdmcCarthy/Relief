@@ -54,6 +54,6 @@ def test_the_shelf_ramp_is_flat_beyond_its_top_which_is_why_basins_need_the_ocea
 
 def test_regions_pick_their_scale():
     regions = {r["id"]: r for r in json.loads((ROOT / "regions" / "regions.json").read_text())["regions"]}
-    assert {i for i, r in regions.items() if r["bathymetry"] == "ocean"} == {"world", "atlantic", "norwegian_sea"}
+    assert {i for i, r in regions.items() if r["bathymetry"] == "ocean"} == {"world", "atlantic", "norwegian_sea", "norwegian_sea_wide"}
     for rid in ("world", "atlantic", "norwegian_sea"):
         assert max(regions[rid]["levels"]["sea"]) >= 5000, f"{rid}: vector sea levels must reach the abyssal plains"

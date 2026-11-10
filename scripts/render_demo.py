@@ -38,6 +38,7 @@ def shp_transform(fn, g):
     return shapely.transform(g, lambda c: np.column_stack(fn(c[:, 0], c[:, 1])))
 
 import seabed
+import fetch_climate
 from areas import AREAS
 from build import inner_rect
 
@@ -161,7 +162,7 @@ def main(area: str) -> None:
     (out / "elev.webp").write_bytes(encode(z))
     srcmap = np.where(z < 0, srcmap + 1, 0).astype("uint8")  # 0 land, 1 gebco, 2 emodnet, 3 denmark, 4 kartverket
     Image.fromarray(srcmap, "L").save(out / "sources.png", optimize=True)
-    zones = climate_zones(Path("data/raw/climate/1991_2020/koppen_geiger_0p00833333.tif"), tr, w, h, crs)
+    zones = climate_zones(fetch_climate.ensure(), tr, w, h, crs)
     # RGB = temperate, boreal, tundra weights; arid = 255 - R - G - B (weights sum to 255). No alpha channel:
     # transparent pixels lose their colour in image resizing and browser decoding. Smooth field: quarter size.
     q = zones[: h // 4 * 4, : w // 4 * 4, :3].reshape(h // 4, 4, w // 4, 4, 3).mean(axis=(1, 3))

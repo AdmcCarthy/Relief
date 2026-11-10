@@ -550,6 +550,64 @@
         "gebco_2026"
       ],
       "gain": "Basin scale for spreading ridges: GEBCO 2026 (15 arc-second, about 463 m) averaged to 2 km, replacing ETOPO 2022 (1.85 km source). Deep-ocean GEBCO is largely satellite-altimetry-predicted at a few km, so the gain is sharpest where ships have surveyed (ridge axes, margins, seamounts); fracture zones sharpen modestly."
+    },
+    "north_sea_wide": {
+      "web_cell_m": {
+        "now": 500,
+        "hires": 500
+      },
+      "land": [
+        "kartverket_dtm10_historic",
+        "os_terrain50",
+        "cop_glo30",
+        "cop_glo90"
+      ],
+      "sea": [
+        "kartverket_sea_25",
+        "kartverket_sea_50",
+        "dk_dybdemodel_50",
+        "bsh_dtm_50",
+        "emodnet_dtm_2024",
+        "etopo_2022_60s"
+      ],
+      "gain": "Landscape frame (about 2:1) for wide web pages; same sources as north_sea, coarse grid only, no hires build."
+    },
+    "norwegian_sea_wide": {
+      "web_cell_m": {
+        "now": 500,
+        "hires": 500
+      },
+      "land": [
+        "kartverket_dtm10_historic",
+        "cop_glo30",
+        "cop_glo90"
+      ],
+      "sea": [
+        "kartverket_sea_25",
+        "kartverket_sea_50",
+        "emodnet_dtm_2024",
+        "etopo_2022_60s"
+      ],
+      "gain": "Landscape frame (about 2:1) for wide web pages; same sources as norwegian_sea, coarse grid only, no hires build."
+    },
+    "ne_europe_wide": {
+      "web_cell_m": {
+        "now": 1000,
+        "hires": 1000
+      },
+      "land": [
+        "cop_glo30",
+        "os_terrain50",
+        "cop_glo90"
+      ],
+      "sea": [
+        "kartverket_sea_50",
+        "dk_dybdemodel_50",
+        "bsh_dtm_50",
+        "emodnet_dtm_2024",
+        "etopo_2022_60s"
+      ],
+      "gain": "Landscape frame (about 2:1) for wide web pages; same sources as ne_europe, coarse grid only, no hires build."
     }
   }
 }

@@ -579,7 +579,7 @@
         34488,
         16786
       ],
-      "built": true,
+      "built": false,
       "bathymetry": "ocean",
       "levels": {
         "sea": [
@@ -609,6 +609,208 @@
           4500
         ]
       }
+    },
+    {
+      "id": "north_sea_wide",
+      "name": "North Sea, landscape (2 : 1)",
+      "description": "The Norwegian North Sea in a 2 : 1 frame for a full-width screen figure (Idiom house/screens.md): the same projection as north_sea, widened east and west with the Atlantic margin, Scotland, the Skagerrak and southern Sweden as context.",
+      "crs": {
+        "code": "EPSG:25832",
+        "name": "ETRS89 / UTM zone 32N",
+        "proj4": "+proj=utm +zone=32 +ellps=GRS80 +units=m +no_defs +type=crs",
+        "epsg": 25832
+      },
+      "design": {
+        "lonlat_box": [
+          -10,
+          54.5,
+          23,
+          62.5
+        ],
+        "fit": "outer"
+      },
+      "fetch": {
+        "step_deg": 0.004166666666666667,
+        "sea": [
+          "emodnet",
+          "etopo"
+        ],
+        "land": [
+          "copernicus",
+          "etopo"
+        ]
+      },
+      "lods": {
+        "overview": {
+          "cell": 2000
+        },
+        "regional": {
+          "cell": 900
+        },
+        "detail": {
+          "cell": 300
+        }
+      },
+      "bathymetry": "shelf",
+      "extent": [
+        -730000,
+        6030000,
+        1410000,
+        7080000
+      ],
+      "bbox": [
+        -14.722,
+        52.968,
+        26.965,
+        63.857
+      ],
+      "size_km": [
+        2140,
+        1050
+      ],
+      "built": true
+    },
+    {
+      "id": "norwegian_sea_wide",
+      "name": "Norwegian Sea, landscape (2 : 1)",
+      "description": "The Norwegian Sea in a 2 : 1 frame for a full-width screen figure (Idiom house/screens.md): the projection of norwegian_sea, widened east and west with the Greenland Sea margin, Sweden and Finland as context.",
+      "crs": {
+        "code": "+proj=lcc +lat_1=62 +lat_2=70 +lat_0=66 +lon_0=8 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs",
+        "name": "Relief Norwegian Sea LCC (8 E)",
+        "proj4": "+proj=lcc +lat_0=66 +lon_0=8 +lat_1=62 +lat_2=70 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs +type=crs",
+        "epsg": null
+      },
+      "design": {
+        "lonlat_box": [
+          -14,
+          61.5,
+          28,
+          70
+        ],
+        "fit": "outer"
+      },
+      "fetch": {
+        "step_deg": 0.004166666666666667,
+        "sea": [
+          "emodnet",
+          "etopo"
+        ],
+        "land": [
+          "copernicus",
+          "etopo"
+        ]
+      },
+      "lods": {
+        "overview": {
+          "cell": 2000
+        },
+        "regional": {
+          "cell": 1000
+        },
+        "detail": {
+          "cell": 400
+        }
+      },
+      "bathymetry": "ocean",
+      "levels": {
+        "sea": [
+          0,
+          200,
+          500,
+          1000,
+          1500,
+          2000,
+          2500,
+          3000,
+          3500,
+          4000,
+          4500,
+          5000,
+          5500,
+          6000
+        ]
+      },
+      "extent": [
+        -1150000,
+        -510000,
+        1050000,
+        600000
+      ],
+      "bbox": [
+        -21.751,
+        59.689,
+        35.496,
+        71.394
+      ],
+      "size_km": [
+        2200,
+        1110
+      ],
+      "built": true
+    },
+    {
+      "id": "ne_europe_wide",
+      "name": "NE Europe, landscape (2 : 1)",
+      "description": "NE Europe in a 2 : 1 frame for a full-width screen figure (Idiom house/screens.md): the projection and north edge of ne_europe, widened east and west with the Atlantic margin and the Baltic states and Belarus as context.",
+      "crs": {
+        "code": "EPSG:3035",
+        "name": "ETRS89 / LAEA Europe",
+        "proj4": "+proj=laea +lat_0=52 +lon_0=10 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +units=m +no_defs +type=crs",
+        "epsg": 3035
+      },
+      "design": {
+        "lonlat_box": [
+          -14,
+          48,
+          30,
+          62
+        ],
+        "fit": "outer",
+        "north_at": [
+          62.0,
+          3
+        ]
+      },
+      "fetch": {
+        "step_deg": 0.008333333333333333,
+        "sea": [
+          "emodnet",
+          "etopo"
+        ],
+        "land": [
+          "copernicus",
+          "etopo"
+        ]
+      },
+      "lods": {
+        "overview": {
+          "cell": 4000
+        },
+        "regional": {
+          "cell": 2000
+        },
+        "detail": {
+          "cell": 800
+        }
+      },
+      "bathymetry": "shelf",
+      "extent": [
+        2560000,
+        2760000,
+        5800000,
+        4340000
+      ],
+      "bbox": [
+        -21.416,
+        45.475,
+        36.887,
+        62.172
+      ],
+      "size_km": [
+        3240,
+        1580
+      ],
+      "built": true
     }
   ]
 }

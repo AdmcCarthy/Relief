@@ -12,8 +12,19 @@ layers are built at.
 | `norwegian_sea` | Sodir Norwegian Sea blocks and fields, Nordland coast | Lambert conformal conic, 8 E (custom) | 1,070 × 1,000 km |
 | `barents_sea` | Barents Sea, northern Norway, Kola, Svalbard, Novaya Zemlya; **Norway at the bottom** | north-polar Lambert azimuthal equal-area, 30 E down (custom) | 2,150 × 1,800 km |
 | `ne_europe` | UK, Norwegian North Sea, Denmark, Netherlands, Germany, Poland; **not** the Norwegian Sea | ETRS89 / LAEA Europe (EPSG:3035) | 2,270 × 1,580 km |
+| `north_sea_wide` | The North Sea frame at 2 : 1, for a full-width screen figure | EPSG:25832 | 2,140 × 1,050 km |
+| `norwegian_sea_wide` | The Norwegian Sea frame at 2 : 1 | Lambert conformal conic, 8 E (custom) | 2,200 × 1,110 km |
+| `ne_europe_wide` | The NE Europe frame at 2 : 1 | ETRS89 / LAEA Europe (EPSG:3035) | 3,240 × 1,580 km |
 | `atlantic` | The Atlantic, Arctic to Southern Ocean, for spreading ridges; ocean depth scale | Lambert azimuthal equal-area, 25 W (custom) | 11,790 × 15,080 km |
 | `world` | Locator and global context; ocean depth scale | Equal Earth (EPSG:8857) | 34,488 × 16,786 km |
+
+## Landscape regions
+
+A map for a full-width figure on a screen wants a 2 : 1 frame (Idiom `house/screens.md`). The `*_wide` regions reuse the projection of
+the region they widen, so layers drawn in that region's coordinates (catchments, wells, blocks) register without conversion, and
+extend it east and west: more sea and more land as context, never less than the original frame. Each is built like any other region.
+They are not the Sodir coverage frames, so they carry no `coverage` block. Their regional images are for a 1,152 px page frame at
+twice the pixel density.
 
 ## Using a region elsewhere
 
