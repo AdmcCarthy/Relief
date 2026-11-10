@@ -193,6 +193,21 @@ def soft_hillshade(
     return (acc / wsum) / max(math.sin(ra), 0.2) * 0.7 + nz * 0.3
 
 
+def hard_hillshade(z: np.ndarray, cell: float, az: float = 315.0, alt: float = 45.0, exag: float | None = None) -> np.ndarray:
+    """Shade multiplier from one light (the classic single-source hillshade), on the same scale as `soft_hillshade` so
+    the two can be swapped and compared. Harder shadows, stronger ridges; use where the terrain is the subject."""
+    exag = exag if exag is not None else 2.0 * max(1.0, cell / 1000)
+    zz = np.nan_to_num(z, nan=0.0) * exag
+    gy_s, gx = np.gradient(zz, cell)
+    nx, ny, nz = -gx, gy_s, np.ones_like(zz)
+    norm = np.sqrt(nx * nx + ny * ny + nz * nz)
+    nx, ny, nz = nx / norm, ny / norm, nz / norm
+    a, ra = math.radians(az), math.radians(alt)
+    lx, ly, lz = math.sin(a) * math.cos(ra), math.cos(a) * math.cos(ra), math.sin(ra)
+    lit = np.maximum(nx * lx + ny * ly + nz * lz, 0.0)
+    return lit / max(math.sin(ra), 0.2) * 0.85 + nz * 0.15
+
+
 def contour_lines(
     z: np.ndarray,
     tr: rasterio.Affine,
@@ -318,6 +333,7 @@ def build(
     source: str = "auto",
     interval_sea: float | None = None,
     interval_land: float | None = None,
+    shade_model: str = "soft",
 ) -> dict:
     t0 = time.perf_counter()
     reg = {r["id"]: r for r in load()["regions"]}[region]
@@ -360,7 +376,7 @@ def build(
         if zi:
             manifest["files"]["zones"] = zi
     if "hillshade" in layers:
-        sh = soft_hillshade(zs, zcell)
+        sh = hard_hillshade(zs, zcell) if shade_model == "hard" else soft_hillshade(zs, zcell)
         write_tif(
             out / "hillshade.tif",
             np.clip(np.round(sh * 100), 0, 160),
@@ -372,7 +388,7 @@ def build(
             "file": "hillshade.tif",
             "encoding": "uint8 = multiplier x 100 (100 flat)",
             "cell": zcell,
-            "mode": "soft",
+            "mode": shade_model,
             "az": 315,
             "alt": 40,
             "exaggeration": 2.0 * max(1.0, zcell / 1000),
@@ -435,6 +451,7 @@ def main() -> None:
     p.add_argument("--source", choices=["auto", "tiles", "hires"], default="auto")
     p.add_argument("--interval-sea", type=float)
     p.add_argument("--interval-land", type=float)
+    p.add_argument("--shade-model", choices=["soft", "hard"], default="soft", help="six lights plus sky (soft) or one light at 315/45 (hard)")
     a = p.parse_args()
     m = build(
         a.region,
@@ -446,6 +463,7 @@ def main() -> None:
         a.source,
         a.interval_sea,
         a.interval_land,
+        a.shade_model,
     )
     print(
         f"{a.region} 1:{a.scale:,.0f} {a.dpi} dpi: source {m['source']['kind']} level cell {m['source']['cell']:g} m, {m['seconds']} s"

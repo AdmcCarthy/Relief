@@ -6,7 +6,7 @@ and draw the result.
 
 ```
 uv run python scripts/print_layers.py north_sea --scale 1500000 --dpi 150 --out _layers/ns \
-    [--extent x0,y0,x1,y1] [--layers elevation,zones,hillshade,contours,coast] [--source auto|tiles|hires]
+    [--extent x0,y0,x1,y1] [--layers elevation,zones,hillshade,contours,coast] [--source auto|tiles|hires] [--shade-model soft|hard]
 ```
 
 **Contract.** Everything lands in `--out`, georeferenced in the region CRS (metres), described by `layers.json`
@@ -16,7 +16,7 @@ uv run python scripts/print_layers.py north_sea --scale 1500000 --dpi 150 --out 
 |---|---|
 | `elevation.tif` | float32 heights, sea negative, on the coarsest tile level no coarser than one print pixel (finest if none) |
 | `zones.tif` | uint8 RGB climate-zone weights (temperate, boreal, tundra; arid = remainder) |
-| `hillshade.tif` | uint8 = shade multiplier x 100 (100 flat, 0..160); soft six-light model as in `preview/relief.js`; slopes over one print pixel |
+| `hillshade.tif` | uint8 = shade multiplier x 100 (100 flat, 0..160); `soft` (default): six lights plus sky as in `preview/relief.js`; `hard`: one light at 315/45, stronger ridges and shadows for sheets where the terrain is the subject; slopes over one print pixel |
 | `contours.geojson` | MultiLineString per level; `z` (m, depth negative), `kind`, `index` (every 5th); 0 m excluded |
 | `coast.geojson` | the 0 m line, generalised harder |
 
