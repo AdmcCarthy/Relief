@@ -7,6 +7,7 @@ need no token; GITHUB_TOKEN (set automatically in Actions) only avoids API rate 
   python scripts/fetch_data.py                       # every region in the latest data-* release
   python scripts/fetch_data.py north_sea world       # just these
   python scripts/fetch_data.py --tag data-2026-11-08 --dest data/out --force
+  python scripts/fetch_data.py --grids               # the merged grids from the latest grids-* release -> data/raw/ (skips the slow stage)
 """
 
 from __future__ import annotations
@@ -33,12 +34,12 @@ def headers() -> dict:
     return h
 
 
-def pick_release(releases: list[dict], tag: str | None = None) -> dict | None:
-    """The newest published release tagged data-* (releases arrive newest first), or the one with exactly `tag`."""
+def pick_release(releases: list[dict], tag: str | None = None, prefix: str = "data-") -> dict | None:
+    """The newest published release tagged `prefix`* (releases arrive newest first), or the one with exactly `tag`."""
     for r in releases:
         if r.get("draft"):
             continue
-        if (tag and tag != "latest" and r["tag_name"] == tag) or ((not tag or tag == "latest") and r["tag_name"].startswith("data-")):
+        if (tag and tag != "latest" and r["tag_name"] == tag) or ((not tag or tag == "latest") and r["tag_name"].startswith(prefix)):
             return r
     return None
 
@@ -79,27 +80,32 @@ def main() -> None:
     ap.add_argument("regions", nargs="*")
     ap.add_argument("--repo", default=DEFAULT_REPO)
     ap.add_argument("--tag", default="latest")
-    ap.add_argument("--dest", default=str(ROOT / "data" / "out"))
-    ap.add_argument("--force", action="store_true", help="download even if this release is already unpacked")
+    ap.add_argument("--dest", default=None, help="default data/out, or data/raw with --grids")
+    ap.add_argument("--grids", action="store_true", help="fetch the merged grids (grids-* releases) into data/raw instead of the built layers")
+    ap.add_argument("--force", action="store_true", help="download even if this release is already unpacked, or a local grid exists")
     a = ap.parse_args()
+    prefix, marker_name = ("grids-", ".grids-release") if a.grids else ("data-", ".data-release")
     r = requests.get(f"{API}/repos/{a.repo}/releases", headers=headers(), params={"per_page": 30}, timeout=60)
     r.raise_for_status()
-    rel = pick_release(r.json(), a.tag)
+    rel = pick_release(r.json(), a.tag, prefix)
     if not rel:
-        sys.exit(f"no published data release found in {a.repo} (tag {a.tag}); publish one with scripts/publish_data.py")
+        sys.exit(f"no published {prefix}* release found in {a.repo} (tag {a.tag}); publish one with scripts/publish_data.py")
     assets = {x["name"]: x for x in rel["assets"]}
     if "manifest.json" not in assets:
         sys.exit(f"release {rel['tag_name']} has no manifest.json")
     manifest = requests.get(assets["manifest.json"]["browser_download_url"], timeout=60).json()
-    dest = Path(a.dest)
+    dest = Path(a.dest or ROOT / "data" / ("raw" if a.grids else "out"))
     print(f"{a.repo} release {rel['tag_name']} ({manifest['created']}): {', '.join(manifest['regions'])}")
     for rid in a.regions or list(manifest["regions"]):
         if rid not in manifest["regions"]:
             sys.exit(f"{rid} is not in release {rel['tag_name']}")
         e = manifest["regions"][rid]
-        marker = dest / rid / ".data-release"
+        marker = dest / rid / marker_name
         if marker.exists() and marker.read_text().strip() == f"{rel['tag_name']} {e['sha256']}" and not a.force:
             print(f"  {rid}: up to date")
+            continue
+        if a.grids and (dest / rid / "hires.tif").exists() and not marker.exists() and not a.force:
+            print(f"  {rid}: a locally built grid is already there; keeping it (use --force to replace)")
             continue
         with tempfile.TemporaryDirectory() as tmp:
             archive = Path(tmp) / e["file"]

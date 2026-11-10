@@ -8,7 +8,8 @@ whenever sources improve, and would otherwise add a full copy to git history on 
 |---|---|
 | git | scripts, `regions/*.json`, docs, tests, the small Vestland proof of concept in `data/out/vestland/` |
 | release `data-YYYY-MM-DD` | `relief-data-<region>.tar.gz` per region, plus `manifest.json` (sha256, sizes, sources, attribution) |
-| `data/raw/` (local, ignored) | downloaded source data and merged high-resolution grids |
+| release `grids-YYYY-MM-DD` | `relief-grids-<region>.tar.gz`: the merged grids (`hires.tif` and its provenance) behind those layers, plus `manifest.json` |
+| `data/raw/` (local, ignored) | downloaded source data, cached source pieces and the merged grids |
 
 ## Use the data
 
@@ -20,6 +21,22 @@ uv run python scripts/fetch_data.py north_sea world  # just these regions
 The Pages workflow does the same before it runs the tests and assembles the site, so a deploy always serves a published,
 checksummed release. A repository that is public needs no token.
 
+## Restore the merged grids on a new machine
+
+Fetching and merging the sources is the slow stage (10 to 25 minutes a region, plus the source downloads). Its product, the
+merged grid, is published as a second release series so a fresh checkout can skip it:
+
+```
+uv run python scripts/fetch_data.py --grids          # latest grids-* release -> data/raw/<region>/ (checks sha256)
+uv run python scripts/fetch_data.py --grids atlantic # just one
+```
+
+A grid already built locally is kept unless `--force` is given. Then render and tile as usual (`render_region.py`,
+`build_tiles.py`). What is not in the release: the cached source pieces in `data/raw/<region>/hires/`, so changing a source
+list still means fetching that source again. The six grids are 551 MB packed (79 to 121 MB each): the GeoTIFFs are already
+compressed, so the archive saves nothing. GitHub allows 2 GiB per release asset and does not cap the total; releases on a
+public repository cost nothing and need no login to download.
+
 ## Publish new data
 
 After a rebuild (`build_hires.py`, `render_region.py`, `build_tiles.py`):
@@ -30,7 +47,10 @@ uv run python scripts/publish_data.py release --dry-run         # shows the gh c
 uv run python scripts/publish_data.py release --tag data-2026-11-08
 ```
 
-`release` needs the `gh` CLI, logged in. Re-run the Pages workflow afterwards (push, or Actions > Run workflow) to pick up
+For the grids (after `build_hires.py`): `publish_data.py grids-build`, then `publish_data.py grids-release --tag grids-2026-11-10`.
+`grids-build` refuses a grid built from a source marked `redistributable: false`, since a grid is a derived copy of its sources.
+
+`release` and `grids-release` need the `gh` CLI, logged in. Re-run the Pages workflow afterwards (push, or Actions > Run workflow) to pick up
 the new release.
 
 ## Licences

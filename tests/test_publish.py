@@ -87,3 +87,62 @@ def test_release_notes_and_dry_run(tmp_path, capsys):
     assert "gh release create data-test" in capsys.readouterr().out
     assert json.loads((dist / "manifest.json").read_text())["tag"] == "data-test"
     assert (dist / "release-notes.md").exists()
+
+
+# ---------------------------------------------------------------- merged grids (the grids-* release series)
+PLAN = {"sources": {"cop_glo30": {}, "emodnet_dtm_2024": {}, "kartverket_seamless": {"redistributable": False}}}
+
+
+def fake_raw(tmp_path, regions=("north_sea", "world"), land=("cop_glo30",)):
+    raw = tmp_path / "raw"
+    for rid in regions:
+        (raw / rid / "hires").mkdir(parents=True)  # cached source pieces: never packed
+        (raw / rid / "hires" / "piece.tif").write_bytes(b"piece")
+        (raw / rid / "hires.tif").write_bytes(b"grid-" + rid.encode())
+        (raw / rid / "hires_sources.png").write_bytes(b"png")
+        (raw / rid / "hires.json").write_text(json.dumps({"cell_m": 150.0, "size": [4, 3], "built": "2026-11-08", "land_sources": list(land),
+                                                         "sea_sources": ["emodnet_dtm_2024"], "attribution": [f"© {rid} sources"]}))
+    return raw
+
+
+def test_grids_are_packed_with_a_manifest_and_restore_exactly(tmp_path):
+    raw, dist = fake_raw(tmp_path), tmp_path / "dist"
+    m = pd.build_grids(raw, dist, PLAN)
+    assert m["kind"] == "grids" and list(m["regions"]) == ["north_sea", "world"]
+    e = m["regions"]["north_sea"]
+    assert e["file"] == "relief-grids-north_sea.tar.gz" and e["sha256"] == pd.sha256(dist / e["file"]) and e["files"] == 3
+    assert e["cell_m"] == 150.0 and e["attribution"] == ["© north_sea sources"]
+    with tarfile.open(dist / e["file"]) as tar:
+        assert sorted(tar.getnames()) == ["north_sea/hires.json", "north_sea/hires.tif", "north_sea/hires_sources.png"]  # no source pieces
+    dest = tmp_path / "restored"
+    fd.verify_and_extract(dist / e["file"], e["sha256"], dest)
+    assert (dest / "north_sea" / "hires.tif").read_bytes() == b"grid-north_sea"
+
+
+def test_a_grid_built_from_a_restricted_source_is_refused(tmp_path):
+    raw = fake_raw(tmp_path, ("north_sea",), land=("kartverket_seamless",))
+    with pytest.raises(SystemExit, match="not redistributable"):
+        pd.build_grids(raw, tmp_path / "dist", PLAN)
+    assert not list((tmp_path / "dist").glob("*.tar.gz"))
+
+
+def test_a_region_without_a_merged_grid_is_reported(tmp_path):
+    with pytest.raises(SystemExit, match="no merged grid"):
+        pd.build_grids(fake_raw(tmp_path), tmp_path / "d", PLAN, ["atlantis"])
+
+
+def test_the_two_release_series_do_not_pick_each_other():
+    rels = [{"tag_name": "grids-2026-11-10", "draft": False}, {"tag_name": "data-2026-11-09", "draft": False}, {"tag_name": "data-2026-11-08", "draft": False}]
+    assert fd.pick_release(rels)["tag_name"] == "data-2026-11-09"  # the Pages build still gets a data release
+    assert fd.pick_release(rels, prefix="grids-")["tag_name"] == "grids-2026-11-10"
+    assert fd.pick_release(rels, "data-2026-11-08")["tag_name"] == "data-2026-11-08"
+    assert fd.pick_release(rels[:1]) is None
+
+
+def test_the_grid_release_command_names_the_assets(tmp_path, capsys):
+    dist = tmp_path / "dist"
+    pd.build_grids(fake_raw(tmp_path), dist, PLAN)
+    pd.release_grids(dist, "grids-test", "owner/repo", dry_run=True)
+    assert "gh release create grids-test" in capsys.readouterr().out
+    assert json.loads((dist / "manifest.json").read_text())["tag"] == "grids-test"
+    assert "fetch_data.py --grids" in (dist / "release-notes.md").read_text()
