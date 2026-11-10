@@ -37,6 +37,22 @@ list still means fetching that source again. The six grids are 551 MB packed (79
 compressed, so the archive saves nothing. GitHub allows 2 GiB per release asset and does not cap the total; releases on a
 public repository cost nothing and need no login to download.
 
+## Rebuild in one command
+
+From a merged grid to a region's published layers:
+
+```
+uv run python scripts/rebuild.py plan                       # which stages are stale, and why (no side effects)
+uv run python scripts/rebuild.py run north_sea              # render, tiles, vectors, base: only the stale ones
+uv run python scripts/rebuild.py run --download             # also restore missing grids from the latest grids-* release
+uv run python scripts/rebuild.py run --force --package      # everything, then dist/ tarballs ready for publishing
+```
+
+A stage is stale when an output is missing or its input changed: the check compares a content hash with the one recorded
+after the last successful run (`data/out/<region>/.rebuild-stamps.json`), so a re-merge that gives the same bytes does not
+trigger a rebuild. `rebuild.py adopt <region>` records the stamps for outputs known to be current. The script never fetches
+or merges source data: that stays with `build_hires.py`, which has to be asked for.
+
 ## Publish new data
 
 After a rebuild (`build_hires.py`, `render_region.py`, `build_tiles.py`):
