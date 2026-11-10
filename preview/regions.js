@@ -44,13 +44,15 @@ async function loadCard(c) {
   const base = `data/${c.reg.id}/demo/`;
   const meta = await getJSON(base + "meta.json");
   if (!meta) { c.el.classList.add("missing"); return; }
-  try {
-    const card = meta.card || null;  // a smaller texture for the card when the full one is wide (render_region.py); the zoom page has the detail
+  const card = meta.card || null;  // a smaller texture for the card when the full one is wide (render_region.py); the zoom page has the detail
+  c.meta = meta;
+  c.drawnAt = card ? card.cell : meta.cell;
+  c.canvas.style.aspectRatio = `${meta.size[0]} / ${meta.size[1]}`;  // reserve the card's height now, so cards that are not drawn yet do not all look visible
+  c.texture = async () => {  // fetched when the card nears the viewport, not before
     const [elev, zones] = await Promise.all([loadImage(base + (card ? card.file : "elev.webp")), loadImage(base + "zones.png")]);
-    c.meta = meta;
-    c.drawnAt = card ? card.cell : meta.cell;
-    c.src = { key: c.reg.id, elev, ice: null, zones, size: card ? card.size : meta.size, cell: c.drawnAt, base: meta.encoding.base, step: meta.encoding.step };
-  } catch { c.el.classList.add("missing"); return; }
+    return { key: c.reg.id, elev, ice: null, zones, size: card ? card.size : meta.size, cell: c.drawnAt, base: meta.encoding.base, step: meta.encoding.step };
+  };
+  drawBars(c);
   const d = meta.data;
   if (d) {
     const names = d.sources.map((s) => `${esc(s.name)} (${s.res_m >= 1000 ? s.res_m / 1000 + " km" : s.res_m + " m"})`).join(", ");
@@ -70,11 +72,14 @@ function equalEarthOutline(bounds, W, H) {
   return ringPath(equalEarthRing(), (x, y) => [((x - x0) / (x1 - x0)) * W, ((y1 - y) / (y1 - y0)) * H]);
 }
 
+function drawBars(c) {
+  if (c.meta) c.bars.innerHTML = regionBars(detunedStyle(theme, c.reg.bathymetry), c.meta.zones.share_of_land);
+}
+
 function drawCard(c) {
   if (!c.src || !R) return;
   const st = detunedStyle(theme, c.reg.bathymetry, (c.meta.bounds[2] - c.meta.bounds[0]) / Math.round((c.canvas.clientWidth || 600) * dpr)), aspect = c.meta.size[1] / c.meta.size[0];
   const W = Math.round((c.canvas.clientWidth || 600) * dpr), H = Math.round(W * aspect);
-  c.canvas.style.aspectRatio = `${c.meta.size[0]} / ${c.meta.size[1]}`;
   c.canvas.width = W; c.canvas.height = H;
   if (c.reg.id === "world") {
     const tmp = document.createElement("canvas"); tmp.width = W; tmp.height = H;
@@ -85,7 +90,6 @@ function drawCard(c) {
   } else {
     R.draw(c.canvas, c.src, st);
   }
-  c.bars.innerHTML = regionBars(st, c.meta.zones.share_of_land);
 }
 
 function drawLegend() {
@@ -112,10 +116,27 @@ function drawCredits() {
   document.getElementById("credits").innerHTML = "Sources: " + [...set].map(esc).join("; ") + ". Not for navigation. Code: MIT.";
 }
 
-function drawAll() { cards.forEach(drawCard); drawLegend(); }
+function drawAll() { cards.forEach((c) => { drawBars(c); if (c.src) drawCard(c); }); drawLegend(); }
+
+// A card's texture is fetched and drawn when it nears the viewport (a full gallery drawn at once cost minutes and gigabytes in a
+// software-GL browser, and 10 MB of downloads for cards nobody scrolled to).
+const byEl = new Map(cards.map((c) => [c.el, c]));
+const pending = new Set();
+function showCard(c) {
+  if (!c.texture || c.src || c.loading) return;
+  c.loading = true;
+  const job = c.texture().then((src) => { c.src = src; drawCard(c); }).catch(() => c.el.classList.add("missing")).finally(() => pending.delete(job));
+  pending.add(job);
+}
+const lazy = "IntersectionObserver" in window
+  ? new IntersectionObserver((entries) => entries.forEach((e) => { if (e.isIntersecting) { lazy.unobserve(e.target); showCard(byEl.get(e.target)); } }), { rootMargin: "600px 0px" })
+  : null;
 let timer;
 addEventListener("resize", () => { clearTimeout(timer); timer = setTimeout(drawAll, 200); });
 
 await Promise.all(cards.map(loadCard));
 drawAll(); drawPlan(); drawCredits();
-window.__relief = { ready: true };
+cards.forEach((c) => { if (!c.texture) return; if (lazy) lazy.observe(c.el); else showCard(c); });
+await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));  // let the observer report the cards already in view
+await Promise.all([...pending]);
+window.__relief = { ready: true, drawn: () => cards.filter((c) => c.src).length, total: cards.length, loading: () => pending.size };

@@ -25,6 +25,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: uv run python scripts/fetch_data.py --dest data/out
+      - name: Contract check on the fetched data
+        run: uv run python scripts/contract.py check data/out
       - name: Quality checks on the committed layers
         run: uv run pytest -q
       - name: Assemble the preview
@@ -33,6 +35,29 @@ jobs:
           cp preview/*.html preview/*.js _site/
           cp -r data/out/* _site/data/
           mkdir -p _site/regions && cp regions/*.json regions/*.geojson _site/regions/
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tests/e2e/package-lock.json
+      - name: Install the browser test
+        working-directory: tests/e2e
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: Browser smoke test of the assembled site
+        timeout-minutes: 15
+        run: |
+          (cd _site && python3 -m http.server 8765 >/dev/null 2>&1 &)
+          sleep 2
+          mkdir -p shots
+          NODE_PATH="$PWD/tests/e2e/node_modules" node tests/e2e/check_pages.mjs http://localhost:8765 shots
+      - name: Keep the screenshots when the browser test fails
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-shots
+          path: shots
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

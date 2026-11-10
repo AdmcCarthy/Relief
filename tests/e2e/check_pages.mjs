@@ -1,5 +1,5 @@
 // Browser smoke test for the Pages site: runs the gallery and the zoom viewer in headless Chromium (software WebGL 2).
-// Not part of pytest (needs Node and Playwright). Usage, from the repo root:
+// Not part of pytest (needs Node and Playwright); CI runs it on the assembled site (.github/workflows/pages.yml). Usage, from the repo root:
 //   mkdir -p /tmp/site/data /tmp/site/regions && cp preview/*.html preview/*.js /tmp/site/ && cp -r data/out/* /tmp/site/data/ \
 //     && cp regions/*.json regions/*.geojson /tmp/site/regions/ && (cd /tmp/site && python3 -m http.server 8765 &)
 //   NODE_PATH=<dir with node_modules/playwright> node tests/e2e/check_pages.mjs [http://localhost:8765] [shots-dir]
@@ -22,8 +22,15 @@ const ready = () => page.waitForFunction(() => window.__relief && window.__relie
 
 await page.goto(`${BASE}/index.html`, { waitUntil: "networkidle", timeout: 90000 }); await ready();
 check(await page.evaluate(() => !!document.createElement("canvas").getContext("webgl2")), "WebGL 2 available");
-check(textureBytes.cards >= 5 && textureBytes.card + textureBytes.full < 20e6,
-  `gallery loads card-sized textures (${textureBytes.cards} cards, ${((textureBytes.card + textureBytes.full) / 1e6).toFixed(1)} MB in all; full textures would be about 39 MB)`);
+const upFront = await page.evaluate(() => ({ drawn: window.__relief.drawn(), total: window.__relief.total }));
+check(upFront.drawn < upFront.total, `gallery is lazy: ${upFront.drawn} of ${upFront.total} cards drawn before any scrolling`);
+for (let i = 0; i < 40 && (await page.evaluate(() => window.__relief.drawn() < window.__relief.total)); i++) { await page.mouse.wheel(0, 700); await page.waitForTimeout(400); }
+await page.waitForFunction(() => window.__relief.drawn() === window.__relief.total && window.__relief.loading() === 0, null, { timeout: 120000 });
+const served = await page.evaluate(async () => (await (await fetch("data/north_sea/demo/meta.json")).json()).card != null);
+if (served) check(textureBytes.cards >= 5 && textureBytes.card + textureBytes.full < 20e6,
+  `scrolling loads every card with card-sized textures (${textureBytes.cards} cards, ${((textureBytes.card + textureBytes.full) / 1e6).toFixed(1)} MB in all; full textures would be about 39 MB)`);
+else console.log("skip  card textures: the served data release has none yet (published before elev_card.webp existed)");
+await page.evaluate(() => window.scrollTo(0, 0));
 const cards = await page.$$eval(".card", (c) => c.map((x) => x.classList.contains("missing")));
 check(cards.length === 7 && cards.every((m) => !m), `gallery: 7 region cards, none missing (${cards.length})`);
 check((await page.$$eval("#plan tbody tr", (r) => r.length)) === 7, "data plan table has 7 rows");

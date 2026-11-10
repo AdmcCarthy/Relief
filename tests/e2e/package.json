@@ -1,0 +1,8 @@
+{
+  "name": "relief-e2e",
+  "private": true,
+  "description": "Browser smoke test for the Relief Pages site (run by .github/workflows/pages.yml; see check_pages.mjs)",
+  "devDependencies": {
+    "playwright": "1.65.0"
+  }
+}
