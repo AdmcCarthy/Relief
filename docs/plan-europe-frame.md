@@ -1,5 +1,13 @@
 # Plan: a Europe frame with hillshade for the source-to-sink work
 
+**Status 2026-11-10, evening.** Steps 1 to 6 done on the owner's go-ahead: `europe_s2s` registered (`fit: outer` on the
+lon/lat box gives 3,720 × 3,060 km, larger than the estimate below, because the box's corners spread in LAEA); fetched
+with `build_hires.py` (Copernicus GLO-90, EMODnet 2024, ETOPO 2022; 65 MB raw), merged at 1,600 m, demo assets rendered,
+layers built at 8,000 / 4,000 / 1,600 m (16 MB), 29 tiles, base tints on the ocean scale. The hillshade keeps its tone
+and the manifest now states its flat value (180) instead. Step 7 (release `publish_data.py release`) waits for the owner
+because creating a release is a new public surface; step 8 is open: source-to-sink's `europe` region (the parallel
+session's) still points at `relief: atlantic`; `relief: europe_s2s` is the drop-in replacement.
+
 Written 2026-11-10 at the owner's request. This is a plan, not a build: nothing here has been fetched or run. It sets out
 what Relief would need to add so that one frame carries terrain and hillshade for every catchment that `source-to-sink`
 analyses and `Sand-from-the-Source` and `Bedrock` display, and what it would cost in disk, time and licence.

@@ -448,6 +448,97 @@
       "bathymetry": "shelf"
     },
     {
+      "id": "europe_s2s",
+      "name": "Europe for source to sink (Ireland to Ladoga, the Alps to the North Cape)",
+      "description": "One frame holding every catchment that drains to the North Sea, the Norwegian Sea, the Baltic and the seas around Britain and Ireland, whole: Ireland to Lake Ladoga, the Alpine and Carpathian headwaters to the North Cape, in ETRS89 LAEA so it nests with ne_europe. Designed for the source-to-sink work (docs/plan-europe-frame.md).",
+      "crs": {
+        "code": "EPSG:3035",
+        "name": "ETRS89 / LAEA Europe",
+        "proj4": "+proj=laea +lat_0=52 +lon_0=10 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +units=m +no_defs +type=crs",
+        "epsg": 3035
+      },
+      "design": {
+        "lonlat_box": [
+          -11.5,
+          44.5,
+          36.0,
+          71.5
+        ],
+        "fit": "outer",
+        "north_at": [
+          71.5,
+          25
+        ]
+      },
+      "fetch": {
+        "step_deg": 0.008333333333333333,
+        "sea": [
+          "emodnet",
+          "etopo"
+        ],
+        "land": [
+          "copernicus",
+          "etopo"
+        ]
+      },
+      "lods": {
+        "overview": {
+          "cell": 8000
+        },
+        "regional": {
+          "cell": 4000
+        },
+        "detail": {
+          "cell": 1600
+        }
+      },
+      "bathymetry": "ocean",
+      "levels": {
+        "sea": [
+          0,
+          20,
+          50,
+          100,
+          150,
+          200,
+          300,
+          500,
+          1000,
+          1500,
+          2000,
+          3000
+        ],
+        "land": [
+          0,
+          100,
+          250,
+          500,
+          750,
+          1000,
+          1500,
+          2000,
+          3000
+        ]
+      },
+      "extent": [
+        2630000,
+        2370000,
+        6350000,
+        5430000
+      ],
+      "bbox": [
+        -31.709,
+        41.398,
+        57.648,
+        72.037
+      ],
+      "size_km": [
+        3720,
+        3060
+      ],
+      "built": false
+    },
+    {
       "id": "atlantic",
       "name": "Atlantic Ocean (spreading ridges)",
       "description": "The Atlantic from the Arctic to the Southern Ocean in a Lambert azimuthal equal-area view centred on 25 W, drawn on the ocean depth scale: the Mid-Atlantic Ridge, its flanks, fracture zones and the abyssal plains show as steady steps in colour from 2,000 to 6,000 m.",
