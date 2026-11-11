@@ -38,6 +38,13 @@ LOD grid, the region's extent, from the demo elevation texture and `zones.png`) 
 }
 ```
 
+The same script writes the **web assets** a page should fetch instead of the PNGs: `regional_base_{light,dark}.webp`
+(lossy, quality 85, about a fifth of the PNG: 68 KB against 576 KB for NE Europe) and `regional_shade.webp`, the regional
+hillshade with flat ground at mid grey and the slopes stretched 2.5 times (130 KB against 460 KB), which a page composites
+with soft-light as it is, with no remapping pass over the pixels. The manifest lists them under `base.webp` and
+`base.shade`. A page that has the base needs the bands only for a key, and the manifest's `land_classes_m` and
+`depth_scale` give that, so the 470 KB `regional.geojson` is not fetched at all.
+
 The files are part of the data release with the other layers (`scripts/publish_data.py`), so a consumer fetching a
 release gets them with the hillshade and the bands.
 

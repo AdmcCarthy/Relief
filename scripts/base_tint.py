@@ -129,8 +129,22 @@ def render(region: str) -> dict:
         name = f"regional_base_{theme}.png"
         Image.fromarray(np.round(np.clip(img, 0, 255)).astype("uint8"), "RGB").save(out / name, optimize=True)
         files[theme] = name
+    # Web assets: the same tints as lossy WebP (about a fifth of the PNG), and the hillshade as a neutral WebP with flat
+    # ground at mid grey and the slopes stretched, so a page composites it with soft-light as it is, without remapping.
+    web = {}
+    for theme, name in files.items():
+        im = Image.open(out / name)
+        wname = name.replace(".png", ".webp")
+        im.save(out / wname, "WEBP", quality=85, method=6)
+        web[theme] = wname
+    hs = np.asarray(Image.open(out / "regional_hillshade.png").convert("L"), dtype=np.float32)
+    flat = float(np.sin(np.radians(45)) * 255)
+    neutral = np.clip(128 + (hs - flat) * 2.5, 0, 255)
+    Image.fromarray(np.round(neutral).astype("uint8"), "L").save(out / "regional_shade.webp", "WEBP", quality=80, method=6)
     manifest["base"] = {
         "regional": files,
+        "webp": web,
+        "shade": {"file": "regional_shade.webp", "flat": 128, "gain": 2.5, "note": "the regional hillshade with flat ground at mid grey and slopes stretched 2.5 x; composite with soft-light directly"},
         "style": f"Detuned: linear bathymetry on the {bathy} depth scale, stepped land classes cross-blended by climate zone",
         "depth_scale": {"kind": bathy, "max_m": OCEAN_MAX if bathy == "ocean" else SMAX, "ticks_m": [0, 1000, 2000, 3000, 4000, 5000, 6000] if bathy == "ocean" else [0, 250, 500, 1000]},
         "land_classes_m": LB,
