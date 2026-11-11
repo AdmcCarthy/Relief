@@ -449,6 +449,7 @@
     },
     {
       "id": "europe_s2s",
+      "role": "analysis",
       "name": "Europe for source to sink (Ireland to Ladoga, the Alps to the North Cape)",
       "description": "One frame holding every catchment that drains to the North Sea, the Norwegian Sea, the Baltic and the seas around Britain and Ireland, whole: Ireland to Lake Ladoga, the Alpine and Carpathian headwaters to the North Cape, in ETRS89 LAEA so it nests with ne_europe. Designed for the source-to-sink work (docs/plan-europe-frame.md).",
       "crs": {
