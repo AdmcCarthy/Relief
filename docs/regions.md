@@ -21,10 +21,15 @@ layers are built at.
 
 ## Landscape regions
 
-A map for a full-width figure on a screen wants a 2 : 1 frame (Idiom `house/screens.md`). The `*_wide` regions reuse the projection of
+A map for a full-width figure on a screen wants a wide frame: 2.5 : 1 by default and never narrower than 2 : 1 (Idiom `house/screens.md`,
+which replaced the earlier 2 : 1 rule on 2026-11-11; the three `*_wide` regions were cut at 2 : 1 and stay). The `*_wide` regions reuse the projection of
 the region they widen, so layers drawn in that region's coordinates (catchments, wells, blocks) register without conversion, and
 extend it east and west: more sea and more land as context, never less than the original frame. Each is built like any other region.
-They are not the Sodir coverage frames, so they carry no `coverage` block. Their regional images are for a 1,152 px page frame at
+They are not the Sodir coverage frames, so they carry no `coverage` block.
+
+A region with `"role": "analysis"` (`europe_s2s`) is a frame made so every catchment is whole, for computation. It may be any
+shape and is not a display frame: a story draws it through landscape frames cut from it. A test keeps every `*_wide` region at 2 : 1
+or wider and keeps analysis frames declared. Their regional images are for a 1,152 px page frame at
 twice the pixel density.
 
 ## Using a region elsewhere

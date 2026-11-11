@@ -1,5 +1,13 @@
 # Plan: a Europe frame with hillshade for the source-to-sink work
 
+**Role (2026-11-11).** `europe_s2s` is an **analysis frame**, registered with `"role": "analysis"`: it holds every catchment whole so
+terrain and budgets can be computed, and it is not drawn directly. At 3,720 × 3,060 km (1.2 : 1) it is outside Idiom's map-frame rule
+(2.5 : 1 by default, never under 2 : 1, `house/screens.md`), which applies to display frames; a story draws it through landscape
+frames cut from it (`*_wide`). **Coverage gap for step 8.** source-to-sink's `europe` region covers 34 N to 72 N (Iberia, Italy, the
+Balkans and the Caucasus edge) where `europe_s2s` stops at 41.4 N, so the 133 catchments of France and Iberia and of the Alps, Italy and
+the Balkans would lose part or all of their terrain on a drop-in switch. `europe` therefore stays on `relief: atlantic` (2 km tiles, its own projection,
+which source-to-sink now samples in) until `europe_s2s` is extended south to about 34 N: a further fetch, which waits for the owner.
+
 **Status 2026-11-10, evening.** Steps 1 to 6 done on the owner's go-ahead: `europe_s2s` registered (`fit: outer` on the
 lon/lat box gives 3,720 × 3,060 km, larger than the estimate below, because the box's corners spread in LAEA); fetched
 with `build_hires.py` (Copernicus GLO-90, EMODnet 2024, ETOPO 2022; 65 MB raw), merged at 1,600 m, demo assets rendered,

@@ -97,3 +97,20 @@ def test_built_region_matches_registry_and_nests(rid):
                     assert hi.difference(lo.buffer(cfg["cell"] / 4 + 50)).area < 0.01 * hi.area
     parts = [m["lods"][k]["coast_parts"] for k in m["lods"]]
     assert parts == sorted(parts), "coarser levels of detail keep fewer coastline pieces"
+
+
+def test_wide_regions_are_at_least_two_to_one():
+    """Idiom house/screens.md: a display map frame is 2.5 : 1 by default and never narrower than 2 : 1."""
+    narrow = []
+    for rid, r in REGIONS.items():
+        if rid.endswith("_wide"):
+            x0, y0, x1, y1 = r["extent"]
+            if (x1 - x0) / (y1 - y0) < 1.95:  # 2 : 1 within the rounding of a frame cut to whole kilometres
+                narrow.append(f"{rid}: {(x1 - x0) / (y1 - y0):.2f} : 1")
+    assert narrow == []
+
+
+def test_the_europe_frame_for_source_to_sink_is_declared_an_analysis_frame():
+    """It is not a display frame (1.2 : 1), so it says so; no other region may use the role by accident."""
+    assert REGIONS["europe_s2s"].get("role") == "analysis"
+    assert [rid for rid, r in REGIONS.items() if r.get("role") == "analysis"] == ["europe_s2s"]
