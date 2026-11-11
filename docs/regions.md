@@ -15,7 +15,7 @@ layers are built at.
 | `north_sea_wide` | The North Sea frame at 2 : 1, for a full-width screen figure | EPSG:25832 | 2,140 × 1,050 km |
 | `norwegian_sea_wide` | The Norwegian Sea frame at 2 : 1 | Lambert conformal conic, 8 E (custom) | 2,200 × 1,110 km |
 | `ne_europe_wide` | The NE Europe frame at 2 : 1 | ETRS89 / LAEA Europe (EPSG:3035) | 3,240 × 1,580 km |
-| `europe_s2s` | Every catchment of the source-to-sink work, whole: Ireland to Lake Ladoga, the Alps and Carpathians to the North Cape; ocean depth scale with the shelf's fine steps (docs/plan-europe-frame.md) | EPSG:3035 | 3,720 × 3,060 km |
+| `europe_s2s` | Every European catchment of the source-to-sink work, whole: Iberia and the Atlantic margin to the Urals, the Mediterranean to Novaya Zemlya (analysis frame, 5,500 x 4,600 km); ocean depth scale with the shelf's fine steps (docs/plan-europe-frame.md) | EPSG:3035 | 3,720 × 3,060 km |
 | `atlantic` | The Atlantic, Arctic to Southern Ocean, for spreading ridges; ocean depth scale | Lambert azimuthal equal-area, 25 W (custom) | 11,790 × 15,080 km |
 | `world` | Locator and global context; ocean depth scale | Equal Earth (EPSG:8857) | 34,488 × 16,786 km |
 

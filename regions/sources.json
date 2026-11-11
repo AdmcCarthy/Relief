@@ -621,7 +621,7 @@
         "emodnet_dtm_2024",
         "etopo_2022_60s"
       ],
-      "gain": "None sought: a 1,600 m cell over 3,300 x 2,950 km is context terrain for catchments; GLO-90 and EMODnet are already finer than the picture, ETOPO fills the deep basin west of the shelf edge and east of 43 E."
+      "gain": "None sought: a 1,600 m cell over 5,500 x 4,600 km is context terrain for catchments; GLO-90 and EMODnet are already finer than the picture, ETOPO fills the deep basin west of the shelf edge and the seas east of 43 E."
     }
   }
 }
