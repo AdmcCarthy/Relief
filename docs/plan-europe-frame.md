@@ -1,12 +1,15 @@
 # Plan: a Europe frame with hillshade for the source-to-sink work
 
-**Role (2026-11-11).** `europe_s2s` is an **analysis frame**, registered with `"role": "analysis"`: it holds every catchment whole so
-terrain and budgets can be computed, and it is not drawn directly. At 3,720 × 3,060 km (1.2 : 1) it is outside Idiom's map-frame rule
-(2.5 : 1 by default, never under 2 : 1, `house/screens.md`), which applies to display frames; a story draws it through landscape
-frames cut from it (`*_wide`). **Coverage gap for step 8.** source-to-sink's `europe` region covers 34 N to 72 N (Iberia, Italy, the
-Balkans and the Caucasus edge) where `europe_s2s` stops at 41.4 N, so the 133 catchments of France and Iberia and of the Alps, Italy and
-the Balkans would lose part or all of their terrain on a drop-in switch. `europe` therefore stays on `relief: atlantic` (2 km tiles, its own projection,
-which source-to-sink now samples in) until `europe_s2s` is extended south to about 34 N: a further fetch, which waits for the owner.
+**Role and extent (2026-11-11).** `europe_s2s` is an **analysis frame**, registered with `"role": "analysis"`: it holds every catchment
+whole so terrain and budgets can be computed, and it is not drawn directly. It is outside Idiom's map-frame rule (2.5 : 1 by default, never
+under 2 : 1, `house/screens.md`), which applies to display frames; a story draws it through landscape frames cut from it (`*_wide`).
+It was first cut for the Ireland-to-Ladoga catchments (3,720 x 3,060 km, 41.4 N to 72 N) and stopped short of Iberia, Italy, the Balkans and
+the Volga and Kama. On 2026-11-11 its design became the bounds of all 313 European catchments of source-to-sink's `europe` set (a `points`
+design from the four corners, 50 km margin): **5,500 x 4,600 km, EPSG:3035, x 2.55 to 8.05 million m, y 1.35 to 5.95 million m**, 1,600 m cell
+(3,438 x 2,875), four tile levels, ocean depth scale. The 97 catchments beyond Europe (Anatolia, the Caucasus, North Africa, the Kola coast)
+reach past it and have terrain only where they overlap. source-to-sink's `europe` region now reads this frame (`terrain_level` 3, flow lines
+on level 2) instead of `atlantic`; for the same 410 systems the group assignments are identical, medians agree within 1.3 %, and terrain
+exists for 390 systems where the atlantic tiles gave 338.
 
 **Status 2026-11-10, evening.** Steps 1 to 6 done on the owner's go-ahead: `europe_s2s` registered (`fit: outer` on the
 lon/lat box gives 3,720 × 3,060 km, larger than the estimate below, because the box's corners spread in LAEA); fetched
