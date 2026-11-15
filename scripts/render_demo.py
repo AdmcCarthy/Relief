@@ -197,7 +197,7 @@ def main(area: str) -> None:
 
     # data overlay for the 'context' case: Sodir wildcats and fields inside the frame (NLOD 2.0)
     overlay = {}
-    wild = Path("../Wildcat/data/wildcats.csv")
+    wild = Path("../ds-wildcat/data/wildcats.csv")
     if wild.exists():
         import pandas as pd
 
@@ -211,7 +211,7 @@ def main(area: str) -> None:
             if b[0] <= x <= b[2] and b[1] <= y <= b[3]:
                 pts.append([round(x), round(y), int(r.year), int(bool(r.technical))])
         overlay["wells"] = pts
-        fl = json.loads(Path("../Wildcat/data/fields.geojson").read_text())["features"]
+        fl = json.loads(Path("../ds-wildcat/data/fields.geojson").read_text())["features"]
         fields = []
         for f in fl:
             g = shp_transform(tt.transform, shape(f["geometry"])).simplify(100)

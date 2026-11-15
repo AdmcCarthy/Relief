@@ -25,7 +25,7 @@ import requests
 from contract import check_release_manifest
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_REPO = "AdmcCarthy/Relief"
+DEFAULT_REPO = "AdmcCarthy/kit-relief"
 API = "https://api.github.com"
 
 

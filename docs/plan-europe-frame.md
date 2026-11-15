@@ -21,7 +21,7 @@ session's) still points at `relief: atlantic`; `relief: europe_s2s` is the drop-
 
 Written 2026-11-10 at the owner's request. This is a plan, not a build: nothing here has been fetched or run. It sets out
 what Relief would need to add so that one frame carries terrain and hillshade for every catchment that `source-to-sink`
-analyses and `Sand-from-the-Source` and `Bedrock` display, and what it would cost in disk, time and licence.
+analyses and `ds-sand-from-the-source` and `Bedrock` display, and what it would cost in disk, time and licence.
 
 ## Why the present frames fall short
 
@@ -105,7 +105,7 @@ All already in `docs/sources.md` and Idiom `DATASETS.md`; nothing new has to be 
 7. **Release and Pages.** `scripts/publish_data.py` to a `data-europe_s2s` release; `fetch_data.py` in the Pages
    workflow; `docs/regions.md` and `docs/data-releases.md` updated; Idiom `DATASETS.md` row for the frame. One hour.
 8. **Consumers.** `source-to-sink` adds the region in `config/regions.yaml` (`relief: europe_s2s`) and rebuilds; the
-   `Sand-from-the-Source` extractor gains the frame; `Bedrock` publishes it. Outside Relief; a day across the three repos,
+   `ds-sand-from-the-source` extractor gains the frame; `Bedrock` publishes it. Outside Relief; a day across the three repos,
    mostly waiting on builds.
 
 Total inside Relief: about two and a half days of work, most of it machine time, in eight steps that each leave the repo

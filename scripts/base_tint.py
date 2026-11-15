@@ -5,7 +5,7 @@ in regions.json); land in STEPPED height classes, cross-blended by climate zone 
 demo texture); both in the light and the dark theme. The stops are the ones in preview/palette.js (tests keep them in step).
 
 Writes data/out/<region>/regional_base_light.png and regional_base_dark.png (RGB, the regional LOD grid, the frame's
-extent) and records them in manifest.json under "base". Consumers (Bedrock, source-to-sink, Sand-from-the-Source, Sheet,
+extent) and records them in manifest.json under "base". Consumers (Bedrock, source-to-sink, ds-sand-from-the-source, Sheet,
 SubScout figures) draw that image with an identity transform, their data over it, then the hillshade; they never colour
 Relief's bands or heights themselves.
 

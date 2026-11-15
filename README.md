@@ -1,7 +1,7 @@
 # Relief
 
 **Open topography and bathymetry, generalised into fast contour maps for data visualisation.**
-Region examples: https://admccarthy.github.io/Relief/ · zoomable tiles: https://admccarthy.github.io/Relief/explore.html · techniques: https://admccarthy.github.io/Relief/techniques.html · vector layers: https://admccarthy.github.io/Relief/vector.html
+Region examples: https://admccarthy.github.io/kit-relief/ · zoomable tiles: https://admccarthy.github.io/kit-relief/explore.html · techniques: https://admccarthy.github.io/kit-relief/techniques.html · vector layers: https://admccarthy.github.io/kit-relief/vector.html
 
 Reusable across areas and stories (SubScout figures, MapLibre maps): land heights from the Copernicus DEM,
 sea-floor depths from the EMODnet Bathymetry DTM, merged, projected, contoured into stacked layers at several
@@ -65,5 +65,5 @@ depth key the manifest gives; see [docs/base-maps.md](docs/base-maps.md).
 ## Licence and acknowledgement
 
 MIT License with Acknowledgement ([LICENSE](LICENSE)): the MIT terms plus one condition. Anything built with this work says so,
-visibly and in plain words, and does not imply endorsement: "Built with Relief by Adam McCarthy (https://github.com/AdmcCarthy/Relief)". The wording is custom, so
+visibly and in plain words, and does not imply endorsement: "Built with Relief by Adam McCarthy (https://github.com/AdmcCarthy/kit-relief)". The wording is custom, so
 the licence is not OSI-approved. Third-party data and vendored code keep their own terms.

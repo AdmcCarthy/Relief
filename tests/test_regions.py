@@ -122,6 +122,6 @@ def test_the_europe_frame_for_source_to_sink_is_declared_an_analysis_frame():
 
 
 def test_med_west_holds_the_canyons_and_the_gulf_of_lion_shelf_edge():
-    """ep-landforms measures the Var canyon, the Rhone channel and the Gulf of Lion shelf edge: all must sit 20 km inside."""
+    """lab-landforms measures the Var canyon, the Rhone channel and the Gulf of Lion shelf edge: all must sit 20 km inside."""
     pts = COVERAGE["med_west"]["points"]
     assert pts["total"] >= 8 and pts["inside"] == pts["total"]

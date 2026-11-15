@@ -1,5 +1,5 @@
 {
-  "about": "Fine windows at EMODnet's native cell for measured sea-floor scenes (ep-landforms, docs/plan-landforms-frames.md). Centre in degrees, size_km a square in the frame's CRS. Built by scripts/window.py.",
+  "about": "Fine windows at EMODnet's native cell for measured sea-floor scenes (lab-landforms, docs/plan-landforms-frames.md). Centre in degrees, size_km a square in the frame's CRS. Built by scripts/window.py.",
   "windows": [
     {"name": "norfolk_banks", "frame": "north_sea_wide", "centre": [1.9, 53.2], "size_km": 80, "setting": "tidal sand ridges"},
     {"name": "flemish_banks", "frame": "ne_europe_wide", "centre": [2.6, 51.4], "size_km": 60, "setting": "tidal sand ridges"},

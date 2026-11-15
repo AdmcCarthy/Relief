@@ -19,7 +19,7 @@ uv run python scripts/fetch_data.py --tag data-2026-11-09-gebco north_sea --dest
 ```
 
 Each fetch checks the release manifest against the contract, then the sha256 of every archive. A public repository needs no
-token. The live site serves the latest data release under `https://admccarthy.github.io/Relief/data/<region>/`, which suits a
+token. The live site serves the latest data release under `https://admccarthy.github.io/kit-relief/data/<region>/`, which suits a
 prototype; a published product should read a pinned tag.
 
 ## What a region folder holds

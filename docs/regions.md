@@ -35,7 +35,7 @@ twice the pixel density.
 
 ## Using a region elsewhere
 
-Published with the preview at `https://admccarthy.github.io/Relief/regions/`:
+Published with the preview at `https://admccarthy.github.io/kit-relief/regions/`:
 `regions.json` (everything below), `regions.geojson` (outlines in lon/lat, curved edges densified, for locator
 maps) and `coverage.json` (the checks).
 
