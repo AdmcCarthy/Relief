@@ -37,13 +37,19 @@ def headers() -> dict:
 
 
 def pick_release(releases: list[dict], tag: str | None = None, prefix: str = "data-") -> dict | None:
-    """The newest published release tagged `prefix`* (releases arrive newest first), or the one with exactly `tag`."""
-    for r in releases:
-        if r.get("draft"):
-            continue
-        if (tag and tag != "latest" and r["tag_name"] == tag) or ((not tag or tag == "latest") and r["tag_name"].startswith(prefix)):
-            return r
-    return None
+    """The most recently published release tagged `prefix`*, or the one with exactly `tag`.
+
+    The API's list is not reliably newest first: on 2026-11-15 it returned data-2026-11-15-sky ahead of data-2026-11-15-linear,
+    published 40 minutes later, so the Pages build and every consumer unpacked the superseded release. Order by `published_at`
+    (then `created_at`), falling back to the list order when neither is present.
+    """
+    published = [r for r in releases if not r.get("draft")]
+    if tag and tag != "latest":
+        return next((r for r in published if r["tag_name"] == tag), None)
+    candidates = [r for r in published if r["tag_name"].startswith(prefix)]
+    if not candidates:
+        return None
+    return max(candidates, key=lambda r: r.get("published_at") or r.get("created_at") or "")  # ties keep the list order
 
 
 def sha256(path: Path) -> str:
