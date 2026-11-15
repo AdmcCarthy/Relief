@@ -21,10 +21,12 @@ uv run python scripts/fetch_data.py north_sea world  # just these regions
 The Pages workflow does the same before it runs the tests and assembles the site, so a deploy always serves a published,
 checksummed release. A repository that is public needs no token.
 
-A release carries the shade model of the build that made it. Releases before 2026-11-15 hold one-light hillshade PNGs
-and no `demo/skyview.webp`; the pages draw them with soft light and request nothing extra. `scripts/build.py <region>
---hillshade-only` rewrites the PNGs under the sky model from the merged grid, and `scripts/sky_view.py <region>` bakes
-the page texture (docs/sky-view.md), ready for the next data release.
+A release carries the shade model of the build that made it. Releases up to `data-2026-11-15` hold one-light hillshade
+PNGs and no `demo/skyview.webp`; the pages draw them with soft light and request nothing extra. `data-2026-11-15-sky`
+is the first under the sky model (docs/sky-view.md): every region's PNGs rewritten with `scripts/build.py <region>
+--hillshade-only`, the base shades with `base_tint.py`, and the page textures baked with `scripts/sky_view.py <region>`.
+Vestland's committed PNGs are the exception: its legacy sources are not in the grids release, so they keep the one-light
+model until that region is rebuilt.
 
 ## Restore the merged grids on a new machine
 
