@@ -61,12 +61,13 @@ export function detunedStyle(theme, bathymetry = "shelf", mpp = 0, tune_ = null)
     ...(ocean && mpp > 0 ? oceanShade(mpp, tune_) : {}) };
 }
 
-// Soft multi-directional shading for ocean basins only (land stays unshaded): fracture zones, ridge-parallel abyssal hills and
-// trenches are a few hundred metres on grids of 2 to 20 km, too faint for colour alone at the full-basin view. Vertical
+// Shading for ocean basins only (land stays unshaded): fracture zones, ridge-parallel abyssal hills and trenches are a few
+// hundred metres on grids of 2 to 20 km, too faint for colour alone at the full-basin view. The sky model (soft light plus the
+// baked sky-view factor, relief.js) is the default; without a baked texture it falls back to soft light. Vertical
 // exaggeration has to grow with the metres each screen pixel covers, or the relief goes flat as the map zooms out.
 export function oceanShade(mpp, t = null) {
   const exag = t?.exag ?? Math.min(40, Math.max(4, mpp / 1500));  // about 14 at 21 km per pixel (the Atlantic fitted to a screen)
-  return { shade: "soft", shadeK: 0, seaShadeK: t?.k ?? 0.8, exag, alt: 40 };
+  return { shade: "sky", shadeK: 0, seaShadeK: t?.k ?? 0.8, exag, alt: 40 };
 }
 
 // ---------------------------------------------------------------- colour bars

@@ -84,3 +84,19 @@ alpine ramp above); the styles differ in how far they are detuned from that full
 The coastline is off by default (at skerry scale it reads as noise); when switched on it is drawn at 30 %
 opacity. Contour lines skip the 0 m level for the same reason. Colour bars show one height strip per climate
 zone present, then depth.
+
+## Sky light (2026-11-15)
+A strong hillshade is often what a map needs to be legible, and a single low light is harsh. The `sky` shade model
+(`scripts/sky_view.py`, docs/sky-view.md) multiplies the soft six-light shade by the sky light, 1 − 0.6 × (1 − sky-view
+factor): hollows darken because they see a strip of sky, open slopes keep their light.
+It is the default wherever Relief draws a shade: the shipped `<lod>_hillshade.png` (flat ground still at 180 of 255,
+so consumers change nothing), the print layers, the techniques page and the gallery's ocean sea floors; the zoom
+viewer's tiles stay on soft light. Data releases made before this date carry the one-light PNGs until rebuilt.
+The question that started it was whether radiance cascades (Sannikov 2023), a 2D global-illumination method, could
+replace hillshading. They cannot map onto a heightfield lit from above, but their one transferable idea, sampling
+at geometrically growing distances, is what makes the sky-view factor cheap here: 16 lattice directions and 12
+distances, about 1 s per million cells in numpy. Cast shadows were rendered and dropped: at the house exaggeration
+and a 45° sun they cover 3 % of Vestland's cells and read as ink lines along the deepest fjords. The page renderer
+reads a baked `demo/skyview.webp` per region (`scripts/sky_view.py <region>`); the strength of the sky light was raised
+from 0.45 to 0.6 on review the same day, and the blend became a product after the first regional shades showed that
+adding the terms let nothing rise above flat ground.

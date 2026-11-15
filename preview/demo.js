@@ -63,14 +63,15 @@ function colourBars(st) {
 }
 
 // ---------------------------------------------------------------- sources
-const [elev, ice, zonesImg, sourcesImg] = await Promise.all([loadImage(BASE + "elev.webp"), loadImage(BASE + "glacier.png"), loadImage(BASE + "zones.png"), loadImage(BASE + "sources.png")]);
-const main = { key: "main", elev, ice, zones: zonesImg, size: meta.size, cell: meta.cell, base: meta.encoding.base, step: meta.encoding.step };
+const [elev, ice, zonesImg, sourcesImg, skyImg] = await Promise.all([loadImage(BASE + "elev.webp"), loadImage(BASE + "glacier.png"), loadImage(BASE + "zones.png"), loadImage(BASE + "sources.png"),
+  meta.skyview ? loadImage(BASE + meta.skyview.file).catch(() => null) : null]);  // the baked sky-view factor (scripts/sky_view.py); without it the sky shade falls back to soft
+const main = { key: "main", elev, ice, zones: zonesImg, sky: skyImg, size: meta.size, cell: meta.cell, base: meta.encoding.base, step: meta.encoding.step };
 
 // ---------------------------------------------------------------- case studies
 const CASES = [
-  { id: "context", title: "Quiet context for data", text: "The climate-aware tints, muted and lifted, with a soft shade: land stays legible while wells and fields, in story colours, carry the meaning.",
-    tags: ["linear", "muted tints", "soft shade", "overlay"], best: "Maps whose job is the data on top: SubScout's default base.",
-    s: () => style("context", { shade: "soft", ice: true }), overlay: true },
+  { id: "context", title: "Quiet context for data", text: "The climate-aware tints, muted and lifted, with the sky shade at low strength: land stays legible while wells and fields, in story colours, carry the meaning.",
+    tags: ["linear", "muted tints", "sky shade", "overlay"], best: "Maps whose job is the data on top: SubScout's default base.",
+    s: () => style("context", { shade: "sky", ice: true }), overlay: true },
   { id: "stepped", title: "Stepped, climate-aware tints", text: "Non-linear classes (finest in shallow water) with a land ramp per climate zone: fresh green on the temperate coast, cooler green in boreal valleys, lichen grey on the tundra.",
     tags: ["stepped", "cross-blended", "classes"], best: "Print, legends, and readers who need to read heights.",
     s: () => style("relief", { stepped: true, ice: true }) },
@@ -83,27 +84,30 @@ const CASES = [
   { id: "soft", title: "Soft multi-directional shade", text: "Six lights round the compass, weighted to the north-west, plus sky light: no slope sinks into black.",
     tags: ["linear", "multi-directional", "sky light"], best: "Large areas with relief in every direction.",
     s: () => style("relief", { shade: "soft", ice: true }) },
+  { id: "sky", title: "Soft shade with sky light", text: "The soft shade with the sky-view factor as its ambient light: fjord floors and the trench darken because they see only a strip of sky, plateaus and summits lift because they see the whole dome. Massing without a harsh low sun.",
+    tags: ["linear", "sky view", "ambient light"], best: "Relief that must read strongly and stay calm: fjord and mountain maps, sheets where the terrain is the subject.",
+    s: () => style("relief", { shade: "sky", ice: true }) },
   { id: "tanaka", title: "Illuminated contours", text: "Tanaka's method: stepped tints whose edges are lit where they face the light and shaded where they face away.",
     tags: ["stepped", "contours", "Tanaka"], best: "Showpiece maps with a crafted, layered look.",
     s: () => style("relief", { stepped: true, contours: "tanaka", landInt: 500, seaInt: 200, lineK: 0.9, ice: true }) },
   { id: "bathy", title: "Sea floor first", text: "Land falls back to near-grey with a trace of its climate tint; depth carries the colour and the shade. Fjords show as deep as the trench.",
-    tags: ["linear", "bathymetry", "soft shade"], best: "Offshore stories: fields, wells, pipelines, licences.",
-    s: () => style("bathy", { shade: "soft", contours: "lines", landInt: 1e6, seaInt: 100, lineK: 0.25, exag: 4 }) },
+    tags: ["linear", "bathymetry", "sky shade"], best: "Offshore stories: fields, wells, pipelines, licences.",
+    s: () => style("bathy", { shade: "sky", contours: "lines", landInt: 1e6, seaInt: 100, lineK: 0.25, exag: 4 }) },
   { id: "ice", title: "Glaciers in white", text: "Folgefonna and Hardangerjøkulen from the glacier inventory, white with a cool edge, shaded with the land.",
-    tags: ["soft shade", "glacier outlines"], best: "Mountain maps; the observed 'always white' layer.",
-    s: () => style("relief", { shade: "soft", ice: true }) },
+    tags: ["sky shade", "glacier outlines"], best: "Mountain maps; the observed 'always white' layer.",
+    s: () => style("relief", { shade: "sky", ice: true }) },
   { id: "lines", title: "Contour lines only", text: "Plain index contours over a quiet tint: precise and light, and the cheapest to print.",
     tags: ["lines", "500 m / 200 m"], best: "Technical figures and overlays that need to stay thin.",
     s: () => style("context", { contours: "lines", landInt: 500, seaInt: 200, lineK: 0.32 }) },
   { id: "det-step", title: "Detuned, stepped", text: "A house style: land at half strength so it recedes, a wide-range sea floor in deep indigo with strong shading, in the same climate steps.",
-    tags: ["stepped", "detuned", "soft shade"], best: "Offshore and coastal stories that still want a sense of place.",
-    s: () => style("detuned", { stepped: true, shade: "soft", ice: true }) },
+    tags: ["stepped", "detuned", "sky shade"], best: "Offshore and coastal stories that still want a sense of place.",
+    s: () => style("detuned", { stepped: true, shade: "sky", ice: true }) },
   { id: "det-lin", title: "Detuned, linear", text: "The same style as a continuous gradient: the sea floor reads as a landscape of its own, the land as a quiet frame.",
-    tags: ["linear", "detuned", "soft shade"], best: "Maps where the sea floor is the subject.",
-    s: () => style("detuned", { shade: "soft", ice: true }) },
+    tags: ["linear", "detuned", "sky shade"], best: "Maps where the sea floor is the subject.",
+    s: () => style("detuned", { shade: "sky", ice: true }) },
   { id: "det-lines", title: "Detuned with sea-floor contours", text: "Detuned stepped tints with fine depth contours at 100 m: the sea floor gets the contour language usually kept for land.",
     tags: ["stepped", "detuned", "contours"], best: "Showpiece maps of the shelf and the trench.",
-    s: () => style("detuned", { stepped: true, shade: "soft", contours: "lines", landInt: 1e6, seaInt: 100, lineK: 0.3, ice: true }) },
+    s: () => style("detuned", { stepped: true, shade: "sky", contours: "lines", landInt: 1e6, seaInt: 100, lineK: 0.3, ice: true }) },
 ];
 const casesEl = document.getElementById("cases");
 CASES.forEach((c) => {
@@ -155,7 +159,7 @@ let cmpReady = false;
 new IntersectionObserver(([e]) => { if (e.isIntersecting && !cmpReady) { cmpReady = true; drawCompare(); } }, { rootMargin: "50% 0px" }).observe(cmpEl);
 
 // ---------------------------------------------------------------- playground
-const play = { palette: "relief", stepped: "0", shade: "soft", contours: "none", zoom: "all" };
+const play = { palette: "relief", stepped: "0", shade: "sky", contours: "none", zoom: "all" };
 const ZOOM = {  // view rectangles in texture uv (x0, y0, x1, y1; y runs south)
   all: [0, 0, 1, 1],
   bergen: [0.18, 0.42, 0.44, 0.62],
@@ -216,8 +220,8 @@ function drawClimate() {
   const Z = ZPAL[theme];
   const conv = document.getElementById("cl-conv"), zone = document.getElementById("cl-zone"), mapc = document.getElementById("cl-map");
   [conv, zone, mapc].forEach((c) => sizeFig(c, ASPECT));
-  R.draw(conv, main, nlStyle({ shade: "soft", shadeK: 0.45, seaShadeK: 0.3 }));
-  R.draw(zone, main, nlStyle({ climate: true, shade: "soft", shadeK: 0.45, seaShadeK: 0.3 }));
+  R.draw(conv, main, nlStyle({ shade: "sky", shadeK: 0.45, seaShadeK: 0.3 }));
+  R.draw(zone, main, nlStyle({ climate: true, shade: "sky", shadeK: 0.45, seaShadeK: 0.3 }));
   // zone map: weights painted in zone colours over a pale land mask
   const ctx = mapc.getContext("2d"), tmp = document.createElement("canvas");
   tmp.width = zonesImg.width; tmp.height = zonesImg.height; const t = tmp.getContext("2d"); t.drawImage(zonesImg, 0, 0);
@@ -241,7 +245,7 @@ function drawSteps() {
   const flat = document.getElementById("st-flat"), soft = document.getElementById("st-soft"), zoom = document.getElementById("st-zoom");
   [flat, soft].forEach((c) => sizeFig(c, ASPECT)); sizeFig(zoom, 1);
   R.draw(flat, main, nlStyle({ climate: true }));
-  R.draw(soft, main, nlStyle({ climate: true, shade: "soft", shadeK: 0.45, seaShadeK: 0.85, exag: 3 }));
+  R.draw(soft, main, nlStyle({ climate: true, shade: "sky", shadeK: 0.45, seaShadeK: 0.85, exag: 3 }));
   if (cmpSrc.kartverket50) R.draw(zoom, cmpSrc.kartverket50, nlStyle({ shade: "soft", shadeK: 0.45, seaShadeK: 0.85, exag: 3 }));
   const Z = ZPAL[theme];
   document.getElementById("stepbars").innerHTML = `<div class="cbs"><span class="cb-kind">Non-linear steps, m</span>${nlBar("Depth", bandCols(at(SB, Z.sea, SMAX), SB, SMAX), SB)}${nlBar("Height", bandCols(at(LB, Z.temperate, LMAX), LB, LMAX), LB)}</div>`;

@@ -33,7 +33,7 @@
  },
  "zones": {
   "channels": "R temperate, G boreal, B tundra/polar; arid = 255 - R - G - B",
-  "source": "Beck et al. (2023) K\u00f6ppen-Geiger 1991-2020, 1 km, CC BY 4.0",
+  "source": "Beck et al. (2023) Köppen-Geiger 1991-2020, 1 km, CC BY 4.0",
   "share_of_land": {
    "temperate": 0.227,
    "boreal": 0.67,
@@ -76,10 +76,21 @@
   "sources.png": 41196,
   "emodnet115.webp": 309656,
   "gebco450.webp": 230440,
-  "kartverket50.webp": 328294
+  "kartverket50.webp": 328294,
+  "skyview.webp": 227792
  },
  "overlay": {
   "wells": 30,
   "fields": 12
+ },
+ "skyview": {
+  "file": "skyview.webp",
+  "encoding": "uint8 = sky-view factor x 255 (255 = the whole sky), lossy WebP quality 85",
+  "exaggeration": 2.0,
+  "directions": 16,
+  "search_cells": 100,
+  "search_km": 20.0,
+  "mean": 0.847,
+  "seconds": 1.1
  }
 }

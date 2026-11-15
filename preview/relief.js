@@ -1,7 +1,7 @@
 // Relief renderer: one WebGL2 context draws every technique from a single 16-bit elevation texture
 // (height = base + (R*256 + G) * step), then copies the result into the target 2D canvas.
 // Techniques are uniforms: colour ramp (linear or stepped), hillshade (none, single light, soft
-// multi-directional), illuminated (Tanaka) contours, coastline, glacier white.
+// multi-directional, soft with a baked sky-view factor as ambient light), illuminated (Tanaka) contours, coastline, glacier white.
 
 const VS = `#version 300 es
 in vec2 p; out vec2 uv;
@@ -11,14 +11,14 @@ void main(){ uv = mix(uView.xy, uView.zw, vec2(p.x*0.5+0.5, 0.5-p.y*0.5)); gl_Po
 const FS = `#version 300 es
 precision highp float;
 in vec2 uv; out vec4 o;
-uniform sampler2D uElev, uIce, uRamp, uZones;
+uniform sampler2D uElev, uIce, uRamp, uZones, uSky;  // uSky: sky-view factor, 1 = the whole sky (scripts/sky_view.py)
 uniform vec4 uZV;  // the part of the zone texture that uv 0..1 covers (x0, y0, x1, y1): a tile view covers only some of it
 uniform int uZoneOn;  // 1: land colour = zone-weighted mix of four ramps (temperate, boreal, tundra, arid)
 uniform vec2 uTex; uniform float uCell, uBase, uStep;
 uniform float uLandMax, uSeaMax;           // ramp ranges, metres
 uniform float uLandStops[12], uSeaStops[12]; uniform int uNLand, uNSea;
 uniform int uStepped, uSeaStepped, uShade, uContours, uIceOn, uCoast;  // uStepped: land classes; uSeaStepped: sea classes
-uniform float uAz, uAlt, uExag, uShadeK, uSeaShadeK, uLineK, uCoastK;
+uniform float uAz, uAlt, uExag, uShadeK, uSeaShadeK, uLineK, uCoastK, uSkyK;  // uSkyK: strength of the sky light
 uniform float uLandInt, uSeaInt;           // contour intervals, metres
 uniform vec3 uIceCol, uIceEdge, uCoastCol, uHi, uLo;
 uniform int uDark;
@@ -47,6 +47,11 @@ vec3 ramp(float z){
     return row(t, 0.)*w.r + row(t, 1.)*w.g + row(t, 2.)*w.b + row(t, 3.)*a; }
   float d = -z; float v = uSeaStepped == 1 ? bandOf(d, false) : d; return row(v/uSeaMax, 4.); }
 float lightAt(vec3 n, float az, float alt){ vec3 L = vec3(sin(az)*cos(alt), cos(az)*cos(alt), sin(alt)); return max(dot(n, L), 0.); }
+float softAt(vec3 n){ // soft: six lights round the compass weighted to the north-west, plus sky light
+  float acc = 0., wsum = 0.;
+  for (int k = 0; k < 6; k++){ float a = radians(uAz) + float(k)*1.0472; float w = 1. + .8*cos(float(k)*1.0472);
+    acc += w*lightAt(n, a, radians(uAlt)); wsum += w; }
+  return (acc/wsum) / max(sin(radians(uAlt)), .2) * .7 + n.z * .3; }
 void main(){
   vec2 px = 1.0/uTex;
   float m = max(1., uTpp);                          // footprint of one screen pixel, in texels
@@ -58,11 +63,10 @@ void main(){
   vec3 col = ramp(z);
   float sh = 1.;
   if (uShade == 1) { float l = lightAt(n, radians(uAz), radians(uAlt)); float flat_ = sin(radians(uAlt)); sh = l / max(flat_, .2); }
-  if (uShade == 2) { // soft: six lights round the compass weighted to the north-west, plus sky light
-    float acc = 0., wsum = 0.;
-    for (int k = 0; k < 6; k++){ float a = radians(uAz) + float(k)*1.0472; float w = 1. + .8*cos(float(k)*1.0472);
-      acc += w*lightAt(n, a, radians(uAlt)); wsum += w; }
-    sh = (acc/wsum) / max(sin(radians(uAlt)), .2) * .7 + n.z * .3; }
+  if (uShade == 2) sh = softAt(n);
+  if (uShade == 3) { // sky: the soft shade multiplied by the sky light; a cell that sees no sky loses uSkyK of its tone
+    float svf = texture(uSky, uv).r;   // the baked sky-view factor, as scripts/sky_view.py
+    sh = softAt(n) * (1. - uSkyK * (1. - svf)); }
   float k = z > 0. ? uShadeK : uSeaShadeK;
   if (uShade > 0) col *= mix(1., clamp(sh, 0., 1.6), k);
   if (uContours > 0) {
@@ -146,7 +150,10 @@ export function createRenderer() {
     gl.uniform1i(U("uNLand"), style.landStops.length); gl.uniform1i(U("uNSea"), style.seaStops.length);
     gl.uniform1i(U("uStepped"), style.stepped ? 1 : 0);
     gl.uniform1i(U("uSeaStepped"), (style.seaStepped ?? style.stepped) ? 1 : 0);  // default: same as land
-    gl.uniform1i(U("uShade"), { none: 0, single: 1, soft: 2 }[style.shade ?? "none"]);
+    const sky = style.shade === "sky" && src.sky;  // no baked sky view (tile views, regions without one): fall back to soft
+    gl.activeTexture(gl.TEXTURE4); gl.bindTexture(gl.TEXTURE_2D, sky ? tex(src.key + ":sky", src.sky, { filter: gl.LINEAR, format: "r" }) : null); gl.uniform1i(U("uSky"), 4);
+    gl.uniform1i(U("uShade"), { none: 0, single: 1, soft: 2, sky: sky ? 3 : 2 }[style.shade ?? "none"]);
+    gl.uniform1f(U("uSkyK"), style.skyK ?? 0.6);
     gl.uniform1i(U("uContours"), { none: 0, lines: 1, tanaka: 2 }[style.contours ?? "none"]);
     gl.uniform1i(U("uIceOn"), style.ice && src.ice ? 1 : 0); gl.uniform1i(U("uCoast"), style.coast ? 1 : 0);
     gl.uniform1f(U("uAz"), style.az ?? 315); gl.uniform1f(U("uAlt"), style.alt ?? 40); gl.uniform1f(U("uExag"), style.exag ?? 2);

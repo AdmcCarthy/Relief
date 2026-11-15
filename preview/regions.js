@@ -49,8 +49,10 @@ async function loadCard(c) {
   c.drawnAt = card ? card.cell : meta.cell;
   c.canvas.style.aspectRatio = `${meta.size[0]} / ${meta.size[1]}`;  // reserve the card's height now, so cards that are not drawn yet do not all look visible
   c.texture = async () => {  // fetched when the card nears the viewport, not before
-    const [elev, zones] = await Promise.all([loadImage(base + (card ? card.file : "elev.webp")), loadImage(base + "zones.png")]);
-    return { key: c.reg.id, elev, ice: null, zones, size: card ? card.size : meta.size, cell: c.drawnAt, base: meta.encoding.base, step: meta.encoding.step };
+    const sv = meta.skyview;  // the baked sky-view factor (scripts/sky_view.py), at the card's size when there is a card; older releases have none
+    const [elev, zones, sky] = await Promise.all([loadImage(base + (card ? card.file : "elev.webp")), loadImage(base + "zones.png"),
+      sv ? loadImage(base + (card && sv.card ? sv.card : sv.file)).catch(() => null) : null]);
+    return { key: c.reg.id, elev, ice: null, zones, sky, size: card ? card.size : meta.size, cell: c.drawnAt, base: meta.encoding.base, step: meta.encoding.step };
   };
   drawBars(c);
   const d = meta.data;

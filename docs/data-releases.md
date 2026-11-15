@@ -21,6 +21,11 @@ uv run python scripts/fetch_data.py north_sea world  # just these regions
 The Pages workflow does the same before it runs the tests and assembles the site, so a deploy always serves a published,
 checksummed release. A repository that is public needs no token.
 
+A release carries the shade model of the build that made it. Releases before 2026-11-15 hold one-light hillshade PNGs
+and no `demo/skyview.webp`; the pages draw them with soft light and request nothing extra. `scripts/build.py <region>
+--hillshade-only` rewrites the PNGs under the sky model from the merged grid, and `scripts/sky_view.py <region>` bakes
+the page texture (docs/sky-view.md), ready for the next data release.
+
 ## Restore the merged grids on a new machine
 
 Fetching and merging the sources is the slow stage (10 to 25 minutes a region, plus the source downloads). Its product, the
