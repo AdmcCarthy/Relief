@@ -95,6 +95,9 @@ viewer's tiles stay on soft light. Data releases made before this date carry the
 `data-2026-11-15-sky` is the first under the model. Later the same day the no-illumination rule for the region examples was
 dropped: the gallery cards and the zoom viewer shade land and sea floor with the sky model (land 0.35, sea 0.9, ocean
 basins 0.8 with their own exaggeration), the zoom viewer reading the region-wide sky texture under its tile views.
+Then the land went linear as well: the examples, the zoom viewer and the consumers' base tints draw height as a
+continuous gradient on each climate zone's ramp (0 to 2,000 m), with `base.land_scale` in the manifest for the key;
+the stepped classes stay as a technique on the techniques page and as `stepped_land` in `base_tint.py`.
 The question that started it was whether radiance cascades (Sannikov 2023), a 2D global-illumination method, could
 replace hillshading. They cannot map onto a heightfield lit from above, but their one transferable idea, sampling
 at geometrically growing distances, is what makes the sky-view factor cheap here: 16 lattice directions and 12

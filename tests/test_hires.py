@@ -41,7 +41,7 @@ def test_sources_are_described_honestly():
 def test_style_is_the_fixed_house_style():
     st = PLAN["style"]
     assert st["name"] == "Detuned"
-    assert "stepped" in st["relief"] and "linear" in st["bathymetry"]
+    assert "linear" in st["relief"] and "linear" in st["bathymetry"]
     assert st["contours"] is False and st["coastline"] is False
 
 

@@ -1,4 +1,4 @@
-// Region examples: every region drawn in one fixed style (Detuned: stepped relief by climate zone, linear
+// Region examples: every region drawn in one fixed style (Detuned: linear relief by climate zone, linear
 // bathymetry, the sky shade on land and sea floor, no contours) from its 16-bit elevation WebP, plus the data plan per region.
 import { createRenderer, loadImage } from "./relief.js";
 import { detunedStyle, regionBars } from "./palette.js";

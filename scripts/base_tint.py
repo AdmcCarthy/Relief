@@ -1,8 +1,9 @@
 """Base-map tint for a frame: the Detuned house style rendered once, for every consumer to draw under its data.
 
 Sea floor as a LINEAR gradient on the region's depth scale (shelf 0 to 1,300 m or ocean 0 to 7,000 m, by `bathymetry`
-in regions.json); land in STEPPED height classes, cross-blended by climate zone (Beck and others 2023 weights from the
-demo texture); both in the light and the dark theme. The stops are the ones in preview/palette.js (tests keep them in step).
+in regions.json); land as a LINEAR gradient too (0 to 2,000 m, since 2026-11-15; stepped classes before), cross-blended by
+climate zone (Beck and others 2023 weights from the demo texture); both in the light and the dark theme. The stops are the
+ones in preview/palette.js (tests keep them in step).
 
 Writes data/out/<region>/regional_base_light.png and regional_base_dark.png (RGB, the regional LOD grid, the frame's
 extent) and records them in manifest.json under "base". Consumers (Bedrock, source-to-sink, ds-sand-from-the-source, Sheet,
@@ -80,6 +81,20 @@ def linear_ramp(t: np.ndarray, breaks: list[float], cols: list[str], vmax: float
     return out
 
 
+def land_stops(zone: str, theme: str) -> list[str]:
+    """The zone ramp at half saturation, lifted (light) or sunk (dark): palette.js `tune(c, 0.5, ±0.08)`."""
+    return ["#" + "".join(f"{round(v):02x}" for v in tune(c, 0.5, 0.08 if theme == "light" else -0.08)) for c in ZPAL[theme][zone]]
+
+
+def linear_land(z: np.ndarray, weights: np.ndarray, theme: str) -> np.ndarray:
+    """Land as a linear gradient, 0 to LMAX, on each climate zone's ramp (stops at LB), blended by the zone weights.
+    The default since 2026-11-15; `stepped_land` is kept for the stepped option."""
+    out = np.zeros(z.shape + (3,), dtype=np.float32)
+    for zi, zone in enumerate(ZONES):
+        out += weights[..., zi : zi + 1] * linear_ramp(z / LMAX, LB, land_stops(zone, theme), LMAX)
+    return out
+
+
 def stepped_land(z: np.ndarray, weights: np.ndarray, theme: str) -> np.ndarray:
     """Stepped height classes; each class colour is the zone ramps at half saturation, blended by the zone weights."""
     cls = np.clip(np.searchsorted(np.array(LB[1:], dtype=np.float32), z, side="right"), 0, len(LB) - 1)
@@ -124,7 +139,7 @@ def render(region: str) -> dict:
             s = linear_ramp(-z / OCEAN_MAX, OCEAN_SB, DETUNED_OCEAN[theme], OCEAN_MAX)
         else:
             s = linear_ramp(-z / SMAX, SB, DETUNED_SEA[theme], SMAX)
-        land = stepped_land(np.maximum(z, 0), weights, theme)
+        land = linear_land(np.maximum(z, 0), weights, theme)
         img = np.where(sea[..., None], s, land)
         name = f"regional_base_{theme}.png"
         Image.fromarray(np.round(np.clip(img, 0, 255)).astype("uint8"), "RGB").save(out / name, optimize=True)
@@ -145,8 +160,9 @@ def render(region: str) -> dict:
         "regional": files,
         "webp": web,
         "shade": {"file": "regional_shade.webp", "flat": 128, "gain": 2.5, "note": "the regional hillshade with flat ground at mid grey and slopes stretched 2.5 x; composite with soft-light directly"},
-        "style": f"Detuned: linear bathymetry on the {bathy} depth scale, stepped land classes cross-blended by climate zone",
+        "style": f"Detuned: linear bathymetry on the {bathy} depth scale, linear land cross-blended by climate zone",
         "depth_scale": {"kind": bathy, "max_m": OCEAN_MAX if bathy == "ocean" else SMAX, "ticks_m": [0, 1000, 2000, 3000, 4000, 5000, 6000] if bathy == "ocean" else [0, 250, 500, 1000]},
+        "land_scale": {"max_m": LMAX, "ticks_m": [0, 500, 1000, 1500], "stops_m": LB, "note": "linear since 2026-11-15; draw the height key as a bar, not classes"},
         "land_classes_m": LB,
         "note": "Draw this image with an identity transform in the frame extent, your data over it, then the hillshade. Do not recolour bands or heights.",
     }
