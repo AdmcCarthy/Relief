@@ -78,6 +78,22 @@ def test_release_selection():
     assert fd.pick_release(rels, "data-1999") is None and fd.pick_release([{"tag_name": "v2"}]) is None
 
 
+def test_the_latest_release_is_the_most_recently_published_not_the_first_listed():
+    # Seen 2026-11-15: the API listed data-2026-11-15-sky before data-2026-11-15-linear, published 40 minutes later, and the
+    # Pages build served the superseded release. The pick goes by published_at, and an exact tag is still honoured.
+    rels = [{"tag_name": "data-2026-11-15-sky", "draft": False, "published_at": "2026-11-15T17:51:03Z", "created_at": "2026-11-15T17:34:41Z"},
+            {"tag_name": "data-2026-11-15-linear", "draft": False, "published_at": "2026-11-15T18:31:44Z", "created_at": "2026-11-15T18:28:48Z"},
+            {"tag_name": "data-2026-11-16", "draft": True, "published_at": None, "created_at": "2026-11-16T08:00:00Z"},
+            {"tag_name": "grids-2026-11-15", "draft": False, "published_at": "2026-11-15T19:00:00Z", "created_at": "2026-11-14T09:18:29Z"}]
+    assert fd.pick_release(rels)["tag_name"] == "data-2026-11-15-linear"
+    assert fd.pick_release(rels, "latest")["tag_name"] == "data-2026-11-15-linear"
+    assert fd.pick_release(rels, "data-2026-11-15-sky")["tag_name"] == "data-2026-11-15-sky"
+    assert fd.pick_release(rels, prefix="grids-")["tag_name"] == "grids-2026-11-15"
+    # a release created later but published earlier loses to the one published later; equal dates keep the list order
+    assert fd.pick_release([{"tag_name": "data-a", "draft": False, "published_at": "2026-01-02T00:00:00Z"},
+                            {"tag_name": "data-b", "draft": False, "published_at": "2026-01-02T00:00:00Z"}])["tag_name"] == "data-a"
+
+
 def test_release_notes_and_dry_run(tmp_path, capsys):
     dist = tmp_path / "dist"
     m = pd.build(fake_out(tmp_path), dist)
