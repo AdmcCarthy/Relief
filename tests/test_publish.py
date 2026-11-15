@@ -146,3 +146,38 @@ def test_the_grid_release_command_names_the_assets(tmp_path, capsys):
     assert "gh release create grids-test" in capsys.readouterr().out
     assert json.loads((dist / "manifest.json").read_text())["tag"] == "grids-test"
     assert "fetch_data.py --grids" in (dist / "release-notes.md").read_text()
+
+
+def fake_window(raw, frame="north_sea_wide", name="norfolk_banks"):
+    d = raw / frame / "windows"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / f"{name}.tif").write_bytes(b"window-" + name.encode())
+    (d / f"{name}.json").write_text(json.dumps({"cell_m": 115, "attribution": "EMODnet Bathymetry Consortium (2024): EMODnet Digital Bathymetry (DTM)"}))
+
+
+def test_windows_are_packed_listed_under_windows_and_restore_exactly(tmp_path):
+    raw, dist = fake_raw(tmp_path), tmp_path / "dist"
+    fake_window(raw)
+    m = pd.build_grids(raw, dist, PLAN)
+    w = m["windows"]
+    assert list(m["regions"]) == ["north_sea", "world"], "windows are not a region"
+    assert w["file"] == "relief-windows.tar.gz" and w["sha256"] == pd.sha256(dist / w["file"]) and w["names"] == ["norfolk_banks"] and w["cell_m"] == 115
+    assert fd.check_release_manifest(m) == []
+    dest = tmp_path / "restored"
+    names = fd.verify_and_extract(dist / w["file"], w["sha256"], dest)
+    assert "north_sea_wide/windows/norfolk_banks.tif" in names
+    assert (dest / "north_sea_wide" / "windows" / "norfolk_banks.tif").read_bytes() == b"window-norfolk_banks"
+
+
+def test_no_windows_built_means_no_windows_entry(tmp_path):
+    m = pd.build_grids(fake_raw(tmp_path), tmp_path / "dist", PLAN)
+    assert "windows" not in m and not (tmp_path / "dist" / "relief-windows.tar.gz").exists()
+
+
+def test_the_grid_release_names_the_windows_asset(tmp_path, capsys):
+    raw, dist = fake_raw(tmp_path), tmp_path / "dist"
+    fake_window(raw)
+    pd.build_grids(raw, dist, PLAN)
+    pd.release_grids(dist, "grids-test", "owner/repo", dry_run=True)
+    assert "(4 assets)" in capsys.readouterr().out  # two grids, the windows and the manifest
+    assert "fetch_data.py --windows" in (dist / "release-notes.md").read_text()

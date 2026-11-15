@@ -8,6 +8,7 @@ need no token; GITHUB_TOKEN (set automatically in Actions) only avoids API rate 
   python scripts/fetch_data.py north_sea world       # just these
   python scripts/fetch_data.py --tag data-2026-11-08 --dest data/out --force
   python scripts/fetch_data.py --grids               # the merged grids from the latest grids-* release -> data/raw/ (skips the slow stage)
+  python scripts/fetch_data.py --windows             # the fine EMODnet windows (relief-windows.tar.gz of the latest grids-* release) -> data/raw/
 """
 
 from __future__ import annotations
@@ -98,9 +99,11 @@ def main() -> None:
     ap.add_argument("--tag", default="latest")
     ap.add_argument("--dest", default=None, help="default data/out, or data/raw with --grids")
     ap.add_argument("--grids", action="store_true", help="fetch the merged grids (grids-* releases) into data/raw instead of the built layers")
+    ap.add_argument("--windows", action="store_true", help="fetch the fine EMODnet windows (listed under 'windows' in a grids-* manifest) into data/raw")
     ap.add_argument("--force", action="store_true", help="download even if this release is already unpacked, or a local grid exists")
     ap.add_argument("--list", action="store_true", help="list the published data-* and grids-* releases and their regions, then stop")
     a = ap.parse_args()
+    a.grids = a.grids or a.windows
     prefix, marker_name = ("grids-", ".grids-release") if a.grids else ("data-", ".data-release")
     r = requests.get(f"{API}/repos/{a.repo}/releases", headers=headers(), params={"per_page": 30}, timeout=60)
     r.raise_for_status()
@@ -119,6 +122,22 @@ def main() -> None:
         sys.exit(f"release {rel['tag_name']} does not match the consumer contract this checkout understands:\n  - " + "\n  - ".join(problems[:8]))
     dest = Path(a.dest or ROOT / "data" / ("raw" if a.grids else "out"))
     print(f"{a.repo} release {rel['tag_name']} ({manifest['created']}): {', '.join(manifest['regions'])}")
+    if a.windows:
+        e = manifest.get("windows")
+        if not e:
+            sys.exit(f"release {rel['tag_name']} lists no fine windows")
+        marker = dest / ".windows-release"
+        if marker.exists() and marker.read_text().strip() == f"{rel['tag_name']} {e['sha256']}" and not a.force:
+            print("  windows: up to date")
+            return
+        with tempfile.TemporaryDirectory() as tmp:
+            archive = Path(tmp) / e["file"]
+            print(f"  windows: downloading {e['bytes'] / 1e6:.0f} MB ...", flush=True)
+            download(assets[e["file"]]["browser_download_url"], archive)
+            names = verify_and_extract(archive, e["sha256"], dest)
+        marker.write_text(f"{rel['tag_name']} {e['sha256']}\n")
+        print(f"  windows: {', '.join(e['names'])} unpacked under {dest} ({len(names)} files)")
+        return
     for rid in a.regions or list(manifest["regions"]):
         if rid not in manifest["regions"]:
             sys.exit(f"{rid} is not in release {rel['tag_name']}")
