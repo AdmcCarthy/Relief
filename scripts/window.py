@@ -1,4 +1,5 @@
-"""Fine windows of the EMODnet Bathymetry DTM at (or near) its native cell, written in a frame's CRS.
+"""Fine windows of the EMODnet Bathymetry DTM at (or near) its native cell, written in a frame's CRS; and height windows of the
+Copernicus DEM GLO-90 at its native cell anywhere on land, written in the local UTM zone.
 
 The frames' merged grids are 15 arc-seconds (about 270 m) or coarser; a ridge's width, a canyon's width and a levee's height
 need EMODnet's own 1/16 arc-minute (about 115 m). A window is not a frame: it is one small GeoTIFF per scene.
@@ -6,9 +7,15 @@ need EMODnet's own 1/16 arc-minute (about 115 m). A window is not a frame: it is
   python scripts/window.py list                                         # windows in regions/windows.json
   python scripts/window.py run norfolk_banks [name ...] | --all         # fetch and write them
   python scripts/window.py box <frame> W S E N --cell 115 --name NAME   # an ad hoc lon/lat box
+  python scripts/window.py dem W S E N --name NAME [--cell 90]          # a GLO-90 height window, UTM of the box centre
+  python scripts/window.py dem --all                                    # every `dem` window of regions/windows.json
 
 Output: data/raw/<frame>/windows/<name>.tif (float32 metres, + up / - down, frame CRS, NaN where EMODnet has no data) and
-<name>.json (cell, extent, source, licence, attribution, date). Fetching is by 2-degree WCS chunks like build_hires.py.
+<name>.json (cell, extent, source, licence, attribution, date). Fetching is by 2-degree WCS chunks like build_hires.py. A DEM
+window goes to data/raw/dem/windows/<name>.tif (float32 metres above EGM2008, NaN where the tile has no data or does not
+exist), read from the one-degree COG tiles of the Copernicus DEM GLO-90 on AWS (regions/sources.json `cop_glo90`) at their
+native cell, mosaicked in lon/lat and reprojected once onto a UTM grid at `--cell` metres; the request for structural
+scenes outside Europe is docs/plan-landforms-structure.md.
 """
 
 from __future__ import annotations
@@ -97,6 +104,63 @@ def build(frame: str, name: str, bounds: tuple[float, float, float, float], cell
     return out / f"{name}.tif"
 
 
+DEM_SOURCE = json.loads((ROOT / "regions" / "sources.json").read_text())["sources"]["cop_glo90"]
+
+
+def utm_of(lon: float, lat: float) -> str:
+    zone = int((lon + 180) // 6) + 1
+    return f"EPSG:{32600 + zone if lat >= 0 else 32700 + zone}"
+
+
+def dem_window(name: str, w: float, s: float, e: float, n: float, cell: float = 90.0, extra: dict | None = None) -> Path:
+    """A Copernicus DEM GLO-90 window for a lon/lat box, reprojected onto the local UTM grid at `cell` metres."""
+    from rasterio.merge import merge
+
+    tiles, missing = [], []
+    for lat in range(math.floor(s), math.ceil(n)):
+        for lon in range(math.floor(w), math.ceil(e)):
+            tname = DEM_SOURCE["tile_name"].format(NS="N" if lat >= 0 else "S", EW="E" if lon >= 0 else "W", lat=abs(lat), lon=abs(lon))
+            url = "/vsicurl/" + DEM_SOURCE["url"].format(name=tname)
+            with rasterio.Env(GDAL_DISABLE_READDIR_ON_OPEN="EMPTY_DIR", AWS_NO_SIGN_REQUEST="YES"):
+                try:
+                    tiles.append(rasterio.open(url))
+                except rasterio.errors.RasterioIOError:
+                    missing.append(tname)  # an all-sea tile does not exist
+    if not tiles:
+        raise RuntimeError(f"no GLO-90 tile covers lon {w}..{e}, lat {s}..{n}")
+    with rasterio.Env(GDAL_DISABLE_READDIR_ON_OPEN="EMPTY_DIR", AWS_NO_SIGN_REQUEST="YES"):
+        pad = 0.01
+        src, src_tr = merge(tiles, bounds=(w - pad, s - pad, e + pad, n + pad), nodata=np.nan, dtype="float32")
+        src_crs = tiles[0].crs
+        for t in tiles:
+            t.close()
+    src = src[0]
+    crs = utm_of((w + e) / 2, (s + n) / 2)
+    x0, y0, x1, y1 = transform_bounds("EPSG:4326", crs, w, s, e, n, densify_pts=41)
+    x0, y0, x1, y1 = (math.floor(x0 / cell) * cell, math.floor(y0 / cell) * cell, math.ceil(x1 / cell) * cell, math.ceil(y1 / cell) * cell)
+    nx, ny = round((x1 - x0) / cell), round((y1 - y0) / cell)
+    dst_tr = from_origin(x0, y1, cell, cell)
+    z = np.full((ny, nx), np.nan, dtype="float32")
+    reproject(src, z, src_transform=src_tr, src_crs=src_crs, src_nodata=np.nan, dst_transform=dst_tr, dst_crs=crs, dst_nodata=np.nan,
+              resampling=Resampling.average if cell >= 135 else Resampling.bilinear)
+    out = ROOT / "data" / "raw" / "dem" / "windows"
+    out.mkdir(parents=True, exist_ok=True)
+    with rasterio.open(out / f"{name}.tif", "w", driver="GTiff", dtype="float32", count=1, width=nx, height=ny, crs=crs,
+                       transform=dst_tr, nodata=np.nan, compress="deflate", predictor=3) as d:
+        d.write(z, 1)
+    ok = np.isfinite(z)
+    prov = {"name": name, "frame": "dem", "crs": crs, "cell_m": cell, "size": [nx, ny], "extent": [x0, y0, x1, y1],
+            "lonlat_bounds": [round(v, 5) for v in (w, s, e, n)], "source": f"{DEM_SOURCE['name']} (one-degree COG tiles, AWS open data)",
+            "source_cell": "3 arc-seconds (about 90 m north-south)", "tiles_missing": missing, "resampling": "bilinear" if cell < 135 else "average",
+            "attribution": DEM_SOURCE["attribution"], "licence": DEM_SOURCE["licence"], "built": date.today().isoformat(),
+            "valid_share": round(float(ok.mean()), 4), "z_min": float(np.nanmin(z)) if ok.any() else None,
+            "z_max": float(np.nanmax(z)) if ok.any() else None, "units": "metres above EGM2008 (the sea has no data or is near zero)"}
+    prov.update(extra or {})
+    (out / f"{name}.json").write_text(json.dumps(prov, indent=1) + "\n")
+    print(f"  dem/windows/{name}.tif {nx} x {ny} at {cell:g} m in {crs}, {prov['valid_share']:.0%} valid, z {prov['z_min']:.0f} to {prov['z_max']:.0f} m")
+    return out / f"{name}.tif"
+
+
 def run_named(w: dict, cell: float) -> Path:
     crs = AREAS[w["frame"]]["crs"]
     cx, cy = Transformer.from_crs("EPSG:4326", crs, always_xy=True).transform(*w["centre"])
@@ -119,17 +183,33 @@ def main() -> None:
         b.add_argument(k, type=float)
     b.add_argument("--cell", type=float, default=115)
     b.add_argument("--name", required=True)
+    d = sub.add_parser("dem")
+    d.add_argument("bounds", nargs="*", type=float, help="W S E N in degrees")
+    d.add_argument("--name")
+    d.add_argument("--all", action="store_true", help="every window with frame `dem` in regions/windows.json")
+    d.add_argument("--cell", type=float, default=90)
     a = ap.parse_args()
     wins = json.loads(WINDOWS.read_text())["windows"]
     if a.cmd == "list":
         for w in wins:
             print(f"{w['name']:20s} {w['frame']:16s} {w['size_km']:>4} km at {w['centre']}  {w['setting']}")
     elif a.cmd == "run":
-        todo = wins if a.all else [w for w in wins if w["name"] in a.names]
+        todo = wins if a.all else [w for w in wins if w["name"] in a.names and w["frame"] != "dem"]
         if not todo:
             sys.exit("name a window or use --all (see `list`)")
         for w in todo:
             run_named(w, a.cell)
+    elif a.cmd == "dem":
+        if a.all:
+            for w in [w for w in wins if w["frame"] == "dem"]:
+                half_lat = w["size_km"] / 222.0
+                half_lon = half_lat / math.cos(math.radians(w["centre"][1]))
+                lon, lat = w["centre"]
+                dem_window(w["name"], lon - half_lon, lat - half_lat, lon + half_lon, lat + half_lat, a.cell, {"centre": w["centre"], "size_km": w["size_km"], "setting": w.get("setting")})
+        else:
+            if len(a.bounds) != 4 or not a.name:
+                sys.exit("dem needs W S E N and --name, or --all")
+            dem_window(a.name, *a.bounds, a.cell)
     else:
         crs = AREAS[a.frame]["crs"]
         x0, y0, x1, y1 = transform_bounds("EPSG:4326", crs, a.west, a.south, a.east, a.north, densify_pts=41)
