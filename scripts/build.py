@@ -7,7 +7,8 @@ Coastline generalisation by scale: islands and lakes smaller than MIN_AREA_PX ce
 dense skerry fields are merged by a closing of CLOSE_PX cells. Coordinates are pre-projected (metres, UTM)
 and rounded, so the browser draws them with an identity transform: no projection maths at render time.
 
-Usage: python scripts/build.py <area>
+Usage: python scripts/build.py <area> [--hillshade-only]
+  --hillshade-only  rewrite only the <lod>_hillshade.png files and their manifest entries under the current shade model
 """
 
 from __future__ import annotations
@@ -30,6 +31,7 @@ from scipy.ndimage import gaussian_filter
 from shapely import set_precision
 from shapely.geometry import MultiPolygon, Polygon, box, mapping
 from shapely.ops import unary_union
+from sky_view import AMBIENT, sky_hillshade
 
 LAND = [0, 100, 250, 500, 750, 1000, 1250, 1500]
 SEA = [0, 50, 100, 150, 200, 250, 300, 400, 500, 750, 1000]  # depths, metres
@@ -139,16 +141,18 @@ def band(z: np.ndarray, tr, lo: float, cfg: dict, cell: float, deeper: bool, cli
     return set_precision(g, 10.0)  # 10 m grid: compact integers, invisible at these scales
 
 
-def hillshade(z: np.ndarray, cell: float, az: float = 315, alt: float = 45, exag: float | None = None) -> np.ndarray:
-    """Hillshade with vertical exaggeration growing with the cell size (2 up to 1 km), or relief goes flat."""
-    exag = exag if exag is not None else 2.0 * max(1.0, cell / 1000)
-    zz = np.nan_to_num(z, nan=0.0) * exag
-    gy, gx = np.gradient(zz, cell)
-    slope = np.arctan(np.hypot(gx, gy))
-    aspect = np.arctan2(-gx, gy)
-    a, b = np.radians(360 - az + 90), np.radians(alt)
-    hs = np.sin(b) * np.cos(slope) + np.cos(b) * np.sin(slope) * np.cos(a - aspect)
-    return np.clip(hs, 0, 1)
+FLAT = float(np.sin(np.radians(45)))  # flat open ground in the PNG: 180 of 255, where the one-light model put it, so consumers' remaps hold
+HILLSHADE_MODEL = (f"sky: soft six-light shade at 315/40 multiplied by 1 - {AMBIENT:.2f} x (1 - sky-view factor) "
+                   "(docs/sky-view.md); vertical exaggeration 2 x max(1, cell/1000); flat open ground at 180 of 255")
+
+
+def shade_png(z: np.ndarray, cell: float) -> np.ndarray:
+    """The shipped shade in [0, 1]: the sky model's multiplier (1.0 on flat open ground) scaled so flat ground sits at FLAT.
+
+    The one-light model (315/45) that shipped before 2026-11-15 put flat ground at the same value, so a consumer's remap
+    around the manifest's `flat` is unchanged; hollows now go darker and open summits lighter than it did.
+    """
+    return np.clip(sky_hillshade(z, cell) * FLAT, 0.0, 1.0)
 
 
 def write_png(path: Path, hs: np.ndarray) -> None:
@@ -165,6 +169,32 @@ def write_png(path: Path, hs: np.ndarray) -> None:
 
 def count_parts(g) -> int:
     return 0 if g.is_empty else len(getattr(g, "geoms", [g]))
+
+
+def hillshade_entry(name: str) -> dict:
+    return {"file": f"{name}_hillshade.png", "flat": round(FLAT * 255), "range": [0, 255], "model": HILLSHADE_MODEL}
+
+
+def rehillshade(area: str) -> None:
+    """Rewrite only the `<lod>_hillshade.png` files and their manifest entries from the merged grid, under the current
+    shade model, leaving the vector layers as they are. Then run base_tint.py for the region's `regional_shade.webp`."""
+    a = AREAS[area]
+    out = Path("data/out") / area
+    manifest = json.loads((out / "manifest.json").read_text(encoding="utf-8"))
+    for name, cfg in lods_for(a).items():
+        lod = manifest["lods"].get(name)
+        if not lod:
+            continue
+        t0 = time.time()
+        z, tr = load_merged(area, a, cfg["cell"])
+        grid_bounds = [tr.c, tr.f + tr.e * z.shape[0], tr.c + tr.a * z.shape[1], tr.f]
+        bounds = lod["bounds"]
+        c0 = int((bounds[0] - grid_bounds[0]) / cfg["cell"]); c1 = int((bounds[2] - grid_bounds[0]) / cfg["cell"])
+        r0 = int((grid_bounds[3] - bounds[3]) / cfg["cell"]); r1 = int((grid_bounds[3] - bounds[1]) / cfg["cell"])
+        write_png(out / f"{name}_hillshade.png", shade_png(z, cfg["cell"])[r0:r1, c0:c1])
+        lod["hillshade"] = hillshade_entry(name)
+        print(f"{area} {name:9s} cell {cfg['cell']:>5} m  {z.shape[1]}x{z.shape[0]}  hillshade rewritten ({time.time() - t0:.0f} s)")
+    (out / "manifest.json").write_text(json.dumps(manifest, indent=1), encoding="utf-8")
 
 
 def main(area: str) -> None:
@@ -198,13 +228,12 @@ def main(area: str) -> None:
         # hillshade cropped to the same rectangle
         c0 = int((bounds[0] - grid_bounds[0]) / cfg["cell"]); c1 = int((bounds[2] - grid_bounds[0]) / cfg["cell"])
         r0 = int((grid_bounds[3] - bounds[3]) / cfg["cell"]); r1 = int((grid_bounds[3] - bounds[1]) / cfg["cell"])
-        write_png(out / f"{name}_hillshade.png", hillshade(z, cfg["cell"])[r0:r1, c0:c1])
-        # flat ground in the PNG is sin(alt) = 0.707 -> 180 of 255; a consumer compositing with soft-light (neutral at 128)
+        write_png(out / f"{name}_hillshade.png", shade_png(z, cfg["cell"])[r0:r1, c0:c1])
+        # flat ground in the PNG is 0.707 -> 180 of 255; a consumer compositing with soft-light (neutral at 128)
         # remaps around this value (docs/base-maps.md, docs/plan-europe-frame.md)
         manifest["lods"][name] = {**cfg, "bounds": bounds, "shape": list(z.shape), "bytes": len(text),
                                   "coast_parts": feats[0]["properties"]["parts"], "coast_parts_ungeneralised": raw_islands,
-                                  "hillshade": {"file": f"{name}_hillshade.png", "flat": int(round(np.sin(np.radians(45)) * 255)), "range": [0, 255],
-                                                "model": "one light at 315/45, vertical exaggeration 2 x max(1, cell/1000)"},
+                                  "hillshade": hillshade_entry(name),
                                   "seconds": round(time.time() - t0, 1)}
         print(f"{name:9s} cell {cfg['cell']:>5} m  {z.shape[1]}x{z.shape[0]}  {len(text) / 1e6:5.2f} MB  coast parts {raw_islands} -> "
               f"{feats[0]['properties']['parts']}  ({time.time() - t0:.0f} s)")
@@ -212,4 +241,8 @@ def main(area: str) -> None:
 
 
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else "vestland")
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    if "--hillshade-only" in sys.argv:
+        rehillshade(args[0] if args else "vestland")
+    else:
+        main(args[0] if args else "vestland")

@@ -97,6 +97,7 @@ def test_build_writes_all_layers_and_manifest(tmp_path):
     ):
         assert (tmp_path / f).exists(), f
     assert m["files"]["contours"]["interval_sea_m"] == 50.0
+    assert m["files"]["hillshade"]["mode"] == "sky"  # the default shade model since 2026-11-15
     with rasterio.open(tmp_path / "hillshade.tif") as r:
         assert (
             r.dtypes[0] == "uint8" and r.crs is not None and 0 < r.read(1).mean() < 160

@@ -12,8 +12,10 @@ Files written to DIR (all georeferenced in the region CRS, metres):
   elevation.tif   float32 heights (m, sea negative) on the finest grid the scale can use: the coarsest tile level whose
                   cell is no coarser than one print pixel, or the finest level when none is
   zones.tif       uint8 RGB climate-zone weights (temperate, boreal, tundra; arid = remainder), as the demo texture
-  hillshade.tif   uint8 shade multiplier x 100 (100 = flat, neutral; 0..160), soft multi-directional light as in
-                  preview/relief.js, slopes measured over one print pixel so sub-pixel noise averages away
+  hillshade.tif   uint8 shade multiplier x 100 (100 = flat, neutral; 0..160), the sky model by default: soft
+                  multi-directional light plus the sky-view factor as ambient light (docs/sky-view.md), as in
+                  preview/relief.js, slopes measured over one print pixel so sub-pixel noise averages away;
+                  --shade-model soft for the six lights alone, hard for one light
   contours.geojson  generalised contour lines (MultiLineString per level) with properties z (m, depth negative),
                   kind (land|sea), index (true every 5th). 0 m is excluded; blur, Douglas-Peucker, Chaikin
   coast.geojson   the 0 m line, generalised harder (skerries and noise dropped)
@@ -38,6 +40,7 @@ import render_region as rr
 from rasterio.transform import from_origin
 from scipy.ndimage import gaussian_filter
 from shapely.geometry import LineString
+from sky_view import AMBIENT, DIRECTIONS, search_cells, sky_hillshade
 from smooth import chaikin, douglas_peucker
 
 from regions import load
@@ -165,7 +168,7 @@ def soft_hillshade(
     """Shade multiplier (1.0 = flat) from six lights round the compass weighted to the north-west plus sky light.
 
     Same model as Relief's WebGL `soft` mode (preview/relief.js). Vertical exaggeration grows with cell size, as in
-    build.hillshade, so relief does not go flat at small scales.
+    sky_view.exaggeration, so relief does not go flat at small scales.
     """
     exag = exag if exag is not None else 2.0 * max(1.0, cell / 1000)
     zz = np.nan_to_num(z, nan=0.0) * exag
@@ -333,7 +336,7 @@ def build(
     source: str = "auto",
     interval_sea: float | None = None,
     interval_land: float | None = None,
-    shade_model: str = "soft",
+    shade_model: str = "sky",
 ) -> dict:
     t0 = time.perf_counter()
     reg = {r["id"]: r for r in load()["regions"]}[region]
@@ -376,7 +379,12 @@ def build(
         if zi:
             manifest["files"]["zones"] = zi
     if "hillshade" in layers:
-        sh = hard_hillshade(zs, zcell) if shade_model == "hard" else soft_hillshade(zs, zcell)
+        if shade_model == "sky":
+            sh = sky_hillshade(zs, zcell)
+        elif shade_model == "hard":
+            sh = hard_hillshade(zs, zcell)
+        else:
+            sh = soft_hillshade(zs, zcell)
         write_tif(
             out / "hillshade.tif",
             np.clip(np.round(sh * 100), 0, 160),
@@ -393,6 +401,14 @@ def build(
             "alt": 40,
             "exaggeration": 2.0 * max(1.0, zcell / 1000),
         }
+        if shade_model == "sky":
+            manifest["files"]["hillshade"].update(
+                {
+                    "sky_strength": AMBIENT,
+                    "sky_view": f"{len(DIRECTIONS)} directions to {search_cells(zcell) * zcell / 1000:.1f} km, geometric distances",
+                    "note": "soft six-light shade x (1 - sky_strength x (1 - sky-view factor)) (docs/sky-view.md)",
+                }
+            )
     sea_i, land_i = intervals_for(scale)
     sea_i, land_i = interval_sea or sea_i, interval_land or land_i
     if "contours" in layers or "coast" in layers:
@@ -451,7 +467,12 @@ def main() -> None:
     p.add_argument("--source", choices=["auto", "tiles", "hires"], default="auto")
     p.add_argument("--interval-sea", type=float)
     p.add_argument("--interval-land", type=float)
-    p.add_argument("--shade-model", choices=["soft", "hard"], default="soft", help="six lights plus sky (soft) or one light at 315/45 (hard)")
+    p.add_argument(
+        "--shade-model",
+        choices=["soft", "hard", "sky"],
+        default="sky",
+        help="soft light with the sky-view factor as ambient light (sky, the default), six lights plus sky (soft), or one light at 315/45 (hard)",
+    )
     a = p.parse_args()
     m = build(
         a.region,
