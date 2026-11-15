@@ -1,5 +1,9 @@
 # Relief
 
+[![Pages](https://github.com/AdmcCarthy/kit-relief/actions/workflows/pages.yml/badge.svg)](https://github.com/AdmcCarthy/kit-relief/actions/workflows/pages.yml)
+![Python](https://img.shields.io/badge/python-%E2%89%A53.12-lightgrey)
+[![Licence](https://img.shields.io/badge/licence-MIT%20with%20acknowledgement-lightgrey)](LICENSE)
+
 **Open topography and bathymetry, generalised into fast contour maps for data visualisation.**
 Region examples: https://admccarthy.github.io/kit-relief/ · zoomable tiles: https://admccarthy.github.io/kit-relief/explore.html · techniques: https://admccarthy.github.io/kit-relief/techniques.html · vector layers: https://admccarthy.github.io/kit-relief/vector.html
 
