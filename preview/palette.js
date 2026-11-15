@@ -48,7 +48,7 @@ export function tune(h, sat, mix = 0) {
   return hexOf(c.map((v) => { const g = y + (v - y) * sat; return g + (t - g) * m; }));
 }
 
-// The house style, fixed for the region examples: land tints at half strength (stepped classes, one ramp per climate
+// The house style, fixed for the region examples: land tints at half strength (a linear gradient, one ramp per climate
 // zone), the sea floor on its own wide indigo ramp as a LINEAR gradient, both under the sky shade (soft light x the sky-view
 // factor; land 0.35, sea 0.9, ocean basins 0.8) when a pixel scale is given. No contours, no coastline.
 // Returned in the shape relief.js draws: `stepped` applies to land, `seaStepped` is false.
@@ -58,7 +58,7 @@ export function detunedStyle(theme, bathymetry = "shelf", mpp = 0, tune_ = null)
   const sea = ocean ? at(OCEAN_SB, DETUNED_OCEAN[theme], OCEAN_MAX) : at(SB, DETUNED_SEA[theme], SMAX);
   return { land: land.temperate, zones: land, sea, landMax: LMAX, seaMax: ocean ? OCEAN_MAX : SMAX, landStops: LB, seaStops: ocean ? OCEAN_SB : SB,
     seaTicks: ocean ? [0, 1000, 2000, 3000, 4000, 5000, 6000] : [0, 250, 500, 1000],
-    stepped: true, seaStepped: false, contours: "none", coast: false, ice: false,
+    stepped: false, seaStepped: false, contours: "none", coast: false, ice: false,  // linear land and sea since 2026-11-15
     ...(mpp > 0 ? { shade: "sky", shadeK: 0.35, seaShadeK: 0.9, exag: landExag(mpp), landExag: landExag(mpp), alt: 40 } : { shade: "none" }),
     ...(ocean && mpp > 0 ? oceanShade(mpp, tune_) : {}) };
 }
@@ -108,11 +108,11 @@ export function axis(max, bands, stepped, ticks) {
   return `<span></span><div class="cb-ticks">${tk}<span style="left:100%">${fmtM(max)}+</span></div>`;
 }
 
-// Legend for the Detuned style: one stepped height strip per climate zone present, then a linear depth gradient.
+// Legend for the Detuned style: one linear height gradient per climate zone present, then a linear depth gradient.
 export function regionBars(st, share) {
   const present = ZK.filter((k) => k !== "arid" || (share && share.arid > 0.005));
   const names = { temperate: "Temperate", boreal: "Boreal", tundra: "Tundra", arid: "Arid" };
-  return `<div class="cbs"><span class="cb-kind">Relief: stepped classes by climate zone, m · Bathymetry: linear, m</span><div class="cbg">` +
-    present.map((k) => strip(names[k], st.zones[k], st.landMax, st.landStops, true)).join("") + axis(st.landMax, st.landStops, true, []) +
+  return `<div class="cbs"><span class="cb-kind">Relief: linear by climate zone, m · Bathymetry: linear, m</span><div class="cbg">` +
+    present.map((k) => strip(names[k], st.zones[k], st.landMax, st.landStops, false)).join("") + axis(st.landMax, st.landStops, false, [0, 500, 1000, 1500]) +
     strip("Depth", st.sea, st.seaMax, st.seaStops, false) + axis(st.seaMax, st.seaStops, false, st.seaTicks ?? [0, 250, 500, 1000]) + "</div></div>";
 }

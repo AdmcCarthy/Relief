@@ -9,10 +9,10 @@
   },
   "style": {
     "name": "Detuned",
-    "relief": "stepped (non-linear classes, cross-blended by climate zone)",
+    "relief": "linear gradient, cross-blended by climate zone (stepped classes until 2026-11-15)",
     "bathymetry": "linear gradient",
     "contours": false,
-    "illumination": false,
+    "illumination": "sky shade on land and sea floor (soft light x sky-view factor, since 2026-11-15)",
     "coastline": false
   },
   "sources": {
