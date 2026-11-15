@@ -98,6 +98,13 @@ basins 0.8 with their own exaggeration), the zoom viewer reading the region-wide
 Then the land went linear as well: the examples, the zoom viewer and the consumers' base tints draw height as a
 continuous gradient on each climate zone's ramp (0 to 2,000 m), with `base.land_scale` in the manifest for the key;
 the stepped classes stay as a technique on the techniques page and as `stepped_land` in `base_tint.py`.
+
+## Slide map (2026-11-15)
+A map for slides and summary displays rather than for data: mainland Norway alone, the sky shade as ink on a nearly
+transparent fill, the outline and five cities (Oslo, Bergen, Trondheim, Stavanger, Harstad), transparent outside the
+country (`scripts/slide_map.py`, docs/slide-map.md). It has its own frame, `norway` (ETRS89 / UTM 33N), registered
+but not yet built from its own sources: the picture is warped from the Europe grid at 1,600 m until `build_hires.py
+norway` runs. Outline and cities come from Natural Earth 10 m (public domain, `scripts/fetch_natural_earth.py`).
 The question that started it was whether radiance cascades (Sannikov 2023), a 2D global-illumination method, could
 replace hillshading. They cannot map onto a heightfield lit from above, but their one transferable idea, sampling
 at geometrically growing distances, is what makes the sky-view factor cheap here: 16 lattice directions and 12

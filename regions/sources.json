@@ -572,6 +572,22 @@
       ],
       "gain": "Landscape frame (about 2:1) for wide web pages; same sources as north_sea, coarse grid only, no hires build."
     },
+    "norway": {
+      "web_cell_m": {
+        "now": 1000,
+        "hires": 500
+      },
+      "land": [
+        "cop_glo30",
+        "cop_glo90"
+      ],
+      "sea": [
+        "kartverket_sea_50",
+        "emodnet_dtm_2024",
+        "etopo_2022_60s"
+      ],
+      "gain": "Slide frame for the Norway cut-out (docs/slide-map.md). Not built from its own sources yet: the slide map is warped from the europe_s2s grid at 1,600 m; a hires build at 500 m would sharpen the fjord coast."
+    },
     "norwegian_sea_wide": {
       "web_cell_m": {
         "now": 500,
