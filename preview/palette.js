@@ -49,7 +49,8 @@ export function tune(h, sat, mix = 0) {
 }
 
 // The house style, fixed for the region examples: land tints at half strength (stepped classes, one ramp per climate
-// zone), the sea floor on its own wide indigo ramp as a LINEAR gradient. No contours, no illumination, no coastline.
+// zone), the sea floor on its own wide indigo ramp as a LINEAR gradient, both under the sky shade (soft light x the sky-view
+// factor; land 0.35, sea 0.9, ocean basins 0.8) when a pixel scale is given. No contours, no coastline.
 // Returned in the shape relief.js draws: `stepped` applies to land, `seaStepped` is false.
 export function detunedStyle(theme, bathymetry = "shelf", mpp = 0, tune_ = null) {
   const dark = theme === "dark", Z = ZPAL[theme], ocean = bathymetry === "ocean";
@@ -57,17 +58,24 @@ export function detunedStyle(theme, bathymetry = "shelf", mpp = 0, tune_ = null)
   const sea = ocean ? at(OCEAN_SB, DETUNED_OCEAN[theme], OCEAN_MAX) : at(SB, DETUNED_SEA[theme], SMAX);
   return { land: land.temperate, zones: land, sea, landMax: LMAX, seaMax: ocean ? OCEAN_MAX : SMAX, landStops: LB, seaStops: ocean ? OCEAN_SB : SB,
     seaTicks: ocean ? [0, 1000, 2000, 3000, 4000, 5000, 6000] : [0, 250, 500, 1000],
-    stepped: true, seaStepped: false, shade: "none", contours: "none", coast: false, ice: false,
+    stepped: true, seaStepped: false, contours: "none", coast: false, ice: false,
+    ...(mpp > 0 ? { shade: "sky", shadeK: 0.35, seaShadeK: 0.9, exag: landExag(mpp), landExag: landExag(mpp), alt: 40 } : { shade: "none" }),
     ...(ocean && mpp > 0 ? oceanShade(mpp, tune_) : {}) };
 }
 
-// Shading for ocean basins only (land stays unshaded): fracture zones, ridge-parallel abyssal hills and trenches are a few
-// hundred metres on grids of 2 to 20 km, too faint for colour alone at the full-basin view. The sky model (soft light plus the
-// baked sky-view factor, relief.js) is the default; without a baked texture it falls back to soft light. Vertical
-// exaggeration has to grow with the metres each screen pixel covers, or the relief goes flat as the map zooms out.
+// The house exaggeration rule, with the metres each screen pixel covers as the cell: 2 x, growing beyond 1 km per pixel
+// so relief does not go flat as the map zooms out (the same rule as scripts/sky_view.py for the shipped shade).
+export function landExag(mpp) {
+  return 2 * Math.max(1, mpp / 1000);
+}
+
+// Ocean basins: fracture zones, ridge-parallel abyssal hills and trenches are a few hundred metres on grids of 2 to 20 km,
+// too faint for colour alone at the full-basin view, so the sea floor takes far more exaggeration than the land beside it
+// (`exag`; land keeps `landExag`). The sky model (soft light x the baked sky-view factor, relief.js) is the default; without
+// a baked texture it falls back to soft light.
 export function oceanShade(mpp, t = null) {
   const exag = t?.exag ?? Math.min(40, Math.max(4, mpp / 1500));  // about 14 at 21 km per pixel (the Atlantic fitted to a screen)
-  return { shade: "sky", shadeK: 0, seaShadeK: t?.k ?? 0.8, exag, alt: 40 };
+  return { shade: "sky", seaShadeK: t?.k ?? 0.8, exag, alt: 40 };
 }
 
 // ---------------------------------------------------------------- colour bars

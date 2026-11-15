@@ -18,7 +18,8 @@ uniform vec2 uTex; uniform float uCell, uBase, uStep;
 uniform float uLandMax, uSeaMax;           // ramp ranges, metres
 uniform float uLandStops[12], uSeaStops[12]; uniform int uNLand, uNSea;
 uniform int uStepped, uSeaStepped, uShade, uContours, uIceOn, uCoast;  // uStepped: land classes; uSeaStepped: sea classes
-uniform float uAz, uAlt, uExag, uShadeK, uSeaShadeK, uLineK, uCoastK, uSkyK;  // uSkyK: strength of the sky light
+uniform float uAz, uAlt, uExag, uLandExag, uShadeK, uSeaShadeK, uLineK, uCoastK, uSkyK;  // uSkyK: strength of the sky light; uLandExag: exaggeration on land (uExag on the sea floor)
+uniform vec4 uSV;  // the part of the sky texture that uv 0..1 covers, as uZV for the zones: a tile view covers only some of it
 uniform float uLandInt, uSeaInt;           // contour intervals, metres
 uniform vec3 uIceCol, uIceEdge, uCoastCol, uHi, uLo;
 uniform int uDark;
@@ -59,13 +60,14 @@ void main(){
   vec2 d = px * m;                                  // slopes measured over the same footprint: no sparkle
   float dzx = (h(uv+vec2(d.x,0.)) - h(uv-vec2(d.x,0.))) / (2.*uCell*m);
   float dzy = (h(uv-vec2(0.,d.y)) - h(uv+vec2(0.,d.y))) / (2.*uCell*m);   // texture y runs south
-  vec3 n = normalize(vec3(-dzx*uExag, -dzy*uExag, 1.));
+  float ex = z > 0. ? uLandExag : uExag;             // ocean basins need far more exaggeration than the land beside them
+  vec3 n = normalize(vec3(-dzx*ex, -dzy*ex, 1.));
   vec3 col = ramp(z);
   float sh = 1.;
   if (uShade == 1) { float l = lightAt(n, radians(uAz), radians(uAlt)); float flat_ = sin(radians(uAlt)); sh = l / max(flat_, .2); }
   if (uShade == 2) sh = softAt(n);
   if (uShade == 3) { // sky: the soft shade multiplied by the sky light; a cell that sees no sky loses uSkyK of its tone
-    float svf = texture(uSky, uv).r;   // the baked sky-view factor, as scripts/sky_view.py
+    float svf = texture(uSky, mix(uSV.xy, uSV.zw, uv)).r;   // the baked sky-view factor, as scripts/sky_view.py
     sh = softAt(n) * (1. - uSkyK * (1. - svf)); }
   float k = z > 0. ? uShadeK : uSeaShadeK;
   if (uShade > 0) col *= mix(1., clamp(sh, 0., 1.6), k);
@@ -124,7 +126,7 @@ export function createRenderer() {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     return t;
   }
-  // draw `style` for `src` = {elev: Image|canvas, ice: Image|null, zones, zoneView, dynamic, size:[w,h], cell, base, step, view:[x0,y0,x1,y1]} into target 2D canvas
+  // draw `style` for `src` = {elev: Image|canvas, ice: Image|null, zones, zoneView, sky, skyView, dynamic, size:[w,h], cell, base, step, view:[x0,y0,x1,y1]} into target 2D canvas
   function draw(target, src, style) {
     const W = target.width, H = target.height;
     cv.width = W; cv.height = H; gl.viewport(0, 0, W, H);
@@ -154,9 +156,11 @@ export function createRenderer() {
     gl.activeTexture(gl.TEXTURE4); gl.bindTexture(gl.TEXTURE_2D, sky ? tex(src.key + ":sky", src.sky, { filter: gl.LINEAR, format: "r" }) : null); gl.uniform1i(U("uSky"), 4);
     gl.uniform1i(U("uShade"), { none: 0, single: 1, soft: 2, sky: sky ? 3 : 2 }[style.shade ?? "none"]);
     gl.uniform1f(U("uSkyK"), style.skyK ?? 0.6);
+    gl.uniform4f(U("uSV"), ...(src.skyView ?? [0, 0, 1, 1]));  // a region-wide sky texture under a tile view: the same rectangle as the zones
     gl.uniform1i(U("uContours"), { none: 0, lines: 1, tanaka: 2 }[style.contours ?? "none"]);
     gl.uniform1i(U("uIceOn"), style.ice && src.ice ? 1 : 0); gl.uniform1i(U("uCoast"), style.coast ? 1 : 0);
     gl.uniform1f(U("uAz"), style.az ?? 315); gl.uniform1f(U("uAlt"), style.alt ?? 40); gl.uniform1f(U("uExag"), style.exag ?? 2);
+    gl.uniform1f(U("uLandExag"), style.landExag ?? style.exag ?? 2);
     gl.uniform1f(U("uShadeK"), style.shadeK ?? 0.6); gl.uniform1f(U("uSeaShadeK"), style.seaShadeK ?? 0.4); gl.uniform1f(U("uLineK"), style.lineK ?? 0.6); gl.uniform1f(U("uCoastK"), style.coastK ?? 0.3);
     gl.uniform1f(U("uLandInt"), style.landInt ?? 200); gl.uniform1f(U("uSeaInt"), style.seaInt ?? 100);
     gl.uniform3f(U("uIceCol"), ...hex(style.iceCol ?? "#ffffff")); gl.uniform3f(U("uIceEdge"), ...hex(style.iceEdge ?? "#9fb3c2"));

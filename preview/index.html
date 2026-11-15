@@ -98,7 +98,7 @@ footer { margin:56px 0 40px; padding-top:14px; border-top:1px solid var(--rule);
 
 <section class="wrap">
   <h2>Examples</h2>
-  <p class="lead">Each map is drawn on your GPU from one 16-bit elevation file. The shelf and coast regions use a shelf depth scale (0 to 1,300 m); the Norwegian Sea, the Atlantic and the world use an ocean scale (0 to 7,000 m) with sea-floor shading, soft light plus the sky-view factor (the one exception to the no-illumination rule; land stays unshaded) so that ridges, fracture zones and abyssal plains show. The last card is the proof of concept the techniques page is built on.</p>
+  <p class="lead">Each map is drawn on your GPU from one 16-bit elevation file. The shelf and coast regions use a shelf depth scale (0 to 1,300 m); the Norwegian Sea, the Atlantic and the world use an ocean scale (0 to 7,000 m). Land and sea floor carry the sky shade, soft light scaled by how much sky each cell sees, with the ocean basins exaggerated far more than the land beside them so that ridges, fracture zones and abyssal plains show. The last card is the proof of concept the techniques page is built on.</p>
   <div class="grid" id="cards"></div>
 </section>
 
