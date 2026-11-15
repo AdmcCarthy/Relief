@@ -108,5 +108,5 @@ Cloudflare R2) and the viewer can fetch tiles from there; nothing else changes.
 `scripts/window.py` writes one small GeoTIFF per measured sea-floor scene at EMODnet's native cell (about 115 m), in a frame's CRS:
 `data/raw/<frame>/windows/<name>.tif` with `<name>.json` (cell, extent, source, licence, attribution, date). The scenes are listed in
 `regions/windows.json` (`window.py list`; `window.py run --all`; `window.py box <frame> W S E N --name NAME` for an ad hoc box). The five
-windows are 0.5 to 3 MB each and live in `data/raw/` (ignored); they are not yet a release asset, so a consumer on another machine
-rebuilds them with `window.py run --all` (a minute or two of WCS requests).
+windows are 0.5 to 3 MB each and live in `data/raw/` (ignored); they are also the asset `relief-windows.tar.gz` of release `grids-2026-11-15` (unpack at `data/raw/`; not listed in
+`manifest.json`), or a consumer rebuilds them with `window.py run --all` (a minute or two of WCS requests).
