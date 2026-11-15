@@ -13,6 +13,7 @@ Vestland stays in git (small, and the tests use it), so it is not packaged by de
 A second, separate series carries the merged grids behind those layers (the slow fetch and merge stage), tagged grids-YYYY-MM-DD:
 
   python scripts/publish_data.py grids-build [region ...]          # data/raw/<region>/hires.* -> dist/grids/relief-grids-<region>.tar.gz
+                                                                   # (and the fine windows -> relief-windows.tar.gz, listed under "windows")
   python scripts/publish_data.py grids-release --tag grids-2026-11-10
 """
 
@@ -157,8 +158,36 @@ def build_grids(raw_root: Path, dist: Path, plan: dict, wanted: list[str] | None
     for rid in grid_regions(raw_root, wanted):
         e = manifest["regions"][rid] = pack_grid(raw_root, rid, dist, plan)
         print(f"  {rid:14s} {e['bytes'] / 1e6:7.1f} MB packed ({e['unpacked_bytes'] / 1e6:.0f} MB, {e['files']} files, {e['cell_m']:.0f} m cell)")
+    win = pack_windows(raw_root, dist)
+    if win:
+        manifest["windows"] = win
     (dist / "manifest.json").write_text(json.dumps(manifest, indent=1, ensure_ascii=False))
     return manifest
+
+
+def pack_windows(raw_root: Path, dist: Path) -> dict | None:
+    """The fine windows of regions/windows.json (scripts/window.py) -> dist/relief-windows.tar.gz, members '<frame>/windows/<name>.tif|json'
+    plus 'windows.json'; None when none is built. Returns the manifest entry (listed under "windows", not under "regions")."""
+    wins = json.loads((ROOT / "regions" / "windows.json").read_text(encoding="utf-8"))["windows"]
+    built = [w for w in wins if (raw_root / w["frame"] / "windows" / f"{w['name']}.tif").exists()]
+    archive = dist / "relief-windows.tar.gz"
+    archive.unlink(missing_ok=True)
+    if not built:
+        return None
+    attrib, cells = set(), set()
+    with tarfile.open(archive, "w:gz", compresslevel=6) as tar:
+        for w in built:
+            base = raw_root / w["frame"] / "windows" / w["name"]
+            prov = json.loads(base.with_suffix(".json").read_text(encoding="utf-8"))
+            attrib.add(prov["attribution"])
+            cells.add(prov["cell_m"])
+            for ext in (".tif", ".json"):
+                tar.add(base.with_suffix(ext), arcname=f"{w['frame']}/windows/{base.name}{ext}", recursive=False)
+        tar.add(ROOT / "regions" / "windows.json", arcname="windows.json", recursive=False)
+    e = {"file": archive.name, "sha256": sha256(archive), "bytes": archive.stat().st_size, "names": [w["name"] for w in built],
+         "cell_m": min(cells), "attribution": sorted(attrib)}
+    print(f"  windows        {e['bytes'] / 1e6:7.1f} MB packed ({len(built)} windows, {e['cell_m']:g} m cell)")
+    return e
 
 
 def grid_notes(manifest: dict) -> str:
@@ -169,6 +198,11 @@ def grid_notes(manifest: dict) -> str:
     for rid, e in manifest["regions"].items():
         lines.append(f"| {rid} | {e['bytes'] / 1e6:.0f} MB | {e['cell_m']:.0f} m | {e['size'][0]} x {e['size'][1]} |")
     attrib = sorted({a for e in manifest["regions"].values() for a in e["attribution"]})
+    win = manifest.get("windows")
+    if win:
+        lines += ["", f"**Fine windows.** `{win['file']}` ({win['bytes'] / 1e6:.0f} MB): {', '.join(win['names'])} at {win['cell_m']:g} m, as GeoTIFFs with "
+                  "provenance JSON. Restore them with `uv run python scripts/fetch_data.py --windows`."]
+        attrib = sorted(set(attrib) | set(win["attribution"]))
     return "\n".join(lines + ["", "**Attribution**", ""] + [f"- {a}" for a in attrib] + ["", manifest["licence"]])
 
 
@@ -178,7 +212,7 @@ def release_grids(dist: Path, tag: str, repo: str | None, dry_run: bool) -> None
     (dist / "manifest.json").write_text(json.dumps(manifest, indent=1, ensure_ascii=False))
     notes = dist / "release-notes.md"
     notes.write_text(grid_notes(manifest))
-    assets = sorted(dist.glob("relief-grids-*.tar.gz")) + [dist / "manifest.json"]
+    assets = sorted(dist.glob("relief-grids-*.tar.gz")) + sorted(dist.glob("relief-windows.tar.gz")) + [dist / "manifest.json"]
     cmd = ["gh", "release", "create", tag, *map(str, assets), "--title", f"Relief merged grids {manifest['created']}", "--notes-file", str(notes)]
     if repo:
         cmd += ["--repo", repo]
