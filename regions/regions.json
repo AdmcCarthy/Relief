@@ -56,6 +56,67 @@
       "bathymetry": "shelf"
     },
     {
+      "id": "norway",
+      "name": "Norway (slide frame)",
+      "description": "Mainland Norway from Lindesnes to the North Cape in the national UTM zone, the frame for the slide map (docs/slide-map.md): one country cut out of the terrain, for slides and summary displays.",
+      "crs": {
+        "code": "EPSG:25833",
+        "name": "ETRS89 / UTM zone 33N",
+        "proj4": "+proj=utm +zone=33 +ellps=GRS80 +units=m +no_defs +type=crs",
+        "epsg": 25833
+      },
+      "design": {
+        "lonlat_box": [
+          4.0,
+          57.6,
+          31.6,
+          71.4
+        ],
+        "fit": "outer"
+      },
+      "fetch": {
+        "step_deg": 0.004166666666666667,
+        "sea": [
+          "emodnet",
+          "etopo"
+        ],
+        "land": [
+          "copernicus",
+          "etopo"
+        ]
+      },
+      "lods": {
+        "overview": {
+          "cell": 2000
+        },
+        "regional": {
+          "cell": 1000
+        },
+        "detail": {
+          "cell": 500
+        }
+      },
+      "note": "Slide frame: the slide map is cut from the Europe grid until this region is built from its own sources.",
+      "extent": [
+        -160000,
+        6380000,
+        1490000,
+        8010000
+      ],
+      "bbox": [
+        -3.685,
+        56.495,
+        41.946,
+        72.199
+      ],
+      "size_km": [
+        1650,
+        1630
+      ],
+      "built": false,
+      "bathymetry": "shelf"
+    },
+    {
       "id": "north_sea",
       "name": "North Sea (Norwegian sector and neighbours)",
       "description": "Norwegian North Sea (Sodir blocks 1/2 to 35/x) with the UK, Danish, German and Dutch margins as context. North edge 0.5 degrees above the 62 N boundary with the Norwegian Sea.",
