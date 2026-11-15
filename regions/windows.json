@@ -1,0 +1,10 @@
+{
+  "about": "Fine windows at EMODnet's native cell for measured sea-floor scenes (ep-landforms, docs/plan-landforms-frames.md). Centre in degrees, size_km a square in the frame's CRS. Built by scripts/window.py.",
+  "windows": [
+    {"name": "norfolk_banks", "frame": "north_sea_wide", "centre": [1.9, 53.2], "size_km": 80, "setting": "tidal sand ridges"},
+    {"name": "flemish_banks", "frame": "ne_europe_wide", "centre": [2.6, 51.4], "size_km": 60, "setting": "tidal sand ridges"},
+    {"name": "celtic_sea_ridges", "frame": "ne_europe_wide", "centre": [-7.5, 49.5], "size_km": 150, "setting": "tidal sand ridges"},
+    {"name": "var_canyon", "frame": "med_west", "centre": [7.6, 43.4], "size_km": 80, "setting": "canyon and channel"},
+    {"name": "rhone_channel", "frame": "med_west", "centre": [5.0, 42.3], "size_km": 150, "setting": "deep-sea channel, Neofan"}
+  ]
+}

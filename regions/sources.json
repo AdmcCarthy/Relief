@@ -622,6 +622,20 @@
         "etopo_2022_60s"
       ],
       "gain": "None sought: a 1,600 m cell over 5,500 x 4,600 km is context terrain for catchments; GLO-90 and EMODnet are already finer than the picture, ETOPO fills the deep basin west of the shelf edge and the seas east of 43 E."
+    },
+    "med_west": {
+      "web_cell_m": {
+        "now": 900,
+        "hires": 400
+      },
+      "land": [
+        "cop_glo90"
+      ],
+      "sea": [
+        "emodnet_dtm_2024",
+        "etopo_2022_60s"
+      ],
+      "gain": "EMODnet's native 1/16 arc-minute (about 115 m) over the western Mediterranean, merged at 120 m, so the Var canyon (2 to 5 km wide), the Rhone deep-sea channel (1 to 3 km) and the Gulf of Lion canyons are resolved. Land stays GLO-90 as context. ETOPO fills only outside EMODnet (Algerian coast south of 36 N is inside it). The merged grid is built at 120 m (`build_hires.py run med_west --cell 120`) and the tile pyramid keeps 120 m; the single web texture is averaged to 400 m so it stays inside the 10 MB budget."
     }
   }
 }

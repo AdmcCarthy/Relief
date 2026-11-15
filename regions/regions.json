@@ -550,6 +550,134 @@
       "built": true
     },
     {
+      "id": "med_west",
+      "role": "analysis",
+      "name": "Western Mediterranean (Gulf of Lion, Rhone fan, Var canyon, Ligurian and Balearic basins)",
+      "description": "One frame for the river-fed deep-marine systems of the western Mediterranean at EMODnet's native cell: the Gulf of Lion shelf edge and canyons, the Rhone channel and Neofan, the Var canyon, the Ebro margin, Corsica and Sardinia. In ETRS89 LAEA so it nests with ne_europe and europe_s2s. Requested by ep-landforms (docs/plan-landforms-frames.md).",
+      "crs": {
+        "code": "EPSG:3035",
+        "name": "ETRS89 / LAEA Europe",
+        "proj4": "+proj=laea +lat_0=52 +lon_0=10 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +units=m +no_defs +type=crs",
+        "epsg": 3035
+      },
+      "design": {
+        "lonlat_box": [
+          -1.0,
+          36.0,
+          12.0,
+          44.5
+        ],
+        "fit": "outer"
+      },
+      "fetch": {
+        "step_deg": 0.0010416666666666667,
+        "sea": [
+          "emodnet",
+          "etopo"
+        ],
+        "land": [
+          "copernicus",
+          "etopo"
+        ]
+      },
+      "lods": {
+        "overview": {
+          "cell": 2000
+        },
+        "regional": {
+          "cell": 900
+        },
+        "detail": {
+          "cell": 300
+        }
+      },
+      "bathymetry": "ocean",
+      "levels": {
+        "sea": [
+          0,
+          20,
+          50,
+          100,
+          150,
+          200,
+          300,
+          500,
+          1000,
+          1500,
+          2000,
+          3000
+        ],
+        "land": [
+          0,
+          100,
+          250,
+          500,
+          750,
+          1000,
+          1500,
+          2000,
+          3000
+        ]
+      },
+      "coverage": {
+        "points": {
+          "min_inside": 1.0,
+          "margin_m": 20000,
+          "names": {
+            "Var canyon head": [
+              7.27,
+              43.65
+            ],
+            "Var canyon mouth": [
+              7.6,
+              43.2
+            ],
+            "Rhone canyon head (Petit-Rhone)": [
+              4.4,
+              43.2
+            ],
+            "Rhone deep-sea channel": [
+              5.0,
+              42.3
+            ],
+            "Rhone Neofan": [
+              5.5,
+              42.0
+            ],
+            "Gulf of Lion shelf edge": [
+              4.0,
+              42.8
+            ],
+            "Cap de Creus canyon": [
+              3.5,
+              42.3
+            ],
+            "Ebro margin": [
+              1.0,
+              40.5
+            ]
+          }
+        }
+      },
+      "extent": [
+        3320000,
+        1430000,
+        4510000,
+        2450000
+      ],
+      "bbox": [
+        -2.617,
+        35.274,
+        12.409,
+        45.172
+      ],
+      "size_km": [
+        1190,
+        1020
+      ],
+      "built": true
+    },
+    {
       "id": "atlantic",
       "name": "Atlantic Ocean (spreading ridges)",
       "description": "The Atlantic from the Arctic to the Southern Ocean in a Lambert azimuthal equal-area view centred on 25 W, drawn on the ocean depth scale: the Mid-Atlantic Ridge, its flanks, fracture zones and the abyssal plains show as steady steps in colour from 2,000 to 6,000 m.",

@@ -124,12 +124,16 @@ def _feats(name: str) -> list[dict]:
 def check() -> None:
     """Share of Sodir blocks, fields and EMODnet wells inside each region, and of unwanted ones that leak in."""
     reg = load()
-    blocks, fields = _feats("sodir_blocks"), _feats("sodir_fields")
-    wells = _feats("emodnet_hydrocarbons")
+    have = all((RAW / f"{n}.geojson").exists() for n in ("sodir_blocks", "sodir_fields", "emodnet_hydrocarbons"))
+    blocks, fields, wells = (_feats("sodir_blocks"), _feats("sodir_fields"), _feats("emodnet_hydrocarbons")) if have else ([], [], [])
+    old = json.loads((REG / "coverage.json").read_text()) if (REG / "coverage.json").exists() else {}
     report: dict = {}
     for r in reg["regions"]:
         cov = r.get("coverage")
         if not cov:
+            continue
+        if not have and set(cov) - {"points"}:  # raw Sodir and well files are not on this machine: keep the last report for these keys
+            report[r["id"]] = old.get(r["id"], {})
             continue
         fwd = Transformer.from_crs(LONLAT, crs_of(r), always_xy=True)
         frame = box(*r["extent"])
@@ -174,11 +178,24 @@ def check() -> None:
                 inside = (x >= x0) & (x <= x1) & (y >= y0) & (y <= y1)
                 w[country] = {"total": len(pts), "inside": int(inside.sum()), "share_inside": round(float(inside.mean()), 4)}
             out["wells"] = w
+        spec = cov.get("points")
+        if spec:  # named places that must lie inside the frame, with a margin from its edge
+            x0, y0, x1, y1 = r["extent"]
+            m = spec.get("margin_m", 0)
+            pts = {}
+            for name, (lon, lat) in spec["names"].items():
+                x, y = fwd.transform(lon, lat)
+                pts[name] = {"lon": lon, "lat": lat, "edge_distance_m": round(min(x - x0, x1 - x, y - y0, y1 - y)),
+                             "inside": bool(x0 + m <= x <= x1 - m and y0 + m <= y <= y1 - m)}
+            out["points"] = {"total": len(pts), "inside": sum(p["inside"] for p in pts.values()), "names": pts}
         report[r["id"]] = out
     (REG / "coverage.json").write_text(json.dumps(report, indent=1) + "\n")
     for rid, out in report.items():
         print(rid)
         for key, groups in out.items():
+            if key == "points":
+                print(f"  points        {groups['inside']}/{groups['total']} inside by their margin")
+                continue
             for a, s in groups.items():
                 print(f"  {key:13s} {a:14s} {s['inside']:>5}/{s['total']:<5} fully inside ({s['share_inside']:.1%}), area inside {s.get('share_area_inside', 0):.1%}, touching {s.get('touching', '-')}")
 
