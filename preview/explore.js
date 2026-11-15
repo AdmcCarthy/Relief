@@ -36,7 +36,7 @@ for (const id of ORDER) {
 }
 const params = new URLSearchParams(location.search);
 let cur = null;  // { reg, tiles, meta, zones, ext: [x0, y0, x1, y1] }
-let shading = params.get("shade") !== "off";  // ocean regions only: soft shading of the sea floor
+let shading = params.get("shade") !== "off";  // the sky shade on land and sea floor (palette.js detunedStyle); ?shade=off for flat tints
 const override = params.get("exag") ? { exag: +params.get("exag"), k: +(params.get("k") ?? 0.8) } : null;
 const view = { cx: 0, cy: 0, mpp: 1 };  // centre in region metres; metres per CSS pixel
 const canvas = $("map"), ctx = canvas.getContext("2d");
@@ -115,9 +115,10 @@ async function render() {
   // stitched extent in metres, then the inner rectangle as texture uv
   const sx0 = x0 + px0 * cz, sx1 = x0 + px1 * cz, sy1 = y1 - py0 * cz, sy0 = y1 - py1 * cz;
   const zw = cur.meta.size[0] * cur.meta.cell, zh = cur.meta.size[1] * cur.meta.cell;
+  const regionView = [(sx0 - x0) / zw, (y1 - sy1) / zh, (sx1 - x0) / zw, (y1 - sy0) / zh];  // the stitched view inside the region-wide textures
   const src = {
-    key: cur.reg.id, elev: stitch, ice: null, zones: cur.zones, dynamic: true, size: [sw, sh], cell: cz, base: tiles.encoding.base, step: tiles.encoding.step,
-    zoneView: [(sx0 - x0) / zw, (y1 - sy1) / zh, (sx1 - x0) / zw, (y1 - sy0) / zh],
+    key: cur.reg.id, elev: stitch, ice: null, zones: cur.zones, sky: cur.sky, dynamic: true, size: [sw, sh], cell: cz, base: tiles.encoding.base, step: tiles.encoding.step,
+    zoneView: regionView, skyView: regionView,
     view: [(ix0 - sx0) / (sx1 - sx0), (sy1 - iy1) / (sy1 - sy0), (ix1 - sx0) / (sx1 - sx0), (sy1 - iy0) / (sy1 - sy0)],
   };
   const bw = Math.max(1, Math.round(((ix1 - ix0) / view.mpp) * dpr)), bh = Math.max(1, Math.round(((iy1 - iy0) / view.mpp) * dpr));
@@ -165,10 +166,12 @@ async function openRegion(id) {
   const entry = regions.find((r) => r.reg.id === id) || regions[0];
   if (!entry) { $("info").textContent = "No tile pyramids are built yet. Run scripts/build_tiles.py <region>."; return; }
   const meta = await getJSON(`data/${entry.reg.id}/demo/meta.json`);
-  const zonesImg = await new Promise((res) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = `data/${entry.reg.id}/demo/zones.png`; });
-  cur = { ...entry, meta, zones: zonesImg, ext: entry.tiles.extent };
+  const img = (file) => new Promise((res) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = `data/${entry.reg.id}/demo/${file}`; });
+  // the baked sky-view factor is region-wide (scripts/sky_view.py) and is sampled under the tile view like the zones; older releases have none
+  const [zonesImg, skyImg] = await Promise.all([img("zones.png"), meta?.skyview ? img(meta.skyview.file) : null]);
+  cur = { ...entry, meta, zones: zonesImg, sky: skyImg, ext: entry.tiles.extent };
   $("regions").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === entry.reg.id)));
-  $("shadeseg").hidden = entry.reg.bathymetry !== "ocean";  // shading is an ocean-basin option only
+  $("shadeseg").hidden = false;
   $("shadeon").setAttribute("aria-pressed", String(shading));
   $("rname").textContent = entry.reg.name;
   $("rdesc").textContent = entry.reg.description;

@@ -91,7 +91,10 @@ A strong hillshade is often what a map needs to be legible, and a single low lig
 factor): hollows darken because they see a strip of sky, open slopes keep their light.
 It is the default wherever Relief draws a shade: the shipped `<lod>_hillshade.png` (flat ground still at 180 of 255,
 so consumers change nothing), the print layers, the techniques page and the gallery's ocean sea floors; the zoom
-viewer's tiles stay on soft light. Data releases made before this date carry the one-light PNGs until rebuilt.
+viewer's tiles stay on soft light. Data releases made before this date carry the one-light PNGs until rebuilt;
+`data-2026-11-15-sky` is the first under the model. Later the same day the no-illumination rule for the region examples was
+dropped: the gallery cards and the zoom viewer shade land and sea floor with the sky model (land 0.35, sea 0.9, ocean
+basins 0.8 with their own exaggeration), the zoom viewer reading the region-wide sky texture under its tile views.
 The question that started it was whether radiance cascades (Sannikov 2023), a 2D global-illumination method, could
 replace hillshading. They cannot map onto a heightfield lit from above, but their one transferable idea, sampling
 at geometrically growing distances, is what makes the sky-view factor cheap here: 16 lattice directions and 12
