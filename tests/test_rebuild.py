@@ -3,6 +3,7 @@
 import json
 import os
 import types
+from pathlib import Path
 
 import pytest
 import rebuild as rb
@@ -97,7 +98,7 @@ def test_execute_runs_stale_stages_in_order_and_records_stamps(tmp_path):
     _, out = tree(tmp_path)
     (out / "tiles" / "tiles.json").unlink()
     calls = []
-    ok = lambda cmd, cwd: calls.append((cmd[1].split("/")[-1], cmd[2], cwd)) or types.SimpleNamespace(returncode=0)  # noqa: E731
+    ok = lambda cmd, cwd: calls.append((Path(cmd[1]).name, cmd[2], cwd)) or types.SimpleNamespace(returncode=0)  # noqa: E731
     res = rb.execute(tmp_path, rb.plan(tmp_path, [REGION]), download=False, runner=ok, log=lambda *_: None)
     assert res == {REGION: "ok"} and calls == [("build_tiles.py", REGION, tmp_path)]
     assert "tiles" in rb.read_stamps(tmp_path, REGION)
