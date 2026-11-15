@@ -64,6 +64,10 @@ def test_coverage_report_meets_each_regions_spec():
     for rid, r in REGIONS.items():
         for key, spec in r.get("coverage", {}).items():
             groups = COVERAGE[rid][key]
+            if key == "points":
+                missing = [n for n, p in groups["names"].items() if not p["inside"]]
+                assert not missing and groups["inside"] / groups["total"] >= spec["min_inside"], f"{rid}: outside {missing}"
+                continue
             if key == "wells":
                 for country, s in groups.items():
                     assert s["share_inside"] >= spec["min_inside"], f"{rid}: {country} wells"
@@ -111,6 +115,12 @@ def test_wide_regions_are_at_least_two_to_one():
 
 
 def test_the_europe_frame_for_source_to_sink_is_declared_an_analysis_frame():
-    """It is not a display frame (1.2 : 1), so it says so; no other region may use the role by accident."""
+    """They are not display frames (1.2 : 1), so they say so; no other region may use the role by accident."""
     assert REGIONS["europe_s2s"].get("role") == "analysis"
-    assert [rid for rid, r in REGIONS.items() if r.get("role") == "analysis"] == ["europe_s2s"]
+    assert [rid for rid, r in REGIONS.items() if r.get("role") == "analysis"] == ["europe_s2s", "med_west"]
+
+
+def test_med_west_holds_the_canyons_and_the_gulf_of_lion_shelf_edge():
+    """ep-landforms measures the Var canyon, the Rhone channel and the Gulf of Lion shelf edge: all must sit 20 km inside."""
+    pts = COVERAGE["med_west"]["points"]
+    assert pts["total"] >= 8 and pts["inside"] == pts["total"]

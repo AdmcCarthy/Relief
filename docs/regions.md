@@ -16,6 +16,7 @@ layers are built at.
 | `norwegian_sea_wide` | The Norwegian Sea frame at 2 : 1 | Lambert conformal conic, 8 E (custom) | 2,200 × 1,110 km |
 | `ne_europe_wide` | The NE Europe frame at 2 : 1 | ETRS89 / LAEA Europe (EPSG:3035) | 3,240 × 1,580 km |
 | `europe_s2s` | Every European catchment of the source-to-sink work, whole: Iberia and the Atlantic margin to the Urals, the Mediterranean to Novaya Zemlya (analysis frame, 5,500 x 4,600 km); ocean depth scale with the shelf's fine steps (docs/plan-europe-frame.md) | EPSG:3035 | 3,720 × 3,060 km |
+| `med_west` | The western Mediterranean at EMODnet's native cell: Gulf of Lion shelf edge and canyons, Rhône channel and Neofan, Var canyon, Ebro margin, Corsica and Sardinia (analysis frame, 120 m tile level; docs/plan-landforms-frames.md) | EPSG:3035 | 1,190 × 1,020 km |
 | `atlantic` | The Atlantic, Arctic to Southern Ocean, for spreading ridges; ocean depth scale | Lambert azimuthal equal-area, 25 W (custom) | 11,790 × 15,080 km |
 | `world` | Locator and global context; ocean depth scale | Equal Earth (EPSG:8857) | 34,488 × 16,786 km |
 
@@ -27,7 +28,7 @@ the region they widen, so layers drawn in that region's coordinates (catchments,
 extend it east and west: more sea and more land as context, never less than the original frame. Each is built like any other region.
 They are not the Sodir coverage frames, so they carry no `coverage` block.
 
-A region with `"role": "analysis"` (`europe_s2s`) is a frame made so every catchment is whole, for computation. It may be any
+A region with `"role": "analysis"` (`europe_s2s`, `med_west`) is a frame made for computation: `europe_s2s` so every catchment is whole, `med_west` so a canyon or a channel is resolved. It may be any
 shape and is not a display frame: a story draws it through landscape frames cut from it. A test keeps every `*_wide` region at 2 : 1
 or wider and keeps analysis frames declared. Their regional images are for a 1,152 px page frame at
 twice the pixel density.
