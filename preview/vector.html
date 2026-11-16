@@ -52,7 +52,7 @@ td { padding:3px 0; border-bottom:1px solid var(--rule); } td:last-child { text-
     <p class="note">Sources: Copernicus DEM GLO-90 (© DLR e.V. 2010–2014 and © Airbus 2014–2018, provided under COPERNICUS by the European Union and ESA); EMODnet Bathymetry Consortium (2024) EMODnet Digital Bathymetry (DTM); NOAA NCEI ETOPO 2022 (public domain) for the world and the sea east of 43 °E. Sodir blocks and fields are not drawn here.</p>
   </aside>
 </div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js" integrity="sha384-CjloA8y00+1SDAUkjs099PVfnY2KmDC2BZnws9kh8D/lX1s46w6EPhpXdqMfjK6i" crossorigin="anonymous"></script>
 <script type="module">
 import { OCEAN_SB, OCEAN_MAX, DETUNED_OCEAN, at, rampAt } from "./palette.js";
 let AREA = new URLSearchParams(location.search).get("area") || "vestland", base = `data/${AREA}/`, REGIONS = [];
