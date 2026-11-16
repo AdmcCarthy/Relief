@@ -269,7 +269,7 @@ def main() -> None:
                 half_lat = w["size_km"] / 222.0
                 half_lon = half_lat / math.cos(math.radians(w["centre"][1]))
                 lon, lat = w["centre"]
-                gebco_window(w["name"], lon - half_lon, lat - half_lat, lon + half_lon, lat + half_lat, a.cell, {"centre": w["centre"], "size_km": w["size_km"], "setting": w.get("setting")})
+                gebco_window(w["name"], lon - half_lon, lat - half_lat, lon + half_lon, lat + half_lat, w.get("cell", a.cell), {"centre": w["centre"], "size_km": w["size_km"], "setting": w.get("setting")})
         else:
             if len(a.bounds) != 4 or not a.name:
                 sys.exit("gebco needs W S E N and --name, or --all")

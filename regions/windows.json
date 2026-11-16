@@ -248,8 +248,9 @@
         106.0,
         4.0
       ],
-      "size_km": 400,
-      "setting": "shelf width and the shelf edge (a flooded continental shelf)"
+      "size_km": 700,
+      "setting": "shelf width and the shelf edge (a flooded continental shelf)",
+      "cell": 700
     },
     {
       "name": "niger_margin_gebco",
@@ -330,6 +331,157 @@
       ],
       "size_km": 350,
       "setting": "shelf width and the shelf edge (the Agulhas bank)"
+    },
+    {
+      "name": "kwanza_salt_gebco",
+      "frame": "gebco",
+      "centre": [
+        12.0,
+        -10.5
+      ],
+      "size_km": 300,
+      "setting": "salt diapir and wall (the Kwanza basin's salt, Angola)"
+    },
+    {
+      "name": "santos_salt_gebco",
+      "frame": "gebco",
+      "centre": [
+        -43.5,
+        -26.5
+      ],
+      "size_km": 400,
+      "setting": "salt diapir and wall (the Santos basin's salt, Brazil)"
+    },
+    {
+      "name": "yellow_sea_gebco",
+      "frame": "gebco",
+      "centre": [
+        123.0,
+        35.0
+      ],
+      "size_km": 700,
+      "setting": "shelf width and the shelf edge (the Yellow Sea shelf)",
+      "cell": 700
+    },
+    {
+      "name": "mekong_margin_gebco",
+      "frame": "gebco",
+      "centre": [
+        107.5,
+        9.0
+      ],
+      "size_km": 300,
+      "setting": "clinoform and prograding margin (the Mekong delta margin)"
+    },
+    {
+      "name": "zaire_channel_gebco",
+      "frame": "gebco",
+      "centre": [
+        11.0,
+        -6.0
+      ],
+      "size_km": 300,
+      "setting": "submarine canyon and channel-levee system (the Zaire canyon)"
+    },
+    {
+      "name": "rio_grande_rift_dem",
+      "frame": "dem",
+      "centre": [
+        -106.0,
+        35.5
+      ],
+      "size_km": 200,
+      "setting": "rift basin in plan (the Rio Grande rift)"
+    },
+    {
+      "name": "malawi_dem",
+      "frame": "dem",
+      "centre": [
+        34.5,
+        -11.5
+      ],
+      "size_km": 250,
+      "setting": "half-graben and tilted block (Lake Malawi)"
+    },
+    {
+      "name": "baikal_dem",
+      "frame": "dem",
+      "centre": [
+        108.0,
+        53.5
+      ],
+      "size_km": 300,
+      "setting": "rift basin in plan (Lake Baikal)"
+    },
+    {
+      "name": "afar_dem",
+      "frame": "dem",
+      "centre": [
+        41.0,
+        11.5
+      ],
+      "size_km": 250,
+      "setting": "rift basin in plan (the Afar triple junction)"
+    },
+    {
+      "name": "high_atlas_dem",
+      "frame": "dem",
+      "centre": [
+        -7.0,
+        31.5
+      ],
+      "size_km": 200,
+      "setting": "inversion and fold (the High Atlas)"
+    },
+    {
+      "name": "chaco_foreland_dem",
+      "frame": "dem",
+      "centre": [
+        -63.0,
+        -22.0
+      ],
+      "size_km": 400,
+      "setting": "foreland basin and forebulge (the Chaco foreland of the Andes)"
+    },
+    {
+      "name": "mesopotamia_dem",
+      "frame": "dem",
+      "centre": [
+        45.0,
+        32.0
+      ],
+      "size_km": 400,
+      "setting": "foreland basin and forebulge (Mesopotamia and the Zagros front)"
+    },
+    {
+      "name": "nayarit_plain_dem",
+      "frame": "dem",
+      "centre": [
+        -105.4,
+        21.9
+      ],
+      "size_km": 60,
+      "setting": "strandplain (the plain's gradient)"
+    },
+    {
+      "name": "rio_grande_plain_dem",
+      "frame": "dem",
+      "centre": [
+        -51.2,
+        -31.5
+      ],
+      "size_km": 80,
+      "setting": "strandplain (the plain's gradient)"
+    },
+    {
+      "name": "camargue_dem",
+      "frame": "dem",
+      "centre": [
+        4.6,
+        43.5
+      ],
+      "size_km": 60,
+      "setting": "delta plain (the Rhone's plain gradient)"
     }
   ]
 }
