@@ -483,6 +483,16 @@
       ],
       "size_km": 60,
       "setting": "delta plain (the Rhone's plain gradient)"
+    },
+    {
+      "name": "dead_sea_dem",
+      "frame": "dem",
+      "centre": [
+        35.5,
+        31.5
+      ],
+      "size_km": 150,
+      "setting": "rift basin in plan (the Dead Sea pull-apart)"
     }
   ]
 }
