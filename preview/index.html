@@ -111,7 +111,7 @@ footer { margin:56px 0 40px; padding-top:14px; border-top:1px solid var(--rule);
 <section class="wrap">
   <h2>How the examples are built</h2>
   <div class="three">
-    <div><h3>Data</h3><p>Sources are open and merged per region by priority, finest first, with a feathered seam. The source plan is a JSON file other tools can read; the long-running build is a resumable script that plans before it fetches. See <a href="https://github.com/AdmcCarthy/Relief/blob/main/docs/hires-sources.md">the research notes</a>.</p></div>
+    <div><h3>Data</h3><p>Sources are open and merged per region by priority, finest first, with a feathered seam. The source plan is a JSON file other tools can read; the long-running build is a resumable script that plans before it fetches. See <a href="https://github.com/AdmcCarthy/kit-relief/blob/main/docs/hires-sources.md">the research notes</a>.</p></div>
     <div><h3>Style</h3><p>Land classes (0, 50, 150, 300, 600, 1,000, 1,500, 2,000 m) take one of four ramps by climate zone (Köppen–Geiger, cross-blended over about 6 km). Depth is a continuous gradient on a wider, deeper ramp, so shelves and trenches both read.</p></div>
     <div><h3>Delivery</h3><p>Heights are packed into a lossless WebP (height = −11,000 m + 16-bit value × 0.5 m). The shader does the colouring, so the style is a few uniforms. A whole-region texture stays under 8,192 px and about 10 MB, which sets how fine a region example can be.</p></div>
   </div>
