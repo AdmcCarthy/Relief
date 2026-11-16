@@ -493,6 +493,77 @@
       ],
       "size_km": 150,
       "setting": "rift basin in plan (the Dead Sea pull-apart)"
+    },
+    {
+      "name": "georges_bank_gebco",
+      "frame": "gebco",
+      "centre": [
+        -67.5,
+        41.3
+      ],
+      "size_km": 300,
+      "setting": "tidal sand ridges and shelf sand sheet (Georges Bank)"
+    },
+    {
+      "name": "orinoco_margin_gebco",
+      "frame": "gebco",
+      "centre": [
+        -60.0,
+        9.5
+      ],
+      "size_km": 300,
+      "setting": "clinoform and prograding margin (the Orinoco delta margin)"
+    },
+    {
+      "name": "saharan_slide_gebco",
+      "frame": "gebco",
+      "centre": [
+        -17.0,
+        25.5
+      ],
+      "size_km": 400,
+      "setting": "slope apron and mass-transport deposit (the Saharan slide)"
+    },
+    {
+      "name": "gabon_salt_gebco",
+      "frame": "gebco",
+      "centre": [
+        8.0,
+        -3.0
+      ],
+      "size_km": 300,
+      "setting": "salt diapir and wall (the Gabon margin's salt)"
+    },
+    {
+      "name": "turkana_dem",
+      "frame": "dem",
+      "centre": [
+        36.0,
+        3.5
+      ],
+      "size_km": 250,
+      "setting": "half-graben and tilted block (Lake Turkana)"
+    },
+    {
+      "name": "tarim_foreland_dem",
+      "frame": "dem",
+      "centre": [
+        82.0,
+        40.0
+      ],
+      "size_km": 400,
+      "setting": "foreland basin and forebulge (the Tarim and the Tien Shan front)",
+      "cell": 180
+    },
+    {
+      "name": "pyrenees_foreland_dem",
+      "frame": "dem",
+      "centre": [
+        0.5,
+        42.0
+      ],
+      "size_km": 250,
+      "setting": "foreland basin and forebulge (the Ebro basin and the Pyrenean front)"
     }
   ]
 }
