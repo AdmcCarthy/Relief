@@ -614,7 +614,7 @@
       "id": "med_west",
       "role": "analysis",
       "name": "Western Mediterranean (Gulf of Lion, Rhone fan, Var canyon, Ligurian and Balearic basins)",
-      "description": "One frame for the river-fed deep-marine systems of the western Mediterranean at EMODnet's native cell: the Gulf of Lion shelf edge and canyons, the Rhone channel and Neofan, the Var canyon, the Ebro margin, Corsica and Sardinia. In ETRS89 LAEA so it nests with ne_europe and europe_s2s. Requested by lab-landforms (docs/plan-landforms-frames.md).",
+      "description": "One frame for the river-fed deep-marine systems of the western Mediterranean at EMODnet's native cell: the Gulf of Lion shelf edge and canyons, the Rhone channel and Neofan, the Var canyon, the Ebro margin, Corsica and Sardinia. In ETRS89 LAEA so it nests with ne_europe and europe_s2s. Requested for measured analogues (docs/plan-landforms-frames.md).",
       "crs": {
         "code": "EPSG:3035",
         "name": "ETRS89 / LAEA Europe",

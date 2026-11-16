@@ -1,4 +1,4 @@
-# Request: sea-floor frames for the measured analogues (lab-landforms)
+# Request: sea-floor frames for the measured analogues (measured analogues)
 
 **Status 15 November 2026.** Steps 1 to 6 done on the owner's go-ahead. `med_west` is registered (1,190 x 1,020 km, EPSG:3035, a little larger than
 estimated because the box corners spread in LAEA), fetched with `build_hires.py` (GLO-90, EMODnet 2024, ETOPO 2022; EMODnet gives 99 % of the sea),
@@ -13,12 +13,12 @@ depth and width; the plan's test against "the detail grid" (300 m) was not run b
 window shows crest-to-trough relief (1st to 99th percentile of local relief) of about 17 m; the 15 arc-second merged grid gives about 19 m, so
 it is not a smear in amplitude, only in cell size (270 x 165 m against 115 m). Read widths from the window; read heights from either.
 
-Written 14 November 2026 at the owner's request, as a plan and not a build: nothing in the sections below had been fetched or run when it was written. The private
-repo `lab-landforms` measures the plan-view dimensions of modern depositional settings, and reads the submerged ones (tidal
+Written 14 November 2026 at the owner's request, as a plan and not a build: nothing in the sections below had been fetched or run when it was written. A private
+measured-analogue study measures the plan-view dimensions of modern depositional settings, and reads the submerged ones (tidal
 sand ridges, shelf edges, canyons and channel-levee systems, fans, slides, glacial troughs) from depth grids rather than optical
 imagery. It takes those grids through Relief and never contours, shades or resamples terrain itself. Two things stop it today.
 
-## What lab-landforms reads, and what it finds
+## What the analogue study reads, and what it finds
 
 | Scene (setting) | Centre | Box | Frame today | Grid held | What the grid can and cannot give |
 |---|---|---|---|---|---|
@@ -67,14 +67,14 @@ the existing frames, written with `build_hires.py run <frame> --cell 115` restri
 `scripts/window.py <frame> <west> <south> <east> <north> --cell 115` that writes `data/raw/<frame>/windows/<name>.tif` with its
 provenance JSON and attribution. The windows: Norfolk Banks (80 km), Flemish Banks (60 km), Celtic Sea ridges (150 km), and, if the
 `med_west` frame is built, the Var and Rhône channel boxes. Five windows of 100 x 60 km at 115 m are about 500,000 cells each, a few
-megabytes: no disk or release concern. `lab-landforms` would read these files as it reads `merged.tif` today, with the cell size
+megabytes: no disk or release concern. The study would read these files as it reads `merged.tif` today, with the cell size
 recorded.
 
 **C. Fetch the `barents_sea` and `atlantic` merged grids** on this machine from the `grids-*` release (`scripts/fetch_data.py --grids
 barents_sea atlantic`), so the Bear Island Fan, Hinlopen and Congo scenes read. This is a download of Relief's own release assets and
 needs only the go-ahead.
 
-## What lab-landforms does meanwhile
+## What the study does meanwhile
 
 It reads the 15 arc-second grids where they are, records the cell size in metres on every scene and limits its measures to what
 the cell supports (ridge length and spacing, not width and height; fan area, not channel width), and says so on the slide. The
@@ -94,7 +94,7 @@ in `docs/sources.md` and Idiom `DATASETS.md`. The Mediterranean frame adds no so
    machine time, run alone for memory.
 4. The window entry point (B) and the five windows. Half a day.
 5. `fetch_data.py --grids barents_sea atlantic` (C). Minutes.
-6. `docs/regions.md`, `docs/data-releases.md` and Idiom `DATASETS.md` updated; `lab-landforms` points its Mediterranean scenes at
+6. `docs/regions.md`, `docs/data-releases.md` and Idiom `DATASETS.md` updated; the study points its Mediterranean scenes at
    the new frame and its ridge scenes at the windows.
 
 ## Acceptance

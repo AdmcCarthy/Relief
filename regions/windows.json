@@ -1,5 +1,5 @@
 {
-  "about": "Fine windows at EMODnet's native cell for measured sea-floor scenes (lab-landforms, docs/plan-landforms-frames.md), and height windows of the Copernicus DEM GLO-90 for structural and alluvial-fan scenes outside the European frames (docs/plan-landforms-structure.md). Centre in degrees, size_km a square in the window's CRS (the frame's, or the local UTM zone for `dem`). Built by scripts/window.py (`run` for EMODnet, `dem --all` for the DEM).",
+  "about": "Fine windows at EMODnet's native cell for measured sea-floor scenes (measured analogues, docs/plan-landforms-frames.md), and height windows of the Copernicus DEM GLO-90 for structural and alluvial-fan scenes outside the European frames (docs/plan-landforms-structure.md). Centre in degrees, size_km a square in the window's CRS (the frame's, or the local UTM zone for `dem`). Built by scripts/window.py (`run` for EMODnet, `dem --all` for the DEM).",
   "windows": [
     {"name": "norfolk_banks", "frame": "north_sea_wide", "centre": [1.9, 53.2], "size_km": 80, "setting": "tidal sand ridges"},
     {"name": "flemish_banks", "frame": "ne_europe_wide", "centre": [2.6, 51.4], "size_km": 60, "setting": "tidal sand ridges"},

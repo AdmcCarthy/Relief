@@ -8,7 +8,7 @@ JSON (about four to one) and not images.
 
 | Consumer | Before | Now |
 |---|---|---|
-| kit-geology-maps preview, Bedrock geology page | `regional_hillshade.png` 460 KB, `regional.geojson` 474 KB, both base PNGs 1,066 KB, manifest; a pixel pass to remap the hillshade on every load | `regional_base_<scheme>.webp` 68 KB, `regional_shade.webp` 130 KB, manifest; no bands, no remap |
+| The geology-maps preview, Bedrock geology page | `regional_hillshade.png` 460 KB, `regional.geojson` 474 KB, both base PNGs 1,066 KB, manifest; a pixel pass to remap the hillshade on every load | `regional_base_<scheme>.webp` 68 KB, `regional_shade.webp` 130 KB, manifest; no bands, no remap |
 | source-to-sink preview, Bedrock s2s page | hillshade 460 KB, bands 474 KB, one base PNG 576 KB, slope flow 13.8 MB GeoJSON; remap pass | base 68 KB, shade 130 KB, slope flow 7.5 MB compact (released separately from Pages), loaded after the first paint |
 | ds-sand-from-the-source story | hillshade and both base PNGs reduced to the page width, per frame | unchanged (that repo is mid-rework); the WebP tints and shade are the drop-in, about 300 KB a frame instead of 1.4 MB |
 | Bedrock `site/relief/<frame>/` | 6.5 MB for three frames (PNGs, bands, overview copies) | about 1.4 MB: WebP tints, shade, bands as the fallback, manifest |

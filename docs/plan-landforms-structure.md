@@ -1,14 +1,14 @@
-# Request: height windows for the structural analogues (lab-landforms, loop D)
+# Request: height windows for the structural analogues (measured analogues, loop D)
 
 **Status 15 November 2026.** Written and built in the same session, on the owner's instruction to carry out loops A to E of
-lab-landforms' `docs/plan-next.md`: `scripts/window.py dem` reads the Copernicus DEM GLO-90 one-degree tiles at their native cell
+the study's own plan: `scripts/window.py dem` reads the Copernicus DEM GLO-90 one-degree tiles at their native cell
 for any lon/lat box, mosaics them and writes one GeoTIFF in the local UTM zone with its provenance; fifteen windows are registered
 in `regions/windows.json` under frame `dem`. Nothing is published: the windows are raw files under `data/raw/dem/windows/` and
 are rebuilt by the command. No new source, no new frame, no change to the contract.
 
 ## Why height, and why outside the frames
 
-lab-landforms adds two groups of settings to its register: **structure** (normal faults and scarps, half-grabens and tilted
+The study adds two groups of settings to its register: **structure** (normal faults and scarps, half-grabens and tilted
 blocks, rifts in plan, rift-flank uplift, salt diapirs and walls, inversion folds) and **the basin's elements** (foreland basins and
 forebulges, shoreline geometry, shelf width and the shelf edge, clinoforms, strandplain width). A deposit is read from an optical
 scene; structure is read from **height**: a scarp's height from profiles, a block's width from fault to fault, a fold's wavelength
@@ -27,7 +27,7 @@ box touches, the COG is opened over HTTP (AWS open data, no sign-in), the tiles 
 reprojected once onto a UTM grid of the box centre's zone at the cell asked for (bilinear at the native cell, average when
 decimated). The output carries `crs`, `cell_m`, `extent`, `lonlat_bounds`, `source`, `source_cell`, the tiles that did not exist
 (all-sea tiles), `attribution`, `licence`, `built`, `valid_share` and the height range, as the EMODnet windows do. A consumer reads
-the `.tif` and the `.json` beside it; lab-landforms reads them through `analogues/bathy.py` with `region: dem` and `window: <name>`.
+the `.tif` and the `.json` beside it; the study reads them through its bathymetry reader with `region: dem` and `window: <name>`.
 
 | Window | Centre | Box | Setting |
 |---|---|---|---|
@@ -64,4 +64,4 @@ ESA; recorded in `docs/sources.md` and Idiom's `DATASETS.md` already. Heights ar
 
 - A window's `.json` carries cell, CRS, extent, attribution and the tiles that did not exist; `valid_share` is above 0.95 on a land box.
 - The Death Valley window's apex-to-toe profile of a Panamint fan falls from about 1,000 m to the playa at about −80 m over 8 to 10 km,
-  which is the published order of the fans' radius; lab-landforms checks it against its own fan method.
+  which is the published order of the fans' radius; the study checks it against its own fan method.
