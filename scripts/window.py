@@ -161,6 +161,65 @@ def dem_window(name: str, w: float, s: float, e: float, n: float, cell: float = 
     return out / f"{name}.tif"
 
 
+GEBCO_SOURCE = json.loads((ROOT / "regions" / "sources.json").read_text())["sources"]["gebco_2026"]
+
+
+def gebco_window(name: str, w: float, s: float, e: float, n: float, cell: float = 450.0, extra: dict | None = None) -> Path:
+    """A GEBCO_2026 window (sea floor and land, one grid) for a lon/lat box anywhere, read by HTTP range requests from the 90 degree
+    tiles on CEDA (only the rows and columns of the box cross the wire), reprojected once onto a UTM grid at `cell` metres."""
+    from rasterio.merge import merge
+    from rasterio.windows import from_bounds as wfb
+
+    tiles = [t for t in GEBCO_SOURCE["tiles"] if t["bbox"][0] < e and t["bbox"][2] > w and t["bbox"][1] < n and t["bbox"][3] > s]
+    if not tiles:
+        raise RuntimeError(f"no GEBCO tile covers lon {w}..{e}, lat {s}..{n}")
+    pad = 0.05
+    parts = []
+    with rasterio.Env(GDAL_DISABLE_READDIR_ON_OPEN="EMPTY_DIR", CPL_VSIL_CURL_ALLOWED_EXTENSIONS=".tif", GDAL_HTTP_MAX_RETRY="4", GDAL_HTTP_RETRY_DELAY="3"):
+        for t in tiles:
+            with rasterio.open("/vsicurl/" + t["url"]) as d:
+                bw, bs, be, bn = max(w - pad, d.bounds.left), max(s - pad, d.bounds.bottom), min(e + pad, d.bounds.right), min(n + pad, d.bounds.top)
+                win = wfb(bw, bs, be, bn, transform=d.transform).round_offsets().round_lengths()
+                a = d.read(1, window=win).astype("float32")
+                parts.append((a, d.window_transform(win)))
+    if len(parts) == 1:
+        src, src_tr = parts[0]
+    else:  # a box across a tile seam: write the parts to memory files and merge
+        mem = []
+        for a, tr in parts:
+            f = rasterio.MemoryFile()
+            with f.open(driver="GTiff", height=a.shape[0], width=a.shape[1], count=1, dtype="float32", crs="EPSG:4326", transform=tr) as d:
+                d.write(a, 1)
+            mem.append(f)
+        ds = [f.open() for f in mem]
+        src, src_tr = merge(ds, bounds=(w - pad, s - pad, e + pad, n + pad))
+        src = src[0]
+    crs = utm_of((w + e) / 2, (s + n) / 2)
+    x0, y0, x1, y1 = transform_bounds("EPSG:4326", crs, w, s, e, n, densify_pts=41)
+    x0, y0, x1, y1 = (math.floor(x0 / cell) * cell, math.floor(y0 / cell) * cell, math.ceil(x1 / cell) * cell, math.ceil(y1 / cell) * cell)
+    nx, ny = round((x1 - x0) / cell), round((y1 - y0) / cell)
+    dst_tr = from_origin(x0, y1, cell, cell)
+    z = np.full((ny, nx), np.nan, dtype="float32")
+    reproject(src, z, src_transform=src_tr, src_crs="EPSG:4326", dst_transform=dst_tr, dst_crs=crs, dst_nodata=np.nan,
+              resampling=Resampling.average if cell >= 1.5 * 463 else Resampling.bilinear)
+    out = ROOT / "data" / "raw" / "gebco" / "windows"
+    out.mkdir(parents=True, exist_ok=True)
+    with rasterio.open(out / f"{name}.tif", "w", driver="GTiff", dtype="float32", count=1, width=nx, height=ny, crs=crs,
+                       transform=dst_tr, nodata=np.nan, compress="deflate", predictor=3) as d:
+        d.write(z, 1)
+    ok = np.isfinite(z)
+    prov = {"name": name, "frame": "gebco", "crs": crs, "cell_m": cell, "size": [nx, ny], "extent": [x0, y0, x1, y1],
+            "lonlat_bounds": [round(v, 5) for v in (w, s, e, n)], "source": "GEBCO_2026 Grid (ice-surface elevation, 15 arc-second GeoTIFF tiles on CEDA, range requests)",
+            "source_cell": "15 arc-seconds (about 463 m at the equator)", "resampling": "average" if cell >= 1.5 * 463 else "bilinear",
+            "attribution": GEBCO_SOURCE["attribution"], "licence": GEBCO_SOURCE["licence"], "built": date.today().isoformat(),
+            "valid_share": round(float(ok.mean()), 4), "z_min": float(np.nanmin(z)) if ok.any() else None,
+            "z_max": float(np.nanmax(z)) if ok.any() else None, "units": "metres, up positive (depths negative)"}
+    prov.update(extra or {})
+    (out / f"{name}.json").write_text(json.dumps(prov, indent=1) + "\n")
+    print(f"  gebco/windows/{name}.tif {nx} x {ny} at {cell:g} m in {crs}, {prov['valid_share']:.0%} valid, z {prov['z_min']:.0f} to {prov['z_max']:.0f} m")
+    return out / f"{name}.tif"
+
+
 def run_named(w: dict, cell: float) -> Path:
     crs = AREAS[w["frame"]]["crs"]
     cx, cy = Transformer.from_crs("EPSG:4326", crs, always_xy=True).transform(*w["centre"])
@@ -188,17 +247,33 @@ def main() -> None:
     d.add_argument("--name")
     d.add_argument("--all", action="store_true", help="every window with frame `dem` in regions/windows.json")
     d.add_argument("--cell", type=float, default=90)
+    g = sub.add_parser("gebco")
+    g.add_argument("bounds", nargs="*", type=float, help="W S E N in degrees")
+    g.add_argument("--name")
+    g.add_argument("--all", action="store_true", help="every window with frame `gebco` in regions/windows.json")
+    g.add_argument("--cell", type=float, default=450)
     a = ap.parse_args()
     wins = json.loads(WINDOWS.read_text())["windows"]
     if a.cmd == "list":
         for w in wins:
             print(f"{w['name']:20s} {w['frame']:16s} {w['size_km']:>4} km at {w['centre']}  {w['setting']}")
     elif a.cmd == "run":
-        todo = wins if a.all else [w for w in wins if w["name"] in a.names and w["frame"] != "dem"]
+        todo = [w for w in wins if w["frame"] not in ("dem", "gebco")] if a.all else [w for w in wins if w["name"] in a.names and w["frame"] not in ("dem", "gebco")]
         if not todo:
             sys.exit("name a window or use --all (see `list`)")
         for w in todo:
             run_named(w, a.cell)
+    elif a.cmd == "gebco":
+        if a.all:
+            for w in [w for w in wins if w["frame"] == "gebco"]:
+                half_lat = w["size_km"] / 222.0
+                half_lon = half_lat / math.cos(math.radians(w["centre"][1]))
+                lon, lat = w["centre"]
+                gebco_window(w["name"], lon - half_lon, lat - half_lat, lon + half_lon, lat + half_lat, a.cell, {"centre": w["centre"], "size_km": w["size_km"], "setting": w.get("setting")})
+        else:
+            if len(a.bounds) != 4 or not a.name:
+                sys.exit("gebco needs W S E N and --name, or --all")
+            gebco_window(a.name, *a.bounds, a.cell)
     elif a.cmd == "dem":
         if a.all:
             for w in [w for w in wins if w["frame"] == "dem"]:
