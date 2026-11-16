@@ -45,6 +45,7 @@ import numpy as np
 import rasterio
 import requests
 from areas import AREAS
+from safe_zip import extract_all
 from pyproj import Transformer
 from rasterio.enums import Resampling
 from rasterio.transform import from_bounds
@@ -398,7 +399,7 @@ def fetch_geonorge(region, sid, s, out: Path, cell: float) -> None:
         for f in r.json()["files"]:
             z = zipfile.ZipFile(io.BytesIO(requests.get(f["downloadUrl"], timeout=900).content))
             tmp = out / "_tmp"
-            z.extractall(tmp)
+            extract_all(z, tmp)
             for t in tmp.rglob("*.tif"):
                 decimate_file(t, out / t.name, cell)
                 t.unlink()

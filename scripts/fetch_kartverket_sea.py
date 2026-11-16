@@ -18,6 +18,7 @@ from pathlib import Path
 import rasterio
 import requests
 from areas import AREAS
+from safe_zip import extract_all
 from pyproj import Transformer
 
 UUID = "67a3a191-49cc-45bc-baf0-eaaf7c513549"  # Dybdedata terrengmodeller 50 meters grid
@@ -44,7 +45,7 @@ def main(area: str) -> None:
         r.raise_for_status()
         for f in r.json()["files"]:
             z = zipfile.ZipFile(io.BytesIO(requests.get(f["downloadUrl"], timeout=300).content))
-            z.extractall(out)
+            extract_all(z, out)
     t = Transformer.from_crs("EPSG:25833", "EPSG:4326", always_xy=True)
     bad = []
     for c in want:
