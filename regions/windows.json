@@ -1,26 +1,488 @@
 {
   "about": "Fine windows at EMODnet's native cell for measured sea-floor scenes (measured analogues, docs/plan-landforms-frames.md), and height windows of the Copernicus DEM GLO-90 for structural and alluvial-fan scenes outside the European frames (docs/plan-landforms-structure.md). Centre in degrees, size_km a square in the window's CRS (the frame's, or the local UTM zone for `dem`). Built by scripts/window.py (`run` for EMODnet, `dem --all` for the DEM).",
   "windows": [
-    {"name": "norfolk_banks", "frame": "north_sea_wide", "centre": [1.9, 53.2], "size_km": 80, "setting": "tidal sand ridges"},
-    {"name": "flemish_banks", "frame": "ne_europe_wide", "centre": [2.6, 51.4], "size_km": 60, "setting": "tidal sand ridges"},
-    {"name": "celtic_sea_ridges", "frame": "ne_europe_wide", "centre": [-7.5, 49.5], "size_km": 150, "setting": "tidal sand ridges"},
-    {"name": "var_canyon", "frame": "med_west", "centre": [7.6, 43.4], "size_km": 80, "setting": "canyon and channel"},
-    {"name": "rhone_channel", "frame": "med_west", "centre": [5.0, 42.3], "size_km": 150, "setting": "deep-sea channel, Neofan"},
-    {"name": "death_valley_dem", "frame": "dem", "centre": [-116.93, 36.22], "size_km": 30, "setting": "alluvial fan (fan radius from the DEM)"},
-    {"name": "batinah_dem", "frame": "dem", "centre": [57.65, 23.75], "size_km": 60, "setting": "fan delta (fan radius from the DEM)"},
-    {"name": "wasatch_dem", "frame": "dem", "centre": [-111.85, 40.55], "size_km": 60, "setting": "normal fault and fault scarp"},
-    {"name": "corinth_dem", "frame": "dem", "centre": [22.5, 38.15], "size_km": 60, "setting": "normal fault and fault scarp (Gulf of Corinth south shore)"},
-    {"name": "tanganyika_dem", "frame": "dem", "centre": [29.8, -6.0], "size_km": 200, "setting": "half-graben and tilted block"},
-    {"name": "suez_dem", "frame": "dem", "centre": [33.3, 28.6], "size_km": 120, "setting": "half-graben and tilted block (Gulf of Suez)"},
-    {"name": "gregory_rift_dem", "frame": "dem", "centre": [36.1, -0.8], "size_km": 200, "setting": "rift basin in plan"},
-    {"name": "rhine_graben_dem", "frame": "dem", "centre": [8.0, 48.6], "size_km": 150, "setting": "rift basin in plan"},
-    {"name": "red_sea_flank_dem", "frame": "dem", "centre": [36.0, 24.5], "size_km": 200, "setting": "rift-flank uplift and footwall erosion"},
-    {"name": "western_ghats_dem", "frame": "dem", "centre": [73.6, 18.3], "size_km": 150, "setting": "rift-flank uplift (the Deccan edge)"},
-    {"name": "zagros_salt_dem", "frame": "dem", "centre": [54.0, 27.5], "size_km": 120, "setting": "salt diapir and wall (Hormuz salt domes)"},
-    {"name": "great_kavir_dem", "frame": "dem", "centre": [53.5, 34.7], "size_km": 100, "setting": "salt diapir and wall (Great Kavir)"},
-    {"name": "zagros_folds_dem", "frame": "dem", "centre": [51.0, 29.5], "size_km": 150, "setting": "inversion and fold (the simple fold belt)"},
-    {"name": "jura_dem", "frame": "dem", "centre": [6.0, 46.9], "size_km": 100, "setting": "inversion and fold (the Jura)"},
-    {"name": "ganges_foreland_dem", "frame": "dem", "centre": [82.0, 25.5], "size_km": 400, "setting": "foreland basin and forebulge (the Ganges plain and the Bundelkhand bulge)"},
-    {"name": "po_plain_dem", "frame": "dem", "centre": [11.0, 44.6], "size_km": 200, "setting": "foreland basin (the Po Plain and the Apennine front)"}
+    {
+      "name": "norfolk_banks",
+      "frame": "north_sea_wide",
+      "centre": [
+        1.9,
+        53.2
+      ],
+      "size_km": 80,
+      "setting": "tidal sand ridges"
+    },
+    {
+      "name": "flemish_banks",
+      "frame": "ne_europe_wide",
+      "centre": [
+        2.6,
+        51.4
+      ],
+      "size_km": 60,
+      "setting": "tidal sand ridges"
+    },
+    {
+      "name": "celtic_sea_ridges",
+      "frame": "ne_europe_wide",
+      "centre": [
+        -7.5,
+        49.5
+      ],
+      "size_km": 150,
+      "setting": "tidal sand ridges"
+    },
+    {
+      "name": "var_canyon",
+      "frame": "med_west",
+      "centre": [
+        7.6,
+        43.4
+      ],
+      "size_km": 80,
+      "setting": "canyon and channel"
+    },
+    {
+      "name": "rhone_channel",
+      "frame": "med_west",
+      "centre": [
+        5.0,
+        42.3
+      ],
+      "size_km": 150,
+      "setting": "deep-sea channel, Neofan"
+    },
+    {
+      "name": "death_valley_dem",
+      "frame": "dem",
+      "centre": [
+        -116.93,
+        36.22
+      ],
+      "size_km": 30,
+      "setting": "alluvial fan (fan radius from the DEM)"
+    },
+    {
+      "name": "batinah_dem",
+      "frame": "dem",
+      "centre": [
+        57.65,
+        23.75
+      ],
+      "size_km": 60,
+      "setting": "fan delta (fan radius from the DEM)"
+    },
+    {
+      "name": "wasatch_dem",
+      "frame": "dem",
+      "centre": [
+        -111.85,
+        40.55
+      ],
+      "size_km": 60,
+      "setting": "normal fault and fault scarp"
+    },
+    {
+      "name": "corinth_dem",
+      "frame": "dem",
+      "centre": [
+        22.5,
+        38.15
+      ],
+      "size_km": 60,
+      "setting": "normal fault and fault scarp (Gulf of Corinth south shore)"
+    },
+    {
+      "name": "tanganyika_dem",
+      "frame": "dem",
+      "centre": [
+        29.8,
+        -6.0
+      ],
+      "size_km": 200,
+      "setting": "half-graben and tilted block"
+    },
+    {
+      "name": "suez_dem",
+      "frame": "dem",
+      "centre": [
+        33.3,
+        28.6
+      ],
+      "size_km": 120,
+      "setting": "half-graben and tilted block (Gulf of Suez)"
+    },
+    {
+      "name": "gregory_rift_dem",
+      "frame": "dem",
+      "centre": [
+        36.1,
+        -0.8
+      ],
+      "size_km": 200,
+      "setting": "rift basin in plan"
+    },
+    {
+      "name": "rhine_graben_dem",
+      "frame": "dem",
+      "centre": [
+        8.0,
+        48.6
+      ],
+      "size_km": 150,
+      "setting": "rift basin in plan"
+    },
+    {
+      "name": "red_sea_flank_dem",
+      "frame": "dem",
+      "centre": [
+        36.0,
+        24.5
+      ],
+      "size_km": 200,
+      "setting": "rift-flank uplift and footwall erosion"
+    },
+    {
+      "name": "western_ghats_dem",
+      "frame": "dem",
+      "centre": [
+        73.6,
+        18.3
+      ],
+      "size_km": 150,
+      "setting": "rift-flank uplift (the Deccan edge)"
+    },
+    {
+      "name": "zagros_salt_dem",
+      "frame": "dem",
+      "centre": [
+        54.0,
+        27.5
+      ],
+      "size_km": 120,
+      "setting": "salt diapir and wall (Hormuz salt domes)"
+    },
+    {
+      "name": "great_kavir_dem",
+      "frame": "dem",
+      "centre": [
+        53.5,
+        34.7
+      ],
+      "size_km": 100,
+      "setting": "salt diapir and wall (Great Kavir)"
+    },
+    {
+      "name": "zagros_folds_dem",
+      "frame": "dem",
+      "centre": [
+        51.0,
+        29.5
+      ],
+      "size_km": 150,
+      "setting": "inversion and fold (the simple fold belt)"
+    },
+    {
+      "name": "jura_dem",
+      "frame": "dem",
+      "centre": [
+        6.0,
+        46.9
+      ],
+      "size_km": 100,
+      "setting": "inversion and fold (the Jura)"
+    },
+    {
+      "name": "ganges_foreland_dem",
+      "frame": "dem",
+      "centre": [
+        82.0,
+        25.5
+      ],
+      "size_km": 400,
+      "setting": "foreland basin and forebulge (the Ganges plain and the Bundelkhand bulge)"
+    },
+    {
+      "name": "po_plain_dem",
+      "frame": "dem",
+      "centre": [
+        11.0,
+        44.6
+      ],
+      "size_km": 200,
+      "setting": "foreland basin (the Po Plain and the Apennine front)"
+    },
+    {
+      "name": "gom_minibasins_gebco",
+      "frame": "gebco",
+      "centre": [
+        -91.5,
+        27.2
+      ],
+      "size_km": 300,
+      "setting": "salt diapir and wall (Gulf of Mexico minibasins, Sigsbee escarpment)"
+    },
+    {
+      "name": "arabian_gulf_gebco",
+      "frame": "gebco",
+      "centre": [
+        51.5,
+        26.5
+      ],
+      "size_km": 350,
+      "setting": "foreland basin and forebulge (the Arabian Gulf and the Qatar arch)"
+    },
+    {
+      "name": "namibia_shelf_gebco",
+      "frame": "gebco",
+      "centre": [
+        13.0,
+        -24.5
+      ],
+      "size_km": 350,
+      "setting": "shelf width and the shelf edge (a passive-margin shelf)"
+    },
+    {
+      "name": "sunda_shelf_gebco",
+      "frame": "gebco",
+      "centre": [
+        106.0,
+        4.0
+      ],
+      "size_km": 700,
+      "setting": "shelf width and the shelf edge (a flooded continental shelf)",
+      "cell": 700
+    },
+    {
+      "name": "niger_margin_gebco",
+      "frame": "gebco",
+      "centre": [
+        6.0,
+        3.8
+      ],
+      "size_km": 300,
+      "setting": "clinoform and prograding margin (the Niger delta margin)"
+    },
+    {
+      "name": "mississippi_margin_gebco",
+      "frame": "gebco",
+      "centre": [
+        -89.3,
+        28.4
+      ],
+      "size_km": 250,
+      "setting": "clinoform and prograding margin; submarine fan (the Mississippi fan head)"
+    },
+    {
+      "name": "amazon_fan_gebco",
+      "frame": "gebco",
+      "centre": [
+        -47.5,
+        5.0
+      ],
+      "size_km": 400,
+      "setting": "submarine fan and lobe (the Amazon fan)"
+    },
+    {
+      "name": "indus_canyon_gebco",
+      "frame": "gebco",
+      "centre": [
+        66.5,
+        23.5
+      ],
+      "size_km": 300,
+      "setting": "submarine canyon and channel-levee system (the Indus canyon)"
+    },
+    {
+      "name": "bengal_swatch_gebco",
+      "frame": "gebco",
+      "centre": [
+        89.5,
+        21.2
+      ],
+      "size_km": 250,
+      "setting": "submarine canyon and channel-levee system (the Swatch of No Ground)"
+    },
+    {
+      "name": "zambezi_margin_gebco",
+      "frame": "gebco",
+      "centre": [
+        37.5,
+        -18.5
+      ],
+      "size_km": 300,
+      "setting": "clinoform and prograding margin (the Zambezi delta margin)"
+    },
+    {
+      "name": "grand_banks_gebco",
+      "frame": "gebco",
+      "centre": [
+        -51.0,
+        44.0
+      ],
+      "size_km": 400,
+      "setting": "slope apron and mass-transport deposit (the Grand Banks slide, 1929)"
+    },
+    {
+      "name": "agulhas_shelf_gebco",
+      "frame": "gebco",
+      "centre": [
+        24.5,
+        -35.0
+      ],
+      "size_km": 350,
+      "setting": "shelf width and the shelf edge (the Agulhas bank)"
+    },
+    {
+      "name": "kwanza_salt_gebco",
+      "frame": "gebco",
+      "centre": [
+        12.0,
+        -10.5
+      ],
+      "size_km": 300,
+      "setting": "salt diapir and wall (the Kwanza basin's salt, Angola)"
+    },
+    {
+      "name": "santos_salt_gebco",
+      "frame": "gebco",
+      "centre": [
+        -43.5,
+        -26.5
+      ],
+      "size_km": 400,
+      "setting": "salt diapir and wall (the Santos basin's salt, Brazil)"
+    },
+    {
+      "name": "yellow_sea_gebco",
+      "frame": "gebco",
+      "centre": [
+        123.0,
+        35.0
+      ],
+      "size_km": 700,
+      "setting": "shelf width and the shelf edge (the Yellow Sea shelf)",
+      "cell": 700
+    },
+    {
+      "name": "mekong_margin_gebco",
+      "frame": "gebco",
+      "centre": [
+        107.5,
+        9.0
+      ],
+      "size_km": 300,
+      "setting": "clinoform and prograding margin (the Mekong delta margin)"
+    },
+    {
+      "name": "zaire_channel_gebco",
+      "frame": "gebco",
+      "centre": [
+        11.0,
+        -6.0
+      ],
+      "size_km": 300,
+      "setting": "submarine canyon and channel-levee system (the Zaire canyon)"
+    },
+    {
+      "name": "rio_grande_rift_dem",
+      "frame": "dem",
+      "centre": [
+        -106.0,
+        35.5
+      ],
+      "size_km": 200,
+      "setting": "rift basin in plan (the Rio Grande rift)"
+    },
+    {
+      "name": "malawi_dem",
+      "frame": "dem",
+      "centre": [
+        34.5,
+        -11.5
+      ],
+      "size_km": 250,
+      "setting": "half-graben and tilted block (Lake Malawi)"
+    },
+    {
+      "name": "baikal_dem",
+      "frame": "dem",
+      "centre": [
+        108.0,
+        53.5
+      ],
+      "size_km": 300,
+      "setting": "rift basin in plan (Lake Baikal)"
+    },
+    {
+      "name": "afar_dem",
+      "frame": "dem",
+      "centre": [
+        41.0,
+        11.5
+      ],
+      "size_km": 250,
+      "setting": "rift basin in plan (the Afar triple junction)"
+    },
+    {
+      "name": "high_atlas_dem",
+      "frame": "dem",
+      "centre": [
+        -7.0,
+        31.5
+      ],
+      "size_km": 200,
+      "setting": "inversion and fold (the High Atlas)"
+    },
+    {
+      "name": "chaco_foreland_dem",
+      "frame": "dem",
+      "centre": [
+        -63.0,
+        -22.0
+      ],
+      "size_km": 400,
+      "setting": "foreland basin and forebulge (the Chaco foreland of the Andes)",
+      "cell": 180
+    },
+    {
+      "name": "mesopotamia_dem",
+      "frame": "dem",
+      "centre": [
+        45.0,
+        32.0
+      ],
+      "size_km": 400,
+      "setting": "foreland basin and forebulge (Mesopotamia and the Zagros front)"
+    },
+    {
+      "name": "nayarit_plain_dem",
+      "frame": "dem",
+      "centre": [
+        -105.4,
+        21.9
+      ],
+      "size_km": 60,
+      "setting": "strandplain (the plain's gradient)"
+    },
+    {
+      "name": "rio_grande_plain_dem",
+      "frame": "dem",
+      "centre": [
+        -51.2,
+        -31.5
+      ],
+      "size_km": 80,
+      "setting": "strandplain (the plain's gradient)"
+    },
+    {
+      "name": "camargue_dem",
+      "frame": "dem",
+      "centre": [
+        4.6,
+        43.5
+      ],
+      "size_km": 60,
+      "setting": "delta plain (the Rhone's plain gradient)"
+    }
   ]
 }

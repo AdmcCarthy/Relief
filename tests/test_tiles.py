@@ -67,7 +67,7 @@ def test_tile_of_maps_metres_to_tiles():
 @pytest.mark.parametrize("rid", BUILT)
 def test_built_pyramid_is_complete_and_matches_the_region(rid):
     folder = ROOT / "data" / "out" / rid / "tiles"
-    doc = json.loads((folder / "tiles.json").read_text())
+    doc = json.loads((folder / "tiles.json").read_text(encoding="utf-8"))
     assert doc["extent"] == REGIONS[rid]["extent"] and doc["tile"] == bt.TILE
     assert doc["levels"][0]["grid"] == [1, 1]
     total = 0
@@ -88,8 +88,8 @@ PAGES = [("explore.html", "explore.js"), ("index.html", "regions.js")]
 
 @pytest.mark.parametrize(("html", "js"), PAGES)
 def test_script_only_uses_element_ids_that_exist(html, js):
-    page = (ROOT / "preview" / html).read_text()
-    code = (ROOT / "preview" / js).read_text()
+    page = (ROOT / "preview" / html).read_text(encoding="utf-8")
+    code = (ROOT / "preview" / js).read_text(encoding="utf-8")
     ids = set(re.findall(r'\$\("([\w-]+)"\)', code)) | set(re.findall(r'getElementById\("([\w-]+)"\)', code))
     missing = [i for i in ids if f'id="{i}"' not in page]
     assert not missing, f"{js} uses ids missing from {html}: {missing}"
@@ -97,16 +97,16 @@ def test_script_only_uses_element_ids_that_exist(html, js):
 
 @pytest.mark.parametrize("js", ["explore.js", "regions.js", "demo.js", "palette.js", "geo.js", "relief.js"])
 def test_imports_resolve_and_names_are_exported(js):
-    code = (ROOT / "preview" / js).read_text()
+    code = (ROOT / "preview" / js).read_text(encoding="utf-8")
     for names, mod in re.findall(r'import \{([^}]*)\} from "\./([\w.]+)"', code):
-        exported = (ROOT / "preview" / mod).read_text()
+        exported = (ROOT / "preview" / mod).read_text(encoding="utf-8")
         for n in [x.strip() for x in names.split(",") if x.strip()]:
             assert re.search(rf"export (?:function {n}\b|(?:const|let) [^;\n]*\b{n}\b)|export \{{[^}}]*\b{n}\b", exported), f"{js} imports {n}, not exported by {mod}"
 
 
 @pytest.mark.parametrize("js", ["explore.js", "regions.js", "palette.js", "geo.js", "relief.js", "demo.js"])
 def test_brackets_balance(js):
-    code = (ROOT / "preview" / js).read_text()
+    code = (ROOT / "preview" / js).read_text(encoding="utf-8")
     code = re.sub(r"/\[[^\]\n]*\]/[a-z]*", "0", code)  # regex literals with a character class
     code = re.sub(r"`(?:\\.|[^`\\])*`", "``", code)  # template literals may hold anything
     code = re.sub(r'"(?:\\.|[^"\\\n])*"|\'(?:\\.|[^\'\\\n])*\'', '""', code)
