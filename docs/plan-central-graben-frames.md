@@ -1,7 +1,8 @@
 # Request: a Central North Sea frame and a fine sea floor for field maps
 
-**Status 16 November 2026.** Built on the owner's request, on branch `central-graben-frames`; nothing is committed, published
-or released. `central_graben` is registered with its extent exactly as asked, fetched with `build_hires.py` (GLO-90 and
+**Status 17 November 2026.** Built on the owner's request on 16 November, merged and released on the 17th: the layers
+are in the data release `data-2026-11-17` and the merged grid in `grids-2026-11-17`. Both releases carry the other regions'
+archives unchanged from `data-2026-11-15-linear` and `grids-2026-11-15`. `central_graben` is registered with its extent exactly as asked, fetched with `build_hires.py` (GLO-90 and
 EMODnet 2024 only), merged at 125 m (8,400 x 3,600) and built: three levels of detail, a six-level tile pyramid down to
 125 m (188 tiles), base tints, sky shade, and a fine base of 5,360 x 3,600 pixels at 125 m over the field-map area from the
 new `scripts/fine_base.py`. 92 MB in `data/out/central_graben`, 303 MB of fetched pieces and a 79 MB merged grid in `data/raw`.
@@ -59,14 +60,11 @@ had to come out exactly as written, because the consumer's views are cuts of it 
   pockmarks or single soundings; the cell cannot separate them (interpreted). North-south rows of dots and faint seams
   near 5 to 5.5 E look like survey lines (interpreted from the picture, not checked against EMODnet's source index).
 - **`regions.py sync` in a worktree without `data/out` turns every `built` flag off.** The other regions' flags were put
-  back from the committed file; `central_graben` is left `built: false` until a release carries its layers, since the
-  vector page lists every region marked built.
+  back from the committed file. `central_graben` is `built: true` from the release of 17 November.
 
 ## Left to do
 
-- Commit, review and merge the branch; a data release (the `fine/` folder ships inside the region's archive, 62 MB of the
-  92 MB, most of it `elevation.tif`) and a grids release; then `built: true`.
-- Idiom `DIRECTORY.md` and `DATASETS.md` were not touched from this build.
+- The 900 m regional level (see the first finding) is unchanged.
 
 ## Sources and licence
 
