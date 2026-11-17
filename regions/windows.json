@@ -635,6 +635,26 @@
       "size_km": 300,
       "setting": "foreland basin and thrust front (the Alberta foothills and plains)",
       "cell": 180
+    },
+    {
+      "name": "astoria_fan_gebco",
+      "frame": "gebco",
+      "centre": [
+        -126.5,
+        46.0
+      ],
+      "size_km": 300,
+      "setting": "submarine fan and lobe (the Astoria fan)"
+    },
+    {
+      "name": "mississippi_fan_gebco",
+      "frame": "gebco",
+      "centre": [
+        -88.0,
+        27.0
+      ],
+      "size_km": 400,
+      "setting": "submarine fan and lobe (the Mississippi fan)"
     }
   ]
 }
