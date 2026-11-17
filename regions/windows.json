@@ -564,6 +564,36 @@
       ],
       "size_km": 250,
       "setting": "foreland basin and forebulge (the Ebro basin and the Pyrenean front)"
+    },
+    {
+      "name": "georges_crest_gebco",
+      "frame": "gebco",
+      "centre": [
+        -67.8,
+        41.7
+      ],
+      "size_km": 90,
+      "setting": "tidal sand ridges on the crest of Georges Bank, at GEBCO's native cell"
+    },
+    {
+      "name": "monterey_canyon_gebco",
+      "frame": "gebco",
+      "centre": [
+        -122.2,
+        36.7
+      ],
+      "size_km": 150,
+      "setting": "submarine canyon (Monterey canyon)"
+    },
+    {
+      "name": "pine_island_bay_gebco",
+      "frame": "gebco",
+      "centre": [
+        -105.0,
+        -74.6
+      ],
+      "size_km": 300,
+      "setting": "glacial troughs on a polar shelf (Pine Island Bay)"
     }
   ]
 }
