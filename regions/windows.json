@@ -594,6 +594,26 @@
       ],
       "size_km": 300,
       "setting": "glacial troughs on a polar shelf (Pine Island Bay)"
+    },
+    {
+      "name": "wessex_dem",
+      "frame": "dem",
+      "centre": [
+        -2.2,
+        50.7
+      ],
+      "size_km": 120,
+      "setting": "inversion fold and monocline (the Wessex basin and the Purbeck coast)"
+    },
+    {
+      "name": "aegean_graben_dem",
+      "frame": "dem",
+      "centre": [
+        28.0,
+        38.0
+      ],
+      "size_km": 150,
+      "setting": "half-graben and tilted block (the Aegean grabens of western Turkey)"
     }
   ]
 }
