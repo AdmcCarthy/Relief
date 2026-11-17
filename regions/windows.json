@@ -675,6 +675,36 @@
       ],
       "size_km": 120,
       "setting": "inversion and fold (the Valley and Ridge of Pennsylvania)"
+    },
+    {
+      "name": "adriatic_clinoform_gebco",
+      "frame": "gebco",
+      "centre": [
+        14.0,
+        43.0
+      ],
+      "size_km": 250,
+      "setting": "clinoform and prograding margin (the Adriatic mud wedge)"
+    },
+    {
+      "name": "ethiopian_flank_dem",
+      "frame": "dem",
+      "centre": [
+        38.8,
+        9.2
+      ],
+      "size_km": 150,
+      "setting": "rift flank (the western escarpment of the Ethiopian Rift)"
+    },
+    {
+      "name": "teton_fault_dem",
+      "frame": "dem",
+      "centre": [
+        -110.8,
+        43.7
+      ],
+      "size_km": 80,
+      "setting": "normal fault and scarp (the Teton fault)"
     }
   ]
 }
