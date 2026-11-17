@@ -655,6 +655,26 @@
       ],
       "size_km": 400,
       "setting": "submarine fan and lobe (the Mississippi fan)"
+    },
+    {
+      "name": "dixie_valley_dem",
+      "frame": "dem",
+      "centre": [
+        -118.0,
+        39.8
+      ],
+      "size_km": 100,
+      "setting": "normal fault and scarp (Dixie Valley, Nevada)"
+    },
+    {
+      "name": "valley_ridge_dem",
+      "frame": "dem",
+      "centre": [
+        -77.8,
+        40.5
+      ],
+      "size_km": 120,
+      "setting": "inversion and fold (the Valley and Ridge of Pennsylvania)"
     }
   ]
 }
