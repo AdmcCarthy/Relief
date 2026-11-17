@@ -17,6 +17,7 @@ layers are built at.
 | `ne_europe_wide` | The NE Europe frame at 2 : 1 | ETRS89 / LAEA Europe (EPSG:3035) | 3,240 × 1,580 km |
 | `europe_s2s` | Every European catchment of the source-to-sink work, whole: Iberia and the Atlantic margin to the Urals, the Mediterranean to Novaya Zemlya (analysis frame, 5,500 x 4,600 km); ocean depth scale with the shelf's fine steps (docs/plan-europe-frame.md) | EPSG:3035 | 3,720 × 3,060 km |
 | `med_west` | The western Mediterranean at EMODnet's native cell: Gulf of Lion shelf edge and canyons, Rhône channel and Neofan, Var canyon, Ebro margin, Corsica and Sardinia (analysis frame, 120 m tile level; docs/plan-landforms-frames.md) | EPSG:3035 | 1,190 × 1,020 km |
+| `central_graben` | The Central North Sea, Hebrides to Jutland, for the Central Graben in the UK, Norwegian and Danish sectors; a display frame of 2.33 : 1 with a pinned extent, merged grid at 125 m and a fine base for field maps (docs/plan-central-graben-frames.md) | ETRS89 / UTM 31N (EPSG:25831) | 1,050 × 450 km |
 | `atlantic` | The Atlantic, Arctic to Southern Ocean, for spreading ridges; ocean depth scale | Lambert azimuthal equal-area, 25 W (custom) | 11,790 × 15,080 km |
 | `world` | Locator and global context; ocean depth scale | Equal Earth (EPSG:8857) | 34,488 × 16,786 km |
 
@@ -70,6 +71,9 @@ Inside this repo `scripts/areas.py` exposes the same registry as `AREAS`.
    (`step_deg`, sources) and `lods` (cell sizes in metres).
 2. `uv run python scripts/regions.py sync` derives `extent`, `bbox`, `size_km`, `proj4`, `built` and `regions.geojson`.
 3. `uv run python scripts/fetch_region.py <id> && uv run python scripts/build.py <id>`, then `sync` again (sets `built`).
+   A frame whose extent must be exact (a consumer cuts fixed views from it) is pinned with two `points` just inside the
+   south-west and north-east corners, `margin_m: 0` and a `round_m` that the corners are multiples of: `central_graben`
+   puts them 2.5 km inside and rounds outwards to 5 km. A lon/lat box cannot do this, because its projected corners spread.
 4. Regions with a `coverage` block are checked by `uv run python scripts/fetch_sodir.py && uv run python scripts/regions.py check`
    and by the tests (`tests/test_regions.py`).
 

@@ -285,5 +285,31 @@
     }
    }
   }
+ },
+ "central_graben": {
+  "points": {
+   "total": 3,
+   "inside": 3,
+   "names": {
+    "Ekofisk": {
+     "lon": 3.21,
+     "lat": 56.55,
+     "edge_distance_m": 207316,
+     "inside": true
+    },
+    "Forties": {
+     "lon": 0.97,
+     "lat": 57.73,
+     "edge_distance_m": 109538,
+     "inside": true
+    },
+    "Dan": {
+     "lon": 5.13,
+     "lat": 55.47,
+     "edge_distance_m": 89157,
+     "inside": true
+    }
+   }
+  }
  }
 }
