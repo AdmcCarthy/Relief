@@ -50,6 +50,23 @@ with soft-light as it is, with no remapping pass over the pixels. The manifest l
 The files are part of the data release with the other layers (`scripts/publish_data.py`), so a consumer fetching a
 release gets them with the hillshade and the bands.
 
+## The fine base, for maps of small windows
+
+A map of a 30 km window is 33 pixels of the regional tint and 100 of the detail hillshade. Where a region's merged grid is
+finer than its levels of detail (`central_graben` is merged at 125 m), `scripts/fine_base.py` renders the same base at the
+grid's own cell for a rectangle cut on whole cells:
+
+```
+uv run python scripts/fine_base.py central_graben --extent 130000 6060000 800000 6510000
+```
+
+writes `data/out/<region>/fine/`: `base_light.png` and `base_dark.png` (and WebP), by the same ramps and stops as the regional
+tint; `hillshade.png`, the sky shade with flat ground at 180; `shade.png` and `shade.webp`, flat ground at 128 and slopes
+stretched 2.5 times, for soft-light as it is; `elevation.tif`; and `manifest.json` (`fine_base: 1`) with the exact extent, cell,
+size, CRS, depth scale and ticks, shade model, sources and attribution lines. The shade is computed with a margin of the
+sky-view search radius and trimmed, at the house exaggeration (2 x); a flat shelf gets no more than that. A consumer
+crops by whole cells and draws the crop with an identity transform. The folder ships with the region in a data release.
+
 ## Drawing it (d3, canvas)
 
 ```js

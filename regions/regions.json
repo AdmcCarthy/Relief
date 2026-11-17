@@ -1102,6 +1102,91 @@
         1580
       ],
       "built": true
+    },
+    {
+      "id": "central_graben",
+      "name": "Central Graben and Central North Sea",
+      "description": "The Central North Sea from the Hebrides and the Scottish east coast to Jutland and the Skagerrak mouth, in ETRS89 / UTM 31N, whose central meridian (3 E) runs through the Central Graben so north stays within about 3 degrees of up over the UK, Norwegian and Danish sectors. A display frame of 1,050 x 450 km (2.33 : 1) with a pinned extent: a consumer cuts fixed views from it. The merged grid is kept at 125 m so field-scale windows can be cut from a fine sea floor (docs/plan-central-graben-frames.md).",
+      "crs": {
+        "code": "EPSG:25831",
+        "name": "ETRS89 / UTM zone 31N",
+        "proj4": "+proj=utm +zone=31 +ellps=GRS80 +units=m +no_defs +type=crs",
+        "epsg": 25831
+      },
+      "design": {
+        "points": [
+          [
+            -6.43485,
+            54.34016
+          ],
+          [
+            10.42859,
+            58.4925
+          ]
+        ],
+        "margin_m": 0,
+        "round_m": 5000,
+        "fit": "outer",
+        "note": "Pinned extent [-115000, 6060000, 935000, 6510000]: the two points lie 2.5 km inside the south-west and north-east corners, so rounding outwards to 5 km gives the frame exactly."
+      },
+      "fetch": {
+        "step_deg": 0.0010416666666666667,
+        "sea": [
+          "emodnet"
+        ],
+        "land": [
+          "copernicus"
+        ]
+      },
+      "lods": {
+        "overview": {
+          "cell": 2000
+        },
+        "regional": {
+          "cell": 900
+        },
+        "detail": {
+          "cell": 300
+        }
+      },
+      "bathymetry": "shelf",
+      "coverage": {
+        "points": {
+          "min_inside": 1.0,
+          "margin_m": 20000,
+          "names": {
+            "Ekofisk": [
+              3.21,
+              56.55
+            ],
+            "Forties": [
+              0.97,
+              57.73
+            ],
+            "Dan": [
+              5.13,
+              55.47
+            ]
+          }
+        }
+      },
+      "extent": [
+        -115000,
+        6060000,
+        935000,
+        6510000
+      ],
+      "bbox": [
+        -7.528,
+        54.305,
+        10.486,
+        58.74
+      ],
+      "size_km": [
+        1050,
+        450
+      ],
+      "built": true
     }
   ]
 }

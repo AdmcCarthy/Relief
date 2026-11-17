@@ -652,6 +652,19 @@
         "etopo_2022_60s"
       ],
       "gain": "EMODnet's native 1/16 arc-minute (about 115 m) over the western Mediterranean, merged at 120 m, so the Var canyon (2 to 5 km wide), the Rhone deep-sea channel (1 to 3 km) and the Gulf of Lion canyons are resolved. Land stays GLO-90 as context. ETOPO fills only outside EMODnet (Algerian coast south of 36 N is inside it). The merged grid is built at 120 m (`build_hires.py run med_west --cell 120`) and the tile pyramid keeps 120 m; the single web texture is averaged to 400 m so it stays inside the 10 MB budget."
+    },
+    "central_graben": {
+      "web_cell_m": {
+        "now": 900,
+        "hires": 300
+      },
+      "land": [
+        "cop_glo90"
+      ],
+      "sea": [
+        "emodnet_dtm_2024"
+      ],
+      "gain": "EMODnet's native 1/16 arc-minute (about 115 m) over the Central North Sea, merged at 125 m (`build_hires.py run central_graben --cell 125`), so a 30 km field window holds 240 cells and not the 100 of the 300 m detail level. Land stays GLO-90 as context. EMODnet covers the whole frame, so no coarser sea source is planned. The single web texture is averaged to 300 m; the tile pyramid and the fine base (`scripts/fine_base.py`) keep 125 m (docs/plan-central-graben-frames.md)."
     }
   }
 }
