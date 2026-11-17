@@ -614,6 +614,27 @@
       ],
       "size_km": 150,
       "setting": "half-graben and tilted block (the Aegean grabens of western Turkey)"
+    },
+    {
+      "name": "tianshan_fans_dem",
+      "frame": "dem",
+      "centre": [
+        85.0,
+        43.8
+      ],
+      "size_km": 120,
+      "setting": "alluvial fan (the northern Tien Shan piedmont)"
+    },
+    {
+      "name": "alberta_foreland_dem",
+      "frame": "dem",
+      "centre": [
+        -114.5,
+        50.5
+      ],
+      "size_km": 300,
+      "setting": "foreland basin and thrust front (the Alberta foothills and plains)",
+      "cell": 180
     }
   ]
 }
