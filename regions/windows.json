@@ -705,6 +705,66 @@
       ],
       "size_km": 80,
       "setting": "normal fault and scarp (the Teton fault)"
+    },
+    {
+      "name": "orange_margin_gebco",
+      "frame": "gebco",
+      "centre": [
+        15.0,
+        -29.0
+      ],
+      "size_km": 300,
+      "setting": "clinoform and prograding margin (the Orange River margin)"
+    },
+    {
+      "name": "pearl_margin_gebco",
+      "frame": "gebco",
+      "centre": [
+        115.0,
+        21.0
+      ],
+      "size_km": 300,
+      "setting": "clinoform and prograding margin (the Pearl River margin)"
+    },
+    {
+      "name": "nuuanu_slide_gebco",
+      "frame": "gebco",
+      "centre": [
+        -157.8,
+        22.3
+      ],
+      "size_km": 300,
+      "setting": "slope apron and mass-transport deposit (the Nuuanu debris avalanche)"
+    },
+    {
+      "name": "gulf_aden_flank_dem",
+      "frame": "dem",
+      "centre": [
+        45.5,
+        14.0
+      ],
+      "size_km": 150,
+      "setting": "rift flank (the Gulf of Aden escarpment of Yemen)"
+    },
+    {
+      "name": "genoa_fault_dem",
+      "frame": "dem",
+      "centre": [
+        -119.8,
+        39.0
+      ],
+      "size_km": 60,
+      "setting": "normal fault and scarp (the Genoa fault, Carson Valley)"
+    },
+    {
+      "name": "belgian_banks",
+      "frame": "north_sea_wide",
+      "centre": [
+        2.6,
+        51.4
+      ],
+      "size_km": 80,
+      "setting": "tidal sand ridges"
     }
   ]
 }
