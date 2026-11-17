@@ -765,6 +765,26 @@
       ],
       "size_km": 80,
       "setting": "tidal sand ridges"
+    },
+    {
+      "name": "pelotas_margin_gebco",
+      "frame": "gebco",
+      "centre": [
+        -50.0,
+        -33.5
+      ],
+      "size_km": 300,
+      "setting": "shelf-margin clinoform (the Pelotas margin, southern Brazil and Uruguay)"
+    },
+    {
+      "name": "albert_rift_dem",
+      "frame": "dem",
+      "centre": [
+        30.9,
+        1.7
+      ],
+      "size_km": 200,
+      "setting": "rift plan (the Albertine rift and Lake Albert)"
     }
   ]
 }
