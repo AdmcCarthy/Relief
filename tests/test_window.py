@@ -2,7 +2,7 @@
 
 Three kinds: EMODnet windows in a registered frame (cell 120 m or finer, EMODnet attributed), Copernicus DEM windows
 (frame `dem`, any land box, UTM) and GEBCO windows (frame `gebco`, any box, UTM), the last two written by `window.py dem` and
-`window.py gebco` for lab-landforms."""
+`window.py gebco` for a private landforms repo."""
 
 import json
 from pathlib import Path
