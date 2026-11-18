@@ -4,10 +4,10 @@
 whole so terrain and budgets can be computed, and it is not drawn directly. It is outside Idiom's map-frame rule (2.5 : 1 by default, never
 under 2 : 1, `house/screens.md`), which applies to display frames; a story draws it through landscape frames cut from it (`*_wide`).
 It was first cut for the Ireland-to-Ladoga catchments (3,720 x 3,060 km, 41.4 N to 72 N) and stopped short of Iberia, Italy, the Balkans and
-the Volga and Kama. On 2026-11-11 its design became the bounds of all 313 European catchments of source-to-sink's `europe` set (a `points`
+the Volga and Kama. On 2026-11-11 its design became the bounds of all 313 European catchments of the private catchment pipeline's `europe` set (a `points`
 design from the four corners, 50 km margin): **5,500 x 4,600 km, EPSG:3035, x 2.55 to 8.05 million m, y 1.35 to 5.95 million m**, 1,600 m cell
 (3,438 x 2,875), four tile levels, ocean depth scale. The 97 catchments beyond Europe (Anatolia, the Caucasus, North Africa, the Kola coast)
-reach past it and have terrain only where they overlap. source-to-sink's `europe` region now reads this frame (`terrain_level` 3, flow lines
+reach past it and have terrain only where they overlap. The private catchment pipeline's `europe` region now reads this frame (`terrain_level` 3, flow lines
 on level 2) instead of `atlantic`; for the same 410 systems the group assignments are identical, medians agree within 1.3 %, and terrain
 exists for 390 systems where the atlantic tiles gave 338.
 
@@ -16,7 +16,7 @@ lon/lat box gives 3,720 × 3,060 km, larger than the estimate below, because the
 with `build_hires.py` (Copernicus GLO-90, EMODnet 2024, ETOPO 2022; 65 MB raw), merged at 1,600 m, demo assets rendered,
 layers built at 8,000 / 4,000 / 1,600 m (16 MB), 29 tiles, base tints on the ocean scale. The hillshade keeps its tone
 and the manifest now states its flat value (180) instead. Step 7 (release `publish_data.py release`) waits for the owner
-because creating a release is a new public surface; step 8 is open: source-to-sink's `europe` region (the parallel
+because creating a release is a new public surface; step 8 is open: the private catchment pipeline's `europe` region (the parallel
 session's) still points at `relief: atlantic`; `relief: europe_s2s` is the drop-in replacement.
 
 Written 2026-11-10 at the owner's request. This is a plan, not a build: nothing here has been fetched or run. It sets out
@@ -82,7 +82,7 @@ All already in `docs/sources.md` and Idiom `DATASETS.md`; nothing new has to be 
 1. **Region.** Add the entry to `regions/regions.json`; `uv run python scripts/regions.py sync`. Add a `coverage` block
    that checks every HydroSHEDS system `source-to-sink` names (Vistula, Neva, Rhine, Elbe, Oder, Glomma, Lule, Kemi,
    Shannon, Severn, Loire) lies inside by at least 99 per cent of its area, with `regions.py check` reading the catchment
-   outlines from `source-to-sink/data/derived/<region>/systems.parquet` or a committed list of bounding boxes. About half a
+   outlines from the private catchment pipeline's `data/derived/<region>/systems.parquet` or a committed list of bounding boxes. About half a
    day including the test.
 2. **Fetch plan.** `scripts/build_hires.py plan europe_s2s` to list the EMODnet and Copernicus tiles the box needs and
    their sizes; confirm the total stays under 3 GB raw. No fetch is run until the owner says so. One hour.
