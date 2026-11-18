@@ -785,6 +785,26 @@
       ],
       "size_km": 200,
       "setting": "rift plan (the Albertine rift and Lake Albert)"
+    },
+    {
+      "name": "hudson_canyon_gebco",
+      "frame": "gebco",
+      "centre": [
+        -71.5,
+        39.5
+      ],
+      "size_km": 200,
+      "setting": "submarine canyon (the Hudson canyon)"
+    },
+    {
+      "name": "nazare_canyon_gebco",
+      "frame": "gebco",
+      "centre": [
+        -9.8,
+        39.6
+      ],
+      "size_km": 150,
+      "setting": "submarine canyon (the Nazare canyon)"
     }
   ]
 }
